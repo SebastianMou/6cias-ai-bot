@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot 6Cias</title>
+</head>
+
+<body>
+
+    <div id="chatbot-container">
+        <div id="chatbot-header">
+            <img src="https://via.placeholder.com/50" alt="Assistant" id="bot-avatar">
+            <h3>Asistente de Reclutamiento</h3>
+        </div>
+        <div id="chat-messages">
+            <!-- Initial welcome message -->
+            <div class="message bot-message">
+                <div class="message-content">
+                    <strong>Petrof - Asistente de Reclutamiento</strong>
+                    <p>¡Bienvenido! Soy Petrof, tu asistente de reclutamiento de 6Cias.</p>
+                    <p>Esta conversación funcionará como tu <strong>primera entrevista</strong>. Las respuestas que proporciones aquí determinarán si avanzas al segundo proceso de selección.</p>
+                    <p>Estas son las vacantes disponibles actualmente (haz clic para descargar):</p>
+                    <div class="job-images">
+                        <a href="https://res.cloudinary.com/dzinwey2x/image/upload/v1768087046/photo_2026-01-10_17-14-13_kzhjwd.jpg" download="Vacante_1.jpg" class="job-image-link">
+                            <img src="https://res.cloudinary.com/dzinwey2x/image/upload/v1768087046/photo_2026-01-10_17-14-13_kzhjwd.jpg" alt="Vacante 1" class="job-opening-image">
+                        </a>
+                        <a href="https://res.cloudinary.com/dzinwey2x/image/upload/v1768087046/photo_2026-01-10_17-14-22_sjlknq.jpg" download="Vacante_2.jpg" class="job-image-link">
+                            <img src="https://res.cloudinary.com/dzinwey2x/image/upload/v1768087046/photo_2026-01-10_17-14-22_sjlknq.jpg" alt="Vacante 2" class="job-opening-image">
+                        </a>
+                    </div>
+                    <p>Por favor, responde con honestidad y detalle. Para comenzar, <strong>¿a qué puesto estás aplicando?</strong></p>
+                </div>
+            </div>
+        </div>
+        <div id="input-container">
+            <input type="text" id="chat-input" placeholder="Escribe tu mensaje...">
+            <button id="send-btn">Enviar</button>
+        </div>
+    </div>
+
+    <style>
+        #chatbot-container {
+            bottom: 20px;
+            right: 20px;
+            height: 500px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            background: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #chatbot-header {
+            background: linear-gradient(135deg, #008386 0%, #427174 100%);
+            color: white;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-radius: 10px 10px 0 0;
+        }
+
+        #bot-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid white;
+            object-fit: cover;
+        }
+
+        #chatbot-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        #chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background: #f8f9fa;
+        }
+
+        /* Message styling */
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-content {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 15px;
+            word-wrap: break-word;
+            line-height: 1.5;
+        }
+
+        .user-message {
+            justify-content: flex-end;
+        }
+
+        .user-message .message-content {
+            background: linear-gradient(135deg, #008386 0%, #427174 100%);
+            color: white;
+            border-radius: 15px 15px 0 15px;
+        }
+
+        .bot-message {
+            justify-content: flex-start;
+        }
+
+        .bot-message .message-content {
+            background: white;
+            color: #333;
+            border: 1px solid #e0e0e0;
+            border-radius: 15px 15px 15px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .bot-message .message-content strong {
+            color: #008386;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .bot-message .message-content p {
+            margin: 8px 0;
+        }
+
+        .bot-message .message-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Job opening images */
+        .job-images {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            margin: 12px 0;
+            justify-content: center;
+        }
+
+        .job-image-link {
+            display: block;
+            flex: 0 0 auto;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+
+        .job-image-link:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0, 131, 134, 0.3);
+        }
+
+        .job-opening-image {
+            width: 120px;
+            height: auto;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: block;
+        }
+
+        /* Timestamp */
+        .timestamp {
+            font-size: 11px;
+            color: #999;
+            margin-top: 5px;
+            text-align: right;
+        }
+
+        /* Typing indicator */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 12px 16px;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 15px 15px 15px 0;
+            max-width: 80px;
+        }
+
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            background: #008386;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+
+            0%,
+            60%,
+            100% {
+                transform: translateY(0);
+            }
+
+            30% {
+                transform: translateY(-10px);
+            }
+        }
+
+        #input-container {
+            display: flex;
+            gap: 10px;
+            padding: 15px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        #chat-input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        #chat-input:focus {
+            border-color: #008386;
+        }
+
+        #chat-input:disabled {
+            background: #f0f0f0;
+            cursor: not-allowed;
+        }
+
+        #send-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #008386 0%, #008387 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        #send-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 131, 134, 0.4);
+        }
+
+        #send-btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        #send-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Scrollbar styling */
+        #chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #chat-messages::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        #chat-messages::-webkit-scrollbar-thumb {
+            background: #008386;
+            border-radius: 3px;
+        }
+
+        #chat-messages::-webkit-scrollbar-thumb:hover {
+            background: #006668;
+        }
+    </style>
+
+    <script>
+        // Generate unique session ID for this user
+        const sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        const API_URL = window.location.origin;  // CHANGE THIS to your deployed FastAPI URL
+
+        // Function to add typing indicator
+        function showTypingIndicator() {
+            const chatMessages = document.getElementById('chat-messages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message bot-message';
+            typingDiv.id = 'typing-indicator';
+            typingDiv.innerHTML = `
+    <div class="typing-indicator">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+  `;
+            chatMessages.appendChild(typingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Function to remove typing indicator
+        function hideTypingIndicator() {
+            const typingIndicator = document.getElementById('typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        // Function to get current time
+        function getCurrentTime() {
+            const now = new Date();
+            return now.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Function to send message
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const sendBtn = document.getElementById('send-btn');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            // Disable input while processing
+            input.disabled = true;
+            sendBtn.disabled = true;
+
+            // Display user message
+            const chatMessages = document.getElementById('chat-messages');
+            const userMessageDiv = document.createElement('div');
+            userMessageDiv.className = 'message user-message';
+            userMessageDiv.innerHTML = `
+    <div class="message-content">
+      ${message}
+      <div class="timestamp">${getCurrentTime()}</div>
+    </div>
+  `;
+            chatMessages.appendChild(userMessageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            input.value = '';
+
+            // Show typing indicator
+            showTypingIndicator();
+
+            try {
+                // Call your FastAPI backend
+                const response = await fetch(`${API_URL}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        session_id: sessionId
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error en la conexión');
+                }
+
+                const data = await response.json();
+
+                // Hide typing indicator
+                hideTypingIndicator();
+
+                // Display bot response
+                const botMessageDiv = document.createElement('div');
+                botMessageDiv.className = 'message bot-message';
+                botMessageDiv.innerHTML = `
+      <div class="message-content">
+        <strong>Asistente</strong>
+        <p>${data.response}</p>
+        <div class="timestamp">${getCurrentTime()}</div>
+      </div>
+    `;
+                chatMessages.appendChild(botMessageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            } catch (error) {
+                // Hide typing indicator
+                hideTypingIndicator();
+
+                // Display error message
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'message bot-message';
+                errorDiv.innerHTML = `
+      <div class="message-content">
+        <strong>Asistente</strong>
+        <p>Lo siento, estoy teniendo problemas para conectarme. Por favor, intenta de nuevo en un momento.</p>
+        <div class="timestamp">${getCurrentTime()}</div>
+      </div>
+    `;
+                chatMessages.appendChild(errorDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            // Re-enable input
+            input.disabled = false;
+            sendBtn.disabled = false;
+            input.focus();
+        }
+
+        // Send on button click
+        document.getElementById('send-btn').addEventListener('click', sendMessage);
+
+        // Send on Enter key
+        document.getElementById('chat-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Auto-focus input on load
+        document.getElementById('chat-input').focus();
+    </script>
+
+</body>
+
+</html>

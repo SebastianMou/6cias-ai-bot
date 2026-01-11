@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Environment variables
+.env
+config.py
+settings.py
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+recruitment.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# API Keys (IMPORTANT!)
+*.key
+secrets/
+
+# Job descriptions (optional - only if they contain sensitive info)
+# jobs/*.txt
