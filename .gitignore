@@ -8,8 +8,6 @@ env/
 ENV/
 .venv
 .env
-config.py
-settings.py
 *.db
 *.sqlite
 *.sqlite3
