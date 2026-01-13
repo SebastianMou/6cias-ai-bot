@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, Request
+from fastapi import FastAPI, Depends, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
@@ -20,6 +20,9 @@ from pathlib import Path
 # Directory where job descriptions are stored
 JOBS_DIR = Path("jobs")
 
+
+# Configuration
+MAX_MESSAGES_PER_SESSION = 60
 
 app = FastAPI(title="6Cias Chatbot API", version="1.0.0")
 
@@ -137,11 +140,29 @@ async def dashboard():
 async def candidate_page():
     return FileResponse("candidate.html")
 
+@app.get("/widget")
+async def widget():
+    return FileResponse("widget.html")
+
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest, req: Request, db: Session = Depends(get_db)):
     try:
+        chat_enabled = crud.get_setting(db, "chat_enabled")
+        if chat_enabled == "false":
+            return ChatResponse(
+                response="Lo sentimos, el sistema de chat está temporalmente desactivado. Por favor, contáctanos directamente al WhatsApp wa.me/5215652301371 para continuar con tu proceso de reclutamiento.",
+                session_id=request.session_id
+            )
+
         # Get conversation history FIRST (needed for job detection)
         history = crud.get_conversations_by_session(db, request.session_id)
+        
+        # Check message limit
+        if len(history) >= MAX_MESSAGES_PER_SESSION:
+            return ChatResponse(
+                response="Lo siento, has alcanzado el límite de 60 mensajes para esta sesión. Por favor, contáctanos directamente al WhatsApp wa.me/5215652301371 para continuar con tu proceso de reclutamiento.",
+                session_id=request.session_id
+            )
         
         # Check if user mentioned a job position in THIS message OR in conversation history
         user_message_lower = request.message.lower()
@@ -403,27 +424,149 @@ async def chat(request: ChatRequest, req: Request, db: Session = Depends(get_db)
         # ========== END EXTRACTION ==========
         
         # ========== CHECK IF INTERVIEW IS COMPLETE ==========
-        end_keywords = ['siguiente fase', 'segunda entrevista', 'se pondrá en contacto', 
-                       'contacto contigo', 'próximos pasos', 'siguiente etapa']
-        
+        end_keywords = ['siguiente fase', 'segunda entrevista', 'se pondrá en contacto', 'contacto contigo', 'próximos pasos', 'siguiente etapa']
+
         interview_ending = any(keyword in bot_response.lower() for keyword in end_keywords)
-        
+
         if interview_ending and candidate:
-            has_all_info = (candidate.name and candidate.email and 
-                          candidate.phone and candidate.position_applied)
+            has_all_info = (candidate.name and candidate.email and candidate.phone and candidate.position_applied)
             
             if has_all_info and not candidate.interview_completed:
-                crud.update_candidate(db, request.session_id, 
-                                    interview_completed=True,
-                                    passed_first_interview=True,
-                                    interview_score=85)
+                crud.update_candidate(db, request.session_id, interview_completed=True, passed_first_interview=True, interview_score=85)
+                
+                # Add final WhatsApp message
+                final_message = (
+                    "\n\nMuy bien, para finalizar y agilizar el proceso, mándame a este WhatsApp "
+                    "wa.me/5215652301371 un video de un minuto con tu nombre completo y vacantes "
+                    "a las que te postulas respondiendo estas 2 preguntas: "
+                    "¿Me explicas brevemente quién eres tú con el por qué aplicas a la vacante? "
+                    "Y ¿Te comprometes a llevar a cabo el proceso profesionalmente responsable en "
+                    "Reclutamiento y Puesto?"
+                )
+                bot_response += final_message
         # ========== END INTERVIEW COMPLETION CHECK ==========
         
         return ChatResponse(response=bot_response, session_id=request.session_id)
     
     except Exception as e:
         return ChatResponse(response=f"Error: {str(e)}", session_id=request.session_id)
+
+@app.get("/settings/chat-enabled")
+async def get_chat_status(db: Session = Depends(get_db)):
+    """Get chatbot enabled status"""
+    status = crud.get_setting(db, "chat_enabled")
+    return {"chat_enabled": status != "false"}  # Default to true if not set
+
+@app.post("/settings/chat-enabled")
+async def toggle_chat_status(request: dict, db: Session = Depends(get_db)):
+    """Toggle chatbot enabled status"""
+    enabled = request.get("enabled", True)
+    crud.set_setting(db, "chat_enabled", "true" if enabled else "false")
+    return {"chat_enabled": enabled, "message": f"Chat {'activado' if enabled else 'desactivado'}"}
+
+@app.get("/candidate/{session_id}")
+async def get_candidate(session_id: str, db: Session = Depends(get_db)):
+    """Get a single candidate by session_id"""
+    candidate = crud.get_candidate_by_session(db, session_id)
+    if not candidate:
+        raise HTTPException(status_code=404, detail="Candidate not found")
     
+    return {
+        "id": candidate.id,
+        "session_id": candidate.session_id,
+        "name": candidate.name,
+        "email": candidate.email,
+        "phone": candidate.phone,
+        "position_applied": candidate.position_applied,
+        "interview_completed": candidate.interview_completed,
+        "passed_first_interview": candidate.passed_first_interview,
+        "interview_score": candidate.interview_score,
+        "incorporation_time": candidate.incorporation_time,
+        "education_level": candidate.education_level,
+        "job_interest_reason": candidate.job_interest_reason,
+        "years_experience": candidate.years_experience,
+        "last_job_info": candidate.last_job_info,
+        "can_travel": candidate.can_travel,
+        "knows_office": candidate.knows_office,
+        "salary_agreement": candidate.salary_agreement,
+        "schedule_availability": candidate.schedule_availability,
+        "accepts_polygraph": candidate.accepts_polygraph,
+        "accepts_socioeconomic": candidate.accepts_socioeconomic,
+        "accepts_drug_test": candidate.accepts_drug_test,
+        "created_at": candidate.created_at.isoformat() if candidate.created_at else None,
+        "updated_at": candidate.updated_at.isoformat() if candidate.updated_at else None
+    }
+
+@app.put("/candidate/{session_id}")
+async def update_candidate_endpoint(session_id: str, data: dict, db: Session = Depends(get_db)):
+    """Update a candidate"""
+    candidate = crud.get_candidate_by_session(db, session_id)
+    if not candidate:
+        raise HTTPException(status_code=404, detail="Candidate not found")
+    
+    # Update all provided fields
+    update_data = {}
+    
+    # Basic fields
+    if "name" in data:
+        update_data["name"] = data["name"]
+    if "email" in data:
+        update_data["email"] = data["email"]
+    if "phone" in data:
+        update_data["phone"] = data["phone"]
+    if "position_applied" in data:
+        update_data["position_applied"] = data["position_applied"]
+    
+    # Interview status
+    if "interview_score" in data:
+        update_data["interview_score"] = data["interview_score"]
+    if "interview_completed" in data:
+        update_data["interview_completed"] = data["interview_completed"]
+    if "passed_first_interview" in data:
+        update_data["passed_first_interview"] = data["passed_first_interview"]
+    
+    # Additional info
+    if "incorporation_time" in data:
+        update_data["incorporation_time"] = data["incorporation_time"]
+    if "education_level" in data:
+        update_data["education_level"] = data["education_level"]
+    if "years_experience" in data:
+        update_data["years_experience"] = data["years_experience"]
+    if "schedule_availability" in data:
+        update_data["schedule_availability"] = data["schedule_availability"]
+    if "job_interest_reason" in data:
+        update_data["job_interest_reason"] = data["job_interest_reason"]
+    if "last_job_info" in data:
+        update_data["last_job_info"] = data["last_job_info"]
+    
+    # Skills & abilities
+    if "can_travel" in data:
+        update_data["can_travel"] = data["can_travel"]
+    if "knows_office" in data:
+        update_data["knows_office"] = data["knows_office"]
+    if "salary_agreement" in data:
+        update_data["salary_agreement"] = data["salary_agreement"]
+    
+    # Filters
+    if "accepts_polygraph" in data:
+        update_data["accepts_polygraph"] = data["accepts_polygraph"]
+    if "accepts_socioeconomic" in data:
+        update_data["accepts_socioeconomic"] = data["accepts_socioeconomic"]
+    if "accepts_drug_test" in data:
+        update_data["accepts_drug_test"] = data["accepts_drug_test"]
+    
+    updated_candidate = crud.update_candidate(db, session_id, **update_data)
+    return {"message": "Candidate updated successfully", "candidate_id": updated_candidate.id}
+
+@app.delete("/candidate/{session_id}")
+async def delete_candidate_endpoint(session_id: str, db: Session = Depends(get_db)):
+    """Delete a candidate and their conversations"""
+    success = crud.delete_candidate(db, session_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Candidate not found")
+    
+    return {"message": "Candidate deleted successfully"}
+
 @app.get("/history/{session_id}", response_model=ChatHistoryResponse)
 async def get_history(session_id: str, db: Session = Depends(get_db)):
     conversations = crud.get_conversations_by_session(db, session_id)
@@ -483,3 +626,5 @@ async def get_all_candidates(db: Session = Depends(get_db)):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
+

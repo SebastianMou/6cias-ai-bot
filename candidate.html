@@ -248,7 +248,7 @@
 </head>
 <body>
     <div class="header">
-        <button class="back-btn" onclick="window.location.href='dashboard.html'">← Volver</button>
+        <button class="back-btn" onclick="window.location.href='dashboard'">← Volver</button>
         <h1>Detalle del Candidato</h1>
     </div>
 
@@ -311,6 +311,132 @@
                 <div class="score-number" id="score">0</div>
                 <div class="score-label">Puntuación de Entrevista</div>
             </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+                <button onclick="openEditModal()" style="width: 100%; padding: 12px; background: #008386; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+                    ✏️ Editar Candidato
+                </button>
+                <button onclick="deleteCandidate()" style="width: 100%; padding: 12px; background: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+                    🗑️ Eliminar Candidato
+                </button>
+            </div>
+        </div>
+
+        <!-- Edit Modal -->
+        <div id="edit-modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); overflow-y: auto;">
+            <div style="max-width: 800px; margin: 50px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="color: #008386;">Editar Candidato</h2>
+                    <button onclick="closeEditModal()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+                </div>
+                <form id="edit-form" style="max-height: 70vh; overflow-y: auto; padding-right: 10px;">
+                    <!-- Basic Info -->
+                    <h3 style="color: #008386; margin: 20px 0 15px; font-size: 18px; border-bottom: 2px solid #008386; padding-bottom: 8px;">Información Básica</h3>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Nombre:</label>
+                            <input type="text" id="edit-name" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Email:</label>
+                            <input type="email" id="edit-email" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Teléfono:</label>
+                            <input type="text" id="edit-phone" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Puesto:</label>
+                            <input type="text" id="edit-position" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        </div>
+                    </div>
+
+                    <!-- Interview Status -->
+                    <h3 style="color: #008386; margin: 20px 0 15px; font-size: 18px; border-bottom: 2px solid #008386; padding-bottom: 8px;">Estado de Entrevista</h3>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Puntuación:</label>
+                            <input type="number" id="edit-score" min="0" max="100" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        </div>
+                        <div style="margin-bottom: 15px; display: flex; flex-direction: column; justify-content: center;">
+                            <label style="display: flex; align-items: center; gap: 10px; font-weight: 600;">
+                                <input type="checkbox" id="edit-completed" style="width: 20px; height: 20px;"> Entrevista Completada
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 10px; font-weight: 600; margin-top: 10px;">
+                                <input type="checkbox" id="edit-passed" style="width: 20px; height: 20px;"> Aprobado Primera Fase
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Additional Info -->
+                    <h3 style="color: #008386; margin: 20px 0 15px; font-size: 18px; border-bottom: 2px solid #008386; padding-bottom: 8px;">Información Adicional</h3>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Tiempo de Incorporación:</label>
+                            <input type="text" id="edit-incorporation" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Nivel de Estudios:</label>
+                            <input type="text" id="edit-education" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Años de Experiencia:</label>
+                            <input type="text" id="edit-experience" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Disponibilidad de Horario:</label>
+                            <input type="text" id="edit-schedule" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Razón de Interés en la Vacante:</label>
+                        <textarea id="edit-interest" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"></textarea>
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Información del Último Trabajo:</label>
+                        <textarea id="edit-lastjob" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"></textarea>
+                    </div>
+
+                    <!-- Skills & Abilities -->
+                    <h3 style="color: #008386; margin: 20px 0 15px; font-size: 18px; border-bottom: 2px solid #008386; padding-bottom: 8px;">Habilidades y Disponibilidad</h3>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                        <label style="display: flex; align-items: center; gap: 10px; font-weight: 600;">
+                            <input type="checkbox" id="edit-travel" style="width: 20px; height: 20px;"> Puede Viajar
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 10px; font-weight: 600;">
+                            <input type="checkbox" id="edit-office" style="width: 20px; height: 20px;"> Sabe Office
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 10px; font-weight: 600;">
+                            <input type="checkbox" id="edit-salary" style="width: 20px; height: 20px;"> Acuerdo con Sueldo
+                        </label>
+                    </div>
+
+                    <!-- Filters -->
+                    <h3 style="color: #008386; margin: 20px 0 15px; font-size: 18px; border-bottom: 2px solid #008386; padding-bottom: 8px;">Filtros de Reclutamiento</h3>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                        <label style="display: flex; align-items: center; gap: 10px; font-weight: 600;">
+                            <input type="checkbox" id="edit-polygraph" style="width: 20px; height: 20px;"> Acepta Polígrafo
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 10px; font-weight: 600;">
+                            <input type="checkbox" id="edit-socioeconomic" style="width: 20px; height: 20px;"> Acepta Socioeconómica
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 10px; font-weight: 600;">
+                            <input type="checkbox" id="edit-drugtest" style="width: 20px; height: 20px;"> Acepta Antidoping
+                        </label>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
+                        <button type="button" onclick="closeEditModal()" style="padding: 10px 20px; background: #ccc; border: none; border-radius: 5px; cursor: pointer;">Cancelar</button>
+                        <button type="submit" style="padding: 10px 20px; background: #008386; color: white; border: none; border-radius: 5px; cursor: pointer;">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
         </div>
 
         <!-- Chat messages -->
@@ -325,7 +451,7 @@
     </div>
 
     <script>
-        const API_URL = 'http://127.0.0.1:8000';
+        const API_URL = window.location.origin;
         const urlParams = new URLSearchParams(window.location.search);
         const sessionId = urlParams.get('session');
 
@@ -425,6 +551,129 @@
         }
 
         loadCandidateDetails();
+
+        // CRUD Functions
+        let currentCandidate = null;
+
+        async function openEditModal() {
+            try {
+                const response = await fetch(`${API_URL}/candidate/${sessionId}`);
+                currentCandidate = await response.json();
+
+                // Basic Info
+                document.getElementById('edit-name').value = currentCandidate.name || '';
+                document.getElementById('edit-email').value = currentCandidate.email || '';
+                document.getElementById('edit-phone').value = currentCandidate.phone || '';
+                document.getElementById('edit-position').value = currentCandidate.position_applied || '';
+
+                // Interview Status
+                document.getElementById('edit-score').value = currentCandidate.interview_score || '';
+                document.getElementById('edit-completed').checked = currentCandidate.interview_completed || false;
+                document.getElementById('edit-passed').checked = currentCandidate.passed_first_interview || false;
+
+                // Additional Info
+                document.getElementById('edit-incorporation').value = currentCandidate.incorporation_time || '';
+                document.getElementById('edit-education').value = currentCandidate.education_level || '';
+                document.getElementById('edit-experience').value = currentCandidate.years_experience || '';
+                document.getElementById('edit-schedule').value = currentCandidate.schedule_availability || '';
+                document.getElementById('edit-interest').value = currentCandidate.job_interest_reason || '';
+                document.getElementById('edit-lastjob').value = currentCandidate.last_job_info || '';
+
+                // Skills & Abilities
+                document.getElementById('edit-travel').checked = currentCandidate.can_travel || false;
+                document.getElementById('edit-office').checked = currentCandidate.knows_office || false;
+                document.getElementById('edit-salary').checked = currentCandidate.salary_agreement || false;
+
+                // Filters
+                document.getElementById('edit-polygraph').checked = currentCandidate.accepts_polygraph || false;
+                document.getElementById('edit-socioeconomic').checked = currentCandidate.accepts_socioeconomic || false;
+                document.getElementById('edit-drugtest').checked = currentCandidate.accepts_drug_test || false;
+
+                document.getElementById('edit-modal').style.display = 'block';
+            } catch (error) {
+                alert('Error al cargar datos del candidato');
+            }
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').style.display = 'none';
+        }
+
+        document.getElementById('edit-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const data = {
+                // Basic Info
+                name: document.getElementById('edit-name').value,
+                email: document.getElementById('edit-email').value,
+                phone: document.getElementById('edit-phone').value,
+                position_applied: document.getElementById('edit-position').value,
+                
+                // Interview Status
+                interview_score: parseInt(document.getElementById('edit-score').value) || null,
+                interview_completed: document.getElementById('edit-completed').checked,
+                passed_first_interview: document.getElementById('edit-passed').checked,
+                
+                // Additional Info
+                incorporation_time: document.getElementById('edit-incorporation').value,
+                education_level: document.getElementById('edit-education').value,
+                years_experience: document.getElementById('edit-experience').value,
+                schedule_availability: document.getElementById('edit-schedule').value,
+                job_interest_reason: document.getElementById('edit-interest').value,
+                last_job_info: document.getElementById('edit-lastjob').value,
+                
+                // Skills & Abilities
+                can_travel: document.getElementById('edit-travel').checked,
+                knows_office: document.getElementById('edit-office').checked,
+                salary_agreement: document.getElementById('edit-salary').checked,
+                
+                // Filters
+                accepts_polygraph: document.getElementById('edit-polygraph').checked,
+                accepts_socioeconomic: document.getElementById('edit-socioeconomic').checked,
+                accepts_drug_test: document.getElementById('edit-drugtest').checked
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/candidate/${sessionId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    alert('Candidato actualizado exitosamente');
+                    closeEditModal();
+                    loadCandidateDetails(); // Reload the page data
+                } else {
+                    alert('Error al actualizar candidato');
+                }
+            } catch (error) {
+                alert('Error al actualizar candidato');
+            }
+        });
+
+        async function deleteCandidate() {
+            const name = document.getElementById('name').textContent;
+            
+            if (!confirm(`¿Estás seguro de eliminar a ${name}? Esta acción no se puede deshacer y eliminará toda la conversación.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/candidate/${sessionId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    alert('Candidato eliminado exitosamente');
+                    window.location.href = 'dashboard';
+                } else {
+                    alert('Error al eliminar candidato');
+                }
+            } catch (error) {
+                alert('Error al eliminar candidato');
+            }
+        }
     </script>
 </body>
 </html>

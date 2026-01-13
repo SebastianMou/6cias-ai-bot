@@ -199,12 +199,73 @@
         .filter-bar select:focus, .filter-bar input:focus {
             border-color: #008386;
         }
+
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 30px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: #008386;
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(30px);
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>Dashboard de Reclutamiento</h1>
-        <p>6Cias - Gestión de Candidatos</p>
+        <div style="flex: 1;">
+            <h1>Dashboard de Reclutamiento</h1>
+            <p>6Cias - Gestión de Candidatos</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <span id="chat-status-text" style="font-size: 14px;">Chat: Cargando...</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="chat-toggle" onchange="toggleChat()">
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
     </div>
 
     <div class="container">
@@ -252,14 +313,17 @@
     </div>
 
     <script>
-        const API_URL = 'http://127.0.0.1:8000';
+        const API_URL = window.location.origin;
+        let allCandidates = [];
+
+        console.log('API_URL:', API_URL); // Debug line
 
         async function loadCandidates() {
             try {
                 const response = await fetch(`${API_URL}/candidates`);
-                const candidates = await response.json();
+                allCandidates = await response.json();
 
-                if (candidates.length === 0) {
+                if (allCandidates.length === 0) {
                     document.getElementById('candidates-container').innerHTML = `
                         <div class="no-data">
                             <h3>No hay candidatos registrados</h3>
@@ -269,11 +333,10 @@
                     return;
                 }
 
-                // Update stats
-                document.getElementById('total-candidates').textContent = candidates.length;
-                const completed = candidates.filter(c => c.interview_completed).length;
-                const passed = candidates.filter(c => c.passed_first_interview).length;
-                const scores = candidates.filter(c => c.interview_score).map(c => c.interview_score);
+                document.getElementById('total-candidates').textContent = allCandidates.length;
+                const completed = allCandidates.filter(c => c.interview_completed).length;
+                const passed = allCandidates.filter(c => c.passed_first_interview).length;
+                const scores = allCandidates.filter(c => c.interview_score).map(c => c.interview_score);
                 const avgScore = scores.length > 0 ? Math.round(scores.reduce((a,b) => a+b, 0) / scores.length) : 0;
 
                 document.getElementById('completed-interviews').textContent = completed;
@@ -281,7 +344,8 @@
                 document.getElementById('avg-score').textContent = avgScore;
 
                 // Render candidates
-                renderCandidates(candidates);
+                renderCandidates(allCandidates);
+
             } catch (error) {
                 console.error('Error loading candidates:', error);
                 document.getElementById('candidates-container').innerHTML = `
@@ -304,16 +368,16 @@
                                   status === 'pending' ? 'Pendiente' : 'Incompleto';
 
                 return `
-                    <div class="candidate-card" onclick="viewCandidate('${candidate.session_id}')">
+                    <div class="candidate-card">
                         <div class="candidate-header">
-                            <div>
+                            <div onclick="viewCandidate('${candidate.session_id}')" style="cursor: pointer; flex: 1;">
                                 <div class="candidate-name">${candidate.name || 'Sin nombre'}</div>
                                 <div class="candidate-position">${candidate.position_applied || 'Sin puesto'}</div>
                             </div>
                             <span class="status-badge status-${status}">${statusText}</span>
                         </div>
 
-                        <div class="candidate-info">
+                        <div class="candidate-info" onclick="viewCandidate('${candidate.session_id}')" style="cursor: pointer;">
                             <div class="info-row">
                                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
@@ -332,6 +396,15 @@
                             <div class="score">${candidate.interview_score}</div>
                             <div class="score-label">Puntuación</div>
                         ` : ''}
+
+                        <div style="display: flex; gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px solid #f0f0f0;">
+                            <button onclick="event.stopPropagation(); editCandidate('${candidate.session_id}')" style="flex: 1; padding: 8px; background: #008386; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">
+                                ✏️ Editar
+                            </button>
+                            <button onclick="event.stopPropagation(); deleteCandidate('${candidate.session_id}', '${candidate.name || 'este candidato'}')" style="flex: 1; padding: 8px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">
+                                🗑️ Eliminar
+                            </button>
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -349,9 +422,223 @@
         document.getElementById('position-filter').addEventListener('change', filterCandidates);
         document.getElementById('status-filter').addEventListener('change', filterCandidates);
 
-        async function filterCandidates() {
-            // Re-load and filter (simplified - you can enhance this)
-            await loadCandidates();
+        // Chat Toggle Functions
+        async function loadChatStatus() {
+            try {
+                const response = await fetch(`${API_URL}/settings/chat-enabled`);
+                const data = await response.json();
+                
+                const toggle = document.getElementById('chat-toggle');
+                const statusText = document.getElementById('chat-status-text');
+                
+                toggle.checked = data.chat_enabled;
+                statusText.textContent = data.chat_enabled ? 'Chat: Activo' : 'Chat: Desactivado';
+                statusText.style.color = data.chat_enabled ? '#d4edda' : '#f8d7da';
+            } catch (error) {
+                console.error('Error loading chat status:', error);
+            }
+        }
+        
+        async function toggleChat() {
+            const toggle = document.getElementById('chat-toggle');
+            const statusText = document.getElementById('chat-status-text');
+            const enabled = toggle.checked;
+
+            try {
+                const response = await fetch(`${API_URL}/settings/chat-enabled`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled: enabled })
+                });
+
+                if (response.ok) {
+                    statusText.textContent = enabled ? 'Chat: Activo' : 'Chat: Desactivado';
+                    statusText.style.color = enabled ? '#d4edda' : '#f8d7da';
+                    
+                    // Show notification
+                    const notification = document.createElement('div');
+                    notification.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        background: ${enabled ? '#008386' : '#dc3545'};
+                        color: white;
+                        padding: 15px 20px;
+                        border-radius: 8px;
+                        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+                        z-index: 9999;
+                        font-weight: 600;
+                    `;
+                    notification.textContent = enabled ? '✓ Chat activado' : '✗ Chat desactivado';
+                    document.body.appendChild(notification);
+                    
+                    setTimeout(() => notification.remove(), 3000);
+                } else {
+                    alert('Error al cambiar el estado del chat');
+                    toggle.checked = !enabled; // Revert toggle
+                }
+            } catch (error) {
+                console.error('Error toggling chat:', error);
+                alert('Error al cambiar el estado del chat');
+                toggle.checked = !enabled; // Revert toggle
+            }
+        }
+
+        // Load chat status on page load
+        loadChatStatus();
+
+        function filterCandidates() {
+            const search = document.getElementById('search').value.toLowerCase();
+            const positionFilter = document.getElementById('position-filter').value.toLowerCase();
+            const statusFilter = document.getElementById('status-filter').value;
+
+            const filtered = allCandidates.filter(candidate => {
+                const matchesSearch = !search || 
+                    (candidate.name && candidate.name.toLowerCase().includes(search)) ||
+                    (candidate.email && candidate.email.toLowerCase().includes(search));
+
+                const matchesPosition = !positionFilter || 
+                    (candidate.position_applied && candidate.position_applied.toLowerCase().includes(positionFilter));
+
+                let matchesStatus = true;
+                if (statusFilter === 'passed') {
+                    matchesStatus = candidate.passed_first_interview === true;
+                } else if (statusFilter === 'pending') {
+                    matchesStatus = candidate.interview_completed === true && !candidate.passed_first_interview;
+                } else if (statusFilter === 'incomplete') {
+                    matchesStatus = !candidate.interview_completed;
+                }
+
+                return matchesSearch && matchesPosition && matchesStatus;
+            });
+
+            renderCandidates(filtered);
+        }
+
+        // Edit functionality
+        async function editCandidate(sessionId) {
+            try {
+                const response = await fetch(`${API_URL}/candidate/${sessionId}`);
+                const candidate = await response.json();
+
+                // Create modal if it doesn't exist
+                if (!document.getElementById('edit-modal')) {
+                    const modalHTML = `
+                        <div id="edit-modal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5);">
+                            <div class="modal-content" style="max-width: 600px; margin: 50px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                    <h2 style="color: #008386;">Editar Candidato</h2>
+                                    <button onclick="closeEditModal()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+                                </div>
+                                <form id="edit-form">
+                                    <input type="hidden" id="edit-session-id">
+                                    <div style="margin-bottom: 15px;">
+                                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Nombre:</label>
+                                        <input type="text" id="edit-name" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                                    </div>
+                                    <div style="margin-bottom: 15px;">
+                                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Email:</label>
+                                        <input type="email" id="edit-email" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                                    </div>
+                                    <div style="margin-bottom: 15px;">
+                                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Teléfono:</label>
+                                        <input type="text" id="edit-phone" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                                    </div>
+                                    <div style="margin-bottom: 15px;">
+                                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Puesto:</label>
+                                        <input type="text" id="edit-position" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                                    </div>
+                                    <div style="margin-bottom: 15px;">
+                                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Puntuación:</label>
+                                        <input type="number" id="edit-score" min="0" max="100" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                                    </div>
+                                    <div style="margin-bottom: 15px;">
+                                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">
+                                            <input type="checkbox" id="edit-passed"> Aprobado para siguiente fase
+                                        </label>
+                                    </div>
+                                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                                        <button type="button" onclick="closeEditModal()" style="padding: 10px 20px; background: #ccc; border: none; border-radius: 5px; cursor: pointer;">Cancelar</button>
+                                        <button type="submit" style="padding: 10px 20px; background: #008386; color: white; border: none; border-radius: 5px; cursor: pointer;">Guardar</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    `;
+                    document.body.insertAdjacentHTML('beforeend', modalHTML);
+                    
+                    // Add form submit handler
+                    document.getElementById('edit-form').addEventListener('submit', async (e) => {
+                        e.preventDefault();
+                        
+                        const sessionId = document.getElementById('edit-session-id').value;
+                        const data = {
+                            name: document.getElementById('edit-name').value,
+                            email: document.getElementById('edit-email').value,
+                            phone: document.getElementById('edit-phone').value,
+                            position_applied: document.getElementById('edit-position').value,
+                            interview_score: parseInt(document.getElementById('edit-score').value) || null,
+                            passed_first_interview: document.getElementById('edit-passed').checked
+                        };
+
+                        try {
+                            const response = await fetch(`${API_URL}/candidate/${sessionId}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(data)
+                            });
+
+                            if (response.ok) {
+                                alert('Candidato actualizado exitosamente');
+                                closeEditModal();
+                                loadCandidates();
+                            } else {
+                                alert('Error al actualizar candidato');
+                            }
+                        } catch (error) {
+                            alert('Error al actualizar candidato');
+                        }
+                    });
+                }
+
+                document.getElementById('edit-session-id').value = sessionId;
+                document.getElementById('edit-name').value = candidate.name || '';
+                document.getElementById('edit-email').value = candidate.email || '';
+                document.getElementById('edit-phone').value = candidate.phone || '';
+                document.getElementById('edit-position').value = candidate.position_applied || '';
+                document.getElementById('edit-score').value = candidate.interview_score || '';
+                document.getElementById('edit-passed').checked = candidate.passed_first_interview || false;
+
+                document.getElementById('edit-modal').style.display = 'block';
+            } catch (error) {
+                alert('Error al cargar datos del candidato');
+            }
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').style.display = 'none';
+        }
+
+        // Delete functionality
+        async function deleteCandidate(sessionId, name) {
+            if (!confirm(`¿Estás seguro de eliminar a ${name}? Esta acción no se puede deshacer.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/candidate/${sessionId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    alert('Candidato eliminado exitosamente');
+                    loadCandidates();
+                } else {
+                    alert('Error al eliminar candidato');
+                }
+            } catch (error) {
+                alert('Error al eliminar candidato');
+            }
         }
     </script>
 </body>

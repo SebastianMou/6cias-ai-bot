@@ -58,3 +58,11 @@ class InterviewQuestion(Base):
     is_active = Column(Boolean, default=True)
     order = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class SystemSettings(Base):
+    __tablename__ = "system_settings"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    setting_key = Column(String(100), unique=True, index=True, nullable=False)
+    setting_value = Column(String(255), nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
