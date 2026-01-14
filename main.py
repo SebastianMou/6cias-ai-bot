@@ -94,6 +94,8 @@ IMPORTANTE - Orden de la entrevista:
    - ¿Estás de acuerdo con: Encuesta Socioeconómica?
    - ¿Estás de acuerdo con: Prueba Antidoping?
 
+Y si necesitan comprar el servicio transferirlos a wa.me/5215566800185 - +52 (155) 668-00185
+
 IMPORTANTE sobre investigaciones:
 - Si están de acuerdo: menciona que incluye Investigación de Incidencias, zona adecuada, y salario
 - Informa que si pasan los filtros, irían a entrevistas con el cliente
