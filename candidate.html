@@ -312,11 +312,14 @@
                 <div class="score-label">Puntuación de Entrevista</div>
             </div>
             <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
-                <button onclick="openEditModal()" style="width: 100%; padding: 12px; background: #008386; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
-                    ✏️ Editar Candidato
+                <button onclick="openEditModal()" style="padding: 10px 20px; background: #008386; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">
+                    ✏️ Editar
                 </button>
-                <button onclick="deleteCandidate()" style="width: 100%; padding: 12px; background: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
-                    🗑️ Eliminar Candidato
+                <button onclick="auditCandidate()" style="padding: 10px 20px; background: #6c63ff; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">
+                    🔍 Auditar Datos
+                </button>
+                <button onclick="deleteCandidate()" style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                    🗑️ Eliminar
                 </button>
             </div>
         </div>
@@ -674,6 +677,103 @@
                 alert('Error al eliminar candidato');
             }
         }
+
+        async function auditCandidate() {
+    if (!confirm('¿Deseas auditar los datos del candidato? La IA analizará la conversación y corregirá automáticamente los campos que puedan estar incorrectos.')) {
+        return;
+    }
+    
+    // Use the sessionId already defined at the top of the script
+    if (!sessionId) {
+        alert('Error: No se pudo obtener el ID de sesión');
+        return;
+    }
+    
+    // Show loading notification
+    const notification = document.createElement('div');
+        notification.id = 'audit-notification';
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #6c63ff;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 9999;
+            font-weight: 600;
+        `;
+        notification.innerHTML = '⏳ Auditando datos con IA...';
+        document.body.appendChild(notification);
+        
+        try {
+            const response = await fetch(`${API_URL}/candidate/${sessionId}/audit`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                // Show success message with updated fields
+                let message = '✅ Auditoría completada exitosamente!\n\n';
+                if (result.updated_fields && result.updated_fields.length > 0) {
+                    message += 'Campos actualizados:\n' + result.updated_fields.map(f => {
+                        // Convert field names to Spanish
+                        const fieldNames = {
+                            'name': 'Nombre',
+                            'email': 'Email',
+                            'phone': 'Teléfono',
+                            'position_applied': 'Puesto',
+                            'incorporation_time': 'Tiempo de incorporación',
+                            'education_level': 'Nivel de estudios',
+                            'job_interest_reason': 'Razón de interés',
+                            'years_experience': 'Años de experiencia',
+                            'last_job_info': 'Último trabajo',
+                            'can_travel': 'Puede viajar',
+                            'knows_office': 'Conoce Office',
+                            'salary_agreement': 'Acuerdo de salario',
+                            'schedule_availability': 'Disponibilidad de horario',
+                            'accepts_polygraph': 'Acepta polígrafo',
+                            'accepts_socioeconomic': 'Acepta estudio socioeconómico',
+                            'accepts_drug_test': 'Acepta antidoping'
+                        };
+                        return `• ${fieldNames[f] || f}`;
+                    }).join('\n');
+                } else {
+                    message += 'No se encontraron datos nuevos o incorrectos para actualizar.';
+                }
+                
+                notification.style.background = '#28a745';
+                notification.innerHTML = '✅ Auditoría completada';
+                
+                setTimeout(() => {
+                    notification.remove();
+                    alert(message);
+                    // Reload the page to show updated data
+                    loadCandidateDetails();
+                }, 1500);
+            } else {
+                notification.style.background = '#dc3545';
+                notification.innerHTML = '❌ Error en auditoría';
+                
+                setTimeout(() => {
+                    notification.remove();
+                    alert(`Error en la auditoría: ${result.detail || 'Error desconocido'}`);
+                }, 1500);
+            }
+        } catch (error) {
+            console.error('Error during audit:', error);
+            notification.style.background = '#dc3545';
+            notification.innerHTML = '❌ Error en auditoría';
+            
+            setTimeout(() => {
+                notification.remove();
+                alert('Error al realizar la auditoría. Por favor intenta nuevamente.');
+            }, 1500);
+        }
+    }
     </script>
 </body>
 </html>

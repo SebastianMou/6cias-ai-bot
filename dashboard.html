@@ -260,6 +260,12 @@
             <p>6Cias - Gestión de Candidatos</p>
         </div>
         <div style="display: flex; align-items: center; gap: 15px;">
+            <button onclick="showJobsModal()" style="padding: 10px 20px; background: #427174; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px;">
+                📋 Gestionar Vacantes
+            </button>
+            <button onclick="window.location.href='/admin'" style="padding: 10px 20px; background: #008386; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px;">
+                ⚙️ Admin Panel
+            </button>
             <span id="chat-status-text" style="font-size: 14px;">Chat: Cargando...</span>
             <label class="toggle-switch">
                 <input type="checkbox" id="chat-toggle" onchange="toggleChat()">
@@ -292,10 +298,8 @@
         <!-- Filters -->
         <div class="filter-bar">
             <input type="text" id="search" placeholder="Buscar por nombre o email...">
-            <select id="position-filter">
+            <select id="position-filter" onchange="filterCandidates()">
                 <option value="">Todos los puestos</option>
-                <option value="ventas b2b">Ventas B2B CDMX Sur</option>
-                <option value="reclutador">Reclutador - CDMX Sur</option>
             </select>
             <select id="status-filter">
                 <option value="">Todos los estados</option>
@@ -319,6 +323,7 @@
 
         async function loadCandidates() {
             try {
+                await loadPositionFilter();
                 const response = await fetch(`${API_URL}/candidates`);
                 allCandidates = await response.json();
 
@@ -637,6 +642,272 @@
                 }
             } catch (error) {
                 alert('Error al eliminar candidato');
+            }
+        }
+
+        // Job Management Functions
+        function showJobsModal() {
+            if (!document.getElementById('jobs-modal')) {
+                const modalHTML = `
+                    <div id="jobs-modal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); overflow-y: auto;">
+                        <div class="modal-content" style="max-width: 800px; margin: 50px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); max-height: 90vh; overflow-y: auto;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                <h2 style="color: #008386;">Gestionar Vacantes</h2>
+                                <button onclick="closeJobsModal()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+                            </div>
+                            
+                            <div style="background: #f5f7fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                                <h3 style="margin-bottom: 15px; color: #333;">Crear Nueva Vacante</h3>
+                                <form id="create-job-form">
+                                    <div style="margin-bottom: 15px;">
+                                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Título del Puesto:</label>
+                                        <input type="text" id="job-title" placeholder="ej: Guardia de Seguridad" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                                    </div>
+                                    <div style="margin-bottom: 15px;">
+                                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Descripción del Puesto:</label>
+                                        <textarea id="job-description" placeholder="Incluye: responsabilidades, requisitos, salario, horario, prestaciones, ubicación, etc." required style="width: 100%; min-height: 200px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; resize: vertical;"></textarea>
+                                    </div>
+                                    <button type="submit" style="padding: 12px 24px; background: #008386; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: 600;">
+                                        + Crear Vacante
+                                    </button>
+                                </form>
+                            </div>
+                            
+                            <div>
+                                <h3 style="margin-bottom: 15px; color: #333;">Vacantes Existentes</h3>
+                                <div id="jobs-list" style="display: flex; flex-direction: column; gap: 10px;">
+                                    <div style="text-align: center; padding: 20px; color: #999;">Cargando...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', modalHTML);
+                
+                // Add form submit handler
+                document.getElementById('create-job-form').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    await createJob();
+                });
+            }
+            
+            document.getElementById('jobs-modal').style.display = 'block';
+            loadJobs();
+        }
+
+        function closeJobsModal() {
+            document.getElementById('jobs-modal').style.display = 'none';
+        }
+
+        async function loadJobs() {
+            try {
+                const response = await fetch(`${API_URL}/jobs/list`);
+                const data = await response.json();
+                
+                const jobsList = document.getElementById('jobs-list');
+                
+                if (data.jobs.length === 0) {
+                    jobsList.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">No hay vacantes creadas</div>';
+                    return;
+                }
+                
+                jobsList.innerHTML = data.jobs.map(job => `
+                    <div style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 15px; display: flex; justify-content: space-between; align-items: start;">
+                        <div style="flex: 1;">
+                            <h4 style="margin-bottom: 8px; color: #008386;">${job.title}</h4>
+                            <p style="color: #666; font-size: 14px; margin: 0;">${job.description}</p>
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-left: 15px;">
+                            <button onclick="editJob('${job.filename}', '${job.title}')" style="background: #008386; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; white-space: nowrap;">
+                                ✏️ Editar
+                            </button>
+                            <button onclick="deleteJob('${job.filename}', '${job.title}')" style="background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; white-space: nowrap;">
+                                🗑️ Eliminar
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading jobs:', error);
+                document.getElementById('jobs-list').innerHTML = '<div style="text-align: center; padding: 20px; color: #dc3545;">Error al cargar vacantes</div>';
+            }
+        }
+
+        async function createJob() {
+            const title = document.getElementById('job-title').value.trim();
+            const description = document.getElementById('job-description').value.trim();
+            
+            if (!title || !description) {
+                alert('Por favor completa todos los campos');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/jobs/create`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        job_title: title,
+                        job_description: description
+                    })
+                });
+                
+                if (response.ok) {
+                    alert('Vacante creada exitosamente');
+                    document.getElementById('job-title').value = '';
+                    document.getElementById('job-description').value = '';
+                    loadJobs();
+                } else {
+                    const error = await response.json();
+                    alert(`Error: ${error.detail}`);
+                }
+            } catch (error) {
+                console.error('Error creating job:', error);
+                alert('Error al crear la vacante');
+            }
+        }
+
+        async function deleteJob(filename, title) {
+            if (!confirm(`¿Estás seguro de eliminar la vacante "${title}"? Esta acción no se puede deshacer.`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/jobs/${filename}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    alert('Vacante eliminada exitosamente');
+                    loadJobs();
+                } else {
+                    alert('Error al eliminar la vacante');
+                }
+            } catch (error) {
+                console.error('Error deleting job:', error);
+                alert('Error al eliminar la vacante');
+            }
+        }
+
+        async function loadPositionFilter() {
+            try {
+                const response = await fetch(`${API_URL}/jobs/list`);
+                const data = await response.json();
+                
+                const positionFilter = document.getElementById('position-filter');
+                
+                // Keep the "Todos los puestos" option and add job positions
+                const currentValue = positionFilter.value;
+                positionFilter.innerHTML = '<option value="">Todos los puestos</option>';
+                
+                data.jobs.forEach(job => {
+                    const option = document.createElement('option');
+                    option.value = job.title.toLowerCase();
+                    option.textContent = job.title;
+                    positionFilter.appendChild(option);
+                });
+                
+                // Restore previous selection if it exists
+                positionFilter.value = currentValue;
+            } catch (error) {
+                console.error('Error loading position filter:', error);
+            }
+        }
+
+        async function editJob(filename, title) {
+            try {
+                // Fetch current job content
+                const response = await fetch(`${API_URL}/jobs/${filename}`);
+                const job = await response.json();
+                
+                // Create edit modal if it doesn't exist
+                if (!document.getElementById('edit-job-modal')) {
+                    const modalHTML = `
+                        <div id="edit-job-modal" class="modal" style="display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); overflow-y: auto;">
+                            <div class="modal-content" style="max-width: 800px; margin: 50px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                    <h2 style="color: #008386;">Editar Vacante</h2>
+                                    <button onclick="closeEditJobModal()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+                                </div>
+                                <form id="edit-job-form">
+                                    <input type="hidden" id="edit-job-filename">
+                                    <div style="margin-bottom: 15px;">
+                                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Título del Puesto:</label>
+                                        <input type="text" id="edit-job-title" readonly style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background: #f5f5f5; cursor: not-allowed;">
+                                        <small style="color: #666; font-size: 12px;">El título no se puede cambiar. Para cambiar el título, crea una nueva vacante.</small>
+                                    </div>
+                                    <div style="margin-bottom: 15px;">
+                                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Descripción del Puesto:</label>
+                                        <textarea id="edit-job-description" required style="width: 100%; min-height: 300px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; resize: vertical;"></textarea>
+                                    </div>
+                                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                                        <button type="button" onclick="closeEditJobModal()" style="padding: 12px 24px; background: #ccc; color: #333; border: none; border-radius: 5px; cursor: pointer; font-weight: 600;">
+                                            Cancelar
+                                        </button>
+                                        <button type="submit" style="padding: 12px 24px; background: #008386; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: 600;">
+                                            💾 Guardar Cambios
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    `;
+                    document.body.insertAdjacentHTML('beforeend', modalHTML);
+                    
+                    // Add form submit handler
+                    document.getElementById('edit-job-form').addEventListener('submit', async (e) => {
+                        e.preventDefault();
+                        await updateJob();
+                    });
+                }
+                
+                // Populate form with current data
+                document.getElementById('edit-job-filename').value = filename;
+                document.getElementById('edit-job-title').value = title;
+                document.getElementById('edit-job-description').value = job.description;
+                
+                // Show modal
+                document.getElementById('edit-job-modal').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error loading job:', error);
+                alert('Error al cargar la vacante');
+            }
+        }
+
+        function closeEditJobModal() {
+            document.getElementById('edit-job-modal').style.display = 'none';
+        }
+
+        async function updateJob() {
+            const filename = document.getElementById('edit-job-filename').value;
+            const description = document.getElementById('edit-job-description').value.trim();
+            
+            if (!description) {
+                alert('Por favor completa la descripción');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/jobs/${filename}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        job_description: description
+                    })
+                });
+                
+                if (response.ok) {
+                    alert('Vacante actualizada exitosamente');
+                    closeEditJobModal();
+                    loadJobs();
+                } else {
+                    const error = await response.json();
+                    alert(`Error: ${error.detail}`);
+                }
+            } catch (error) {
+                console.error('Error updating job:', error);
+                alert('Error al actualizar la vacante');
             }
         }
     </script>

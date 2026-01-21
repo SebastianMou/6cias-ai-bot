@@ -68,48 +68,48 @@ jobs_list = "\n- ".join(available_jobs) if available_jobs else "No hay vacantes 
 
 SYSTEM_PROMPT = f"""Eres Petrof, asistente de reclutamiento de 6Cias.
 
-Vacantes disponibles:
-- {jobs_list}
+    Vacantes disponibles:
+    - {jobs_list}
 
-IMPORTANTE - Orden de la entrevista:
-1. PRIMERO: Pregunta qué puesto de trabajo están solicitando
-2. DESPUÉS: Solicita nombre completo
-3. DESPUÉS: Solicita email
-4. DESPUÉS: Solicita teléfono
-5. PREGUNTAS ADICIONALES (en orden):
-   - ¿En cuánto tiempo podrías incorporarte a laborar?
-   - ¿Cuál grado de estudios tienes?
-   - ¿Las actividades del puesto son acordes a tu perfil?
-   - ¿Qué te pareció más llamativo de la vacante y te interesó?
-   - ¿Es lo que estabas buscando?
-   - ¿Cuánta experiencia tienes en el puesto?
-   - ¿Cuándo fue tu último trabajo y cuánto duraste?
-   - ¿Puedes viajar si es necesario para esta vacante u otra?
-   - ¿Sabes usar Paquetería Office?
-   - ¿Estás de acuerdo con el sueldo?
-   - ¿Qué disponibilidad tienes de horario o restricciones?
+    IMPORTANTE - Orden de la entrevista:
+    1. PRIMERO: Pregunta qué puesto de trabajo están solicitando
+    2. DESPUÉS: Solicita nombre completo
+    3. DESPUÉS: Solicita email
+    4. DESPUÉS: Solicita teléfono
+    5. PREGUNTAS ADICIONALES (en orden):
+    - ¿En cuánto tiempo podrías incorporarte a laborar?
+    - ¿Cuál grado de estudios tienes?
+    - ¿Las actividades del puesto son acordes a tu perfil?
+    - ¿Qué te pareció más llamativo de la vacante y te interesó?
+    - ¿Es lo que estabas buscando?
+    - ¿Cuánta experiencia tienes en el puesto?
+    - ¿Cuándo fue tu último trabajo y cuánto duraste?
+    - ¿Puedes viajar si es necesario para esta vacante u otra?
+    - ¿Sabes usar Paquetería Office?
+    - ¿Estás de acuerdo con el sueldo?
+    - ¿Qué disponibilidad tienes de horario o restricciones?
 
-6. FILTROS FINALES:
-   - ¿Estás de acuerdo con: Examinación de Poligrafía?
-   - ¿Estás de acuerdo con: Encuesta Socioeconómica?
-   - ¿Estás de acuerdo con: Prueba Antidoping?
+    6. FILTROS FINALES:
+    - ¿Estás de acuerdo con: Examinación de Poligrafía?
+    - ¿Estás de acuerdo con: Encuesta Socioeconómica?
+    - ¿Estás de acuerdo con: Prueba Antidoping?
 
-Y si necesitan comprar el servicio transferirlos a wa.me/5215566800185 - +52 (155) 668-00185
+    Y si necesitan comprar el servicio transferirlos a wa.me/5215566800185 - +52 (155) 668-00185
 
-IMPORTANTE sobre investigaciones:
-- Si están de acuerdo: menciona que incluye Investigación de Incidencias, zona adecuada, y salario
-- Informa que si pasan los filtros, irían a entrevistas con el cliente
-- Si pasan con el cliente, se firma el contrato
+    IMPORTANTE sobre investigaciones:
+    - Si están de acuerdo: menciona que incluye Investigación de Incidencias, zona adecuada, y salario
+    - Informa que si pasan los filtros, irían a entrevistas con el cliente
+    - Si pasan con el cliente, se firma el contrato
 
-Tu rol:
-- Ser profesional, amable y empático
-- Seguir el orden exacto mencionado arriba
-- Hacer preguntas claras y una a la vez
-- Evaluar si el candidato es adecuado para posiciones de confianza
+    Tu rol:
+    - Ser profesional, amable y empático
+    - Seguir el orden exacto mencionado arriba
+    - Hacer preguntas claras y una a la vez
+    - Evaluar si el candidato es adecuado para posiciones de confianza
 
-Cuando el usuario pregunte ESPECÍFICAMENTE sobre detalles de una vacante (salario, horario, responsabilidades), 
-recibirás la descripción completa del puesto en tags <job_description>.
-"""
+    Cuando el usuario pregunte ESPECÍFICAMENTE sobre detalles de una vacante (salario, horario, responsabilidades), 
+    recibirás la descripción completa del puesto en tags <job_description>.
+    """
 
 admin = Admin(app, engine)
 
@@ -179,7 +179,9 @@ async def chat(request: ChatRequest, req: Request, db: Session = Depends(get_db)
         detail_keywords = ["salario", "sueldo", "horario", "responsabilidad", "responsabilidades", 
                         "requisito", "requisitos", "prestacion", "prestaciones", 
                         "actividad", "actividades", "qué hace", "funciones", "ubicación",
-                        "ubicacion", "vacante", "puesto", "trabajo"]
+                        "ubicacion", "vacante", "puesto", "trabajo", "paga", "pagan", 
+                        "cuanto", "cuánto", "comision", "comisiones", "commission", 
+                        "beneficio", "beneficios", "detalles", "informacion", "información"]
 
         # Check if user is asking about job details OR mentioning job for first time
         needs_job_info = any(keyword in user_message_lower for keyword in detail_keywords)
@@ -624,6 +626,325 @@ async def get_all_candidates(db: Session = Depends(get_db)):
         "interview_score": c.interview_score,
         "created_at": c.created_at.isoformat() if c.created_at else None
     } for c in candidates]
+
+@app.post("/jobs/create")
+async def create_job(request: dict):
+    """Create a new job description file"""
+    try:
+        job_title = request.get("job_title", "").strip()
+        job_description = request.get("job_description", "").strip()
+        
+        if not job_title or not job_description:
+            raise HTTPException(status_code=400, detail="Job title and description are required")
+        
+        # Ensure jobs directory exists
+        JOBS_DIR.mkdir(exist_ok=True)
+        
+        # Normalize filename
+        filename = job_title.lower().replace(" ", "_").replace("ó", "o").replace("á", "a").replace("é", "e").replace("í", "i").replace("ú", "u").replace("ñ", "n") + ".txt"
+        filepath = JOBS_DIR / filename
+        
+        # Check if file already exists
+        if filepath.exists():
+            raise HTTPException(status_code=400, detail="A job with this title already exists")
+        
+        # Create the file
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(job_description)
+        
+        # Refresh available jobs list
+        global available_jobs, jobs_list, SYSTEM_PROMPT
+        available_jobs = get_available_jobs()
+        jobs_list = "\n- ".join(available_jobs) if available_jobs else "No hay vacantes cargadas"
+        SYSTEM_PROMPT = f"""Eres Petrof, asistente de reclutamiento de 6Cias.
+
+            Vacantes disponibles:
+            - {jobs_list}
+
+            IMPORTANTE - Orden de la entrevista:
+            1. PRIMERO: Pregunta qué puesto de trabajo están solicitando
+            2. DESPUÉS: Solicita nombre completo
+            3. DESPUÉS: Solicita email
+            4. DESPUÉS: Solicita teléfono
+            5. PREGUNTAS ADICIONALES (en orden):
+            - ¿En cuánto tiempo podrías incorporarte a laborar?
+            - ¿Cuál grado de estudios tienes?
+            - ¿Las actividades del puesto son acordes a tu perfil?
+            - ¿Qué te pareció más llamativo de la vacante y te interesó?
+            - ¿Es lo que estabas buscando?
+            - ¿Cuánta experiencia tienes en el puesto?
+            - ¿Cuándo fue tu último trabajo y cuánto duraste?
+            - ¿Puedes viajar si es necesario para esta vacante u otra?
+            - ¿Sabes usar Paquetería Office?
+            - ¿Estás de acuerdo con el sueldo?
+            - ¿Qué disponibilidad tienes de horario o restricciones?
+
+            6. FILTROS FINALES:
+            - ¿Estás de acuerdo con: Examinación de Poligrafía?
+            - ¿Estás de acuerdo con: Encuesta Socioeconómica?
+            - ¿Estás de acuerdo con: Prueba Antidoping?
+
+            Y si necesitan comprar el servicio transferirlos a wa.me/5215566800185 - +52 (155) 668-00185
+
+            IMPORTANTE sobre investigaciones:
+            - Si están de acuerdo: menciona que incluye Investigación de Incidencias, zona adecuada, y salario
+            - Informa que si pasan los filtros, irían a entrevistas con el cliente
+            - Si pasan con el cliente, se firma el contrato
+
+            Tu rol:
+            - Ser profesional, amable y empático
+            - Seguir el orden exacto mencionado arriba
+            - Hacer preguntas claras y una a la vez
+            - Evaluar si el candidato es adecuado para posiciones de confianza
+
+            Cuando el usuario pregunte ESPECÍFICAMENTE sobre detalles de una vacante (salario, horario, responsabilidades), 
+            recibirás la descripción completa del puesto en tags <job_description>.
+            """
+        
+        return {"message": "Job created successfully", "filename": filename, "job_title": job_title}
+    
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/jobs/list")
+async def list_jobs():
+    """Get list of all available jobs with their descriptions"""
+    try:
+        jobs = []
+        if JOBS_DIR.exists():
+            for file in JOBS_DIR.glob("*.txt"):
+                with open(file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                jobs.append({
+                    "filename": file.name,
+                    "title": file.stem.replace("_", " ").title(),
+                    "description": content[:200] + "..." if len(content) > 200 else content
+                })
+        return {"jobs": jobs}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/jobs/{filename}")
+async def delete_job(filename: str):
+    """Delete a job description file"""
+    try:
+        filepath = JOBS_DIR / filename
+        
+        if not filepath.exists():
+            raise HTTPException(status_code=404, detail="Job file not found")
+        
+        filepath.unlink()
+        
+        # Refresh available jobs list
+        global available_jobs, jobs_list, SYSTEM_PROMPT
+        available_jobs = get_available_jobs()
+        jobs_list = "\n- ".join(available_jobs) if available_jobs else "No hay vacantes cargadas"
+        SYSTEM_PROMPT = f"""Eres Petrof, asistente de reclutamiento de 6Cias.
+
+            Vacantes disponibles:
+            - {jobs_list}
+
+            IMPORTANTE - Orden de la entrevista:
+            1. PRIMERO: Pregunta qué puesto de trabajo están solicitando
+            2. DESPUÉS: Solicita nombre completo
+            3. DESPUÉS: Solicita email
+            4. DESPUÉS: Solicita teléfono
+            5. PREGUNTAS ADICIONALES (en orden):
+            - ¿En cuánto tiempo podrías incorporarte a laborar?
+            - ¿Cuál grado de estudios tienes?
+            - ¿Las actividades del puesto son acordes a tu perfil?
+            - ¿Qué te pareció más llamativo de la vacante y te interesó?
+            - ¿Es lo que estabas buscando?
+            - ¿Cuánta experiencia tienes en el puesto?
+            - ¿Cuándo fue tu último trabajo y cuánto duraste?
+            - ¿Puedes viajar si es necesario para esta vacante u otra?
+            - ¿Sabes usar Paquetería Office?
+            - ¿Estás de acuerdo con el sueldo?
+            - ¿Qué disponibilidad tienes de horario o restricciones?
+
+            6. FILTROS FINALES:
+            - ¿Estás de acuerdo con: Examinación de Poligrafía?
+            - ¿Estás de acuerdo con: Encuesta Socioeconómica?
+            - ¿Estás de acuerdo con: Prueba Antidoping?
+
+            Y si necesitan comprar el servicio transferirlos a wa.me/5215566800185 - +52 (155) 668-00185
+
+            IMPORTANTE sobre investigaciones:
+            - Si están de acuerdo: menciona que incluye Investigación de Incidencias, zona adecuada, y salario
+            - Informa que si pasan los filtros, irían a entrevistas con el cliente
+            - Si pasan con el cliente, se firma el contrato
+
+            Tu rol:
+            - Ser profesional, amable y empático
+            - Seguir el orden exacto mencionado arriba
+            - Hacer preguntas claras y una a la vez
+            - Evaluar si el candidato es adecuado para posiciones de confianza
+
+            Cuando el usuario pregunte ESPECÍFICAMENTE sobre detalles de una vacante (salario, horario, responsabilidades), 
+            recibirás la descripción completa del puesto en tags <job_description>.
+            """
+        
+        return {"message": "Job deleted successfully", "filename": filename}
+    
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/jobs/{filename}")
+async def get_job(filename: str):
+    """Get a specific job description file content"""
+    try:
+        filepath = JOBS_DIR / filename
+        
+        if not filepath.exists():
+            raise HTTPException(status_code=404, detail="Job file not found")
+        
+        with open(filepath, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        return {
+            "filename": filename,
+            "title": filename.replace('.txt', '').replace('_', ' ').title(),
+            "description": content
+        }
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/jobs/{filename}")
+async def update_job(filename: str, request: dict):
+    """Update a job description file"""
+    try:
+        filepath = JOBS_DIR / filename
+        
+        if not filepath.exists():
+            raise HTTPException(status_code=404, detail="Job file not found")
+        
+        new_description = request.get("job_description", "").strip()
+        
+        if not new_description:
+            raise HTTPException(status_code=400, detail="Job description is required")
+        
+        # Update the file
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(new_description)
+        
+        return {"message": "Job updated successfully", "filename": filename}
+    
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/candidate/{session_id}/audit")
+async def audit_candidate(session_id: str, db: Session = Depends(get_db)):
+    """Use AI to audit and correct candidate data from conversation history"""
+    try:
+        # Get candidate and conversation history
+        candidate = crud.get_candidate_by_session(db, session_id)
+        if not candidate:
+            raise HTTPException(status_code=404, detail="Candidate not found")
+        
+        conversations = crud.get_conversations_by_session(db, session_id)
+        if not conversations:
+            raise HTTPException(status_code=400, detail="No conversation history found")
+        
+        # Build conversation transcript
+        transcript = "\n\n".join([
+            f"Usuario: {conv.user_message}\nPetrof: {conv.bot_response}"
+            for conv in conversations
+        ])
+        
+        # Create AI prompt for data extraction
+        audit_prompt = f"""Analiza la siguiente conversación de reclutamiento y extrae EXACTAMENTE la información del candidato.
+
+                CONVERSACIÓN:
+                {transcript}
+
+                INSTRUCCIONES:
+                Extrae los siguientes datos del candidato de la conversación. Si un dato NO está presente, devuelve null.
+                Responde SOLO con un objeto JSON válido, sin texto adicional.
+
+                FORMATO DE RESPUESTA (JSON):
+                {{
+                    "name": "nombre completo del candidato o null",
+                    "email": "email del candidato o null",
+                    "phone": "teléfono del candidato o null",
+                    "position_applied": "puesto al que aplicó o null",
+                    "incorporation_time": "tiempo de incorporación mencionado o null",
+                    "education_level": "nivel de estudios o null",
+                    "job_interest_reason": "razón de interés en la vacante o null",
+                    "years_experience": "años de experiencia o null",
+                    "last_job_info": "información del último trabajo o null",
+                    "can_travel": true/false/null,
+                    "knows_office": true/false/null,
+                    "salary_agreement": true/false/null,
+                    "schedule_availability": "disponibilidad de horario o null",
+                    "accepts_polygraph": true/false/null,
+                    "accepts_socioeconomic": true/false/null,
+                    "accepts_drug_test": true/false/null
+                }}
+
+                REGLAS IMPORTANTES:
+                - Para campos booleanos: usa true si la respuesta es afirmativa (sí, claro, por supuesto, etc.), false si es negativa (no), null si no se mencionó
+                - Para campos de texto: extrae la respuesta exacta del usuario
+                - NO inventes información
+                - Si hay dudas, usa null
+                """
+
+        # Call Gemini API for audit
+        response = client.models.generate_content(
+            model='gemini-2.0-flash-exp',
+            contents=audit_prompt
+        )
+        
+        # Parse AI response
+        import json
+        import re
+        
+        response_text = response.text.strip()
+        
+        # Remove markdown code blocks if present
+        response_text = re.sub(r'```json\s*|\s*```', '', response_text)
+        
+        try:
+            extracted_data = json.loads(response_text)
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=500, detail="Error parsing AI response")
+        
+        # Update candidate with extracted data
+        update_fields = {}
+        
+        # Only update fields that are not null
+        for field, value in extracted_data.items():
+            if value is not None:
+                update_fields[field] = value
+        
+        if update_fields:
+            updated_candidate = crud.update_candidate(db, session_id, **update_fields)
+            
+            return {
+                "message": "Candidate data audited and updated successfully",
+                "updated_fields": list(update_fields.keys()),
+                "data": extracted_data
+            }
+        else:
+            return {
+                "message": "No data extracted from conversation",
+                "data": extracted_data
+            }
+    
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error during audit: {str(e)}")
+
 
 if __name__ == "__main__":
     import uvicorn
