@@ -264,6 +264,8 @@
             z-index: 10000;
             justify-content: center;
             align-items: center;
+            padding: 20px;
+            overflow-y: auto;
         }
 
         .privacy-modal.show {
@@ -272,9 +274,11 @@
 
         .privacy-content {
             background: white;
-            padding: 40px;
+            padding: 30px;
             border-radius: 15px;
             max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
             position: relative;
         }
@@ -285,10 +289,10 @@
         }
 
         .privacy-icon {
-            font-size: 60px;
-            margin-bottom: 15px;
+            font-size: 50px;
+            margin-bottom: 10px;
         }
-
+        
         .privacy-title {
             color: #dc2626;
             font-size: 28px;
@@ -305,9 +309,11 @@
         .privacy-body {
             background: #fef2f2;
             border-left: 4px solid #dc2626;
-            padding: 20px;
-            margin-bottom: 25px;
+            padding: 15px;
+            margin-bottom: 20px;
             border-radius: 5px;
+            max-height: 250px;
+            overflow-y: auto;
         }
 
         .privacy-body h3 {
@@ -403,7 +409,7 @@
     </style>
 </head>
 <body>
-    
+
     <div class="header">
         <div style="display: flex; align-items: center; gap: 15px;">
             <img src="https://res.cloudinary.com/dzinwey2x/image/upload/v1769564931/photo_2026-01-27_19-46-01_ui7pwg.jpg" 
