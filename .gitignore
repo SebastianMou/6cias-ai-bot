@@ -12,6 +12,7 @@ ENV/
 *.sqlite
 *.sqlite3
 recruitment.db
+chatbot.db
 .vscode/
 .idea/
 *.swp

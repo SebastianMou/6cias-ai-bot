@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chatbot 6Cias</title>
+    <title>Encuesta Económica - 6Cias</title>
 </head>
 
 <body>
@@ -11,41 +11,55 @@
         <!-- Terms and Conditions Modal -->
         <div id="terms-modal">
             <div class="modal-content">
-                <h2>Términos y Condiciones</h2>
-                <p>Somos de <a href="www.6Cias.com" target="_blank" class="whatsapp-link">www.6Cias.com</a>Estamos realizando investigaciones y certificaciones empresariales para nuestros clientes. Puede que nuestras conversaciones sean grabadas con fines de calidad. *Puede usted consultar nuestro aviso de privacidad en la página antes mencionada.*</p>
+                <h2>Encuesta Socioeconómica</h2>
+                <p>Somos de <a href="www.6Cias.com" target="_blank" class="whatsapp-link">www.6Cias.com</a>. Esta encuesta es parte del proceso de investigación socioeconómica. La información proporcionada será tratada de manera confidencial según nuestro aviso de privacidad.</p>
                 <div class="modal-actions">
-                    <button id="accept-terms-btn">Aceptar</button>
+                    <button id="accept-terms-btn">Aceptar y Continuar</button>
                 </div>
             </div>
         </div>
         <div id="chatbot-header">
             <img src="https://res.cloudinary.com/dzinwey2x/image/upload/v1768439905/photo_2026-01-14_19-14-44_thkx0a.jpg" alt="Assistant" id="bot-avatar">
             <div style="flex: 1;">
-                <h3>Asistente de Reclutamiento</h3>
-                <p id="message-counter" style="font-size: 11px; opacity: 0.8; margin: 0;">Mensajes: 0/60</p>
+                <h3>Encuesta Económica</h3>
+                <p id="progress-counter" style="font-size: 11px; opacity: 0.8; margin: 0;">Progreso: 0%</p>
             </div>
         </div>
         <div id="chat-messages">
             <!-- Initial welcome message -->
             <div class="message bot-message">
                 <div class="message-content">
-                    <strong>Petrof - Asistente de Reclutamiento</strong>
-                    <p>¡Bienvenido! Soy Petrof, tu asistente de reclutamiento de 6Cias.</p>
-                    <p>Esta conversación funcionará como tu <strong>primera entrevista</strong>. Las respuestas que proporciones aquí determinarán si avanzas al segundo proceso de selección.</p>
-                    <!-- <div class="job-images">
-                        <a href="https://res.cloudinary.com/dzinwey2x/image/upload/v1768087046/photo_2026-01-10_17-14-13_kzhjwd.jpg" target="_blank" rel="noopener noreferrer" class="job-image-link">
-                            <img src="https://res.cloudinary.com/dzinwey2x/image/upload/v1768087046/photo_2026-01-10_17-14-13_kzhjwd.jpg" alt="Vacante 1" class="job-opening-image">
-                        </a>
-                        <a href="https://res.cloudinary.com/dzinwey2x/image/upload/v1768087046/photo_2026-01-10_17-14-22_sjlknq.jpg" target="_blank" rel="noopener noreferrer" class="job-image-link">
-                            <img src="https://res.cloudinary.com/dzinwey2x/image/upload/v1768087046/photo_2026-01-10_17-14-22_sjlknq.jpg" alt="Vacante 2" class="job-opening-image">
-                        </a>
-                    </div> -->
-                    <p>Por favor, responde con honestidad y detalle. Para comenzar, <strong>¿a qué puesto estás aplicando?</strong></p>
+                    <strong>Asistente de Verificación - 6Cias</strong>
+                    <p>Somos de <a href="https://www.6Cias.com" target="_blank" style="color: #008386; font-weight: 600;">www.6Cias.com</a>. Estamos realizando investigaciones y certificaciones empresariales para nuestros clientes. Puede que nuestras conversaciones sean grabadas con fines de calidad. Puede usted consultar nuestro aviso de privacidad en la página antes mencionada.</p>
+                    
+                    <p><strong>Estás en un proceso de certificación</strong> mismo que requiere realizar un proceso en RH y seguridad.</p>
+                    
+                    <p>Para su proceso pendiente, es importante que se encuentre en su domicilio, con internet estable y tenga a la mano cualquiera de los siguientes documentos opcionales:</p>
+                    <ol style="font-size: 13px; line-height: 1.8; margin: 10px 0;">
+                        <li>IDENTIFICACIÓN OFICIAL</li>
+                        <li>ACTA DE NACIMIENTO</li>
+                        <li>CLAVE ÚNICA DE REGISTRO POBLACIÓN</li>
+                        <li>COMPROBANTE DE DOMICILIO</li>
+                        <li>MÁXIMO COMPROBANTE DE ESTUDIOS</li>
+                        <li>CÉDULA PROFESIONAL (solo si aplica)</li>
+                        <li>LICENCIA DE CONDUCIR</li>
+                        <li>ACTA DE ANTECEDENTES NO PENALES (solo si aplica)</li>
+                        <li>REGISTRO FEDERAL DE CONTRIBUYENTE</li>
+                        <li>NÚMERO DE SEGURO SOCIAL</li>
+                        <li>CARTILLA MILITAR</li>
+                        <li>FOTOGRAFÍA LEGIBLE DE CARTAS DE RECOMENDACIÓN</li>
+                    </ol>
+                    
+                    <p style="background: #fff3cd; padding: 10px; border-radius: 5px; border-left: 3px solid #ffc107;">
+                        <strong>⚠️ IMPORTANTE:</strong> Es importante contar con buen WiFi 🛜 y silencio. No refresques la página o dejes incompleto el proceso, ya que fallará su prueba. Inicie en cuanto pueda y recuerde estar en su domicilio actual a certificar o puede salir perjudicado en su resultado.
+                    </p>
+                    
+                    <p style="margin-top: 15px;">Para comenzar, <strong>¿estás en tu casa en este momento?</strong></p>
                 </div>
             </div>
         </div>
         <div id="input-container">
-            <input type="text" id="chat-input" placeholder="Escribe tu mensaje...">
+            <input type="text" id="chat-input" placeholder="Escribe tu respuesta...">
             <button id="send-btn">Enviar</button>
         </div>
     </div>
@@ -410,24 +424,23 @@
 
     <script>
         // Generate unique session ID for this user
-        const sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        const API_URL = window.location.origin;  // CHANGE THIS to your deployed FastAPI URL
+        const sessionId = 'survey_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        const API_URL = window.location.origin;
 
-        let messageCount = 0;
-        const MAX_MESSAGES = 60;
+        let currentProgress = 0;
+        const TOTAL_SECTIONS = 8; // 7.1, 7.2, 7.3, 7.4, 8.0, 9.0, 9.1
 
-        // Function to update message counter
-        function updateMessageCounter() {
-            messageCount++;
-            const counter = document.getElementById('message-counter');
+        // Function to update progress counter
+        function updateProgressCounter(progress) {
+            currentProgress = progress;
+            const counter = document.getElementById('progress-counter');
             if (counter) {
-                counter.textContent = `Mensajes: ${messageCount}/${MAX_MESSAGES}`;
+                counter.textContent = `Progreso: ${progress}%`;
                 
-                // Change color when approaching limit
-                if (messageCount >= MAX_MESSAGES) {
-                    counter.style.color = '#dc3545';
-                    counter.textContent = `Límite alcanzado (${messageCount}/${MAX_MESSAGES})`;
-                } else if (messageCount >= 50) {
+                // Change color based on progress
+                if (progress >= 100) {
+                    counter.style.color = '#28a745';
+                } else if (progress >= 50) {
                     counter.style.color = '#ffc107';
                 }
             }
@@ -495,15 +508,18 @@
             showTypingIndicator();
 
             try {
+                console.log('Sending message with IP:', userIpAddress);
+
                 // Call your FastAPI backend
-                const response = await fetch(`${API_URL}/chat`, {
+                const response = await fetch(`${API_URL}/survey/chat`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
+                        session_id: sessionId,
                         message: message,
-                        session_id: sessionId
+                        ip_address: userIpAddress
                     })
                 });
 
@@ -513,7 +529,10 @@
 
                 const data = await response.json();
 
-                updateMessageCounter();
+                // Update progress if provided
+                if (data.progress !== undefined) {
+                    updateProgressCounter(data.progress);
+                }
 
                 // Hide typing indicator
                 hideTypingIndicator();
@@ -566,17 +585,32 @@
             }
         });
 
-        // Handle Terms and Conditions Modal
-        document.addEventListener('DOMContentLoaded', function() {
-            const termsModal = document.getElementById('terms-modal');
-            const acceptBtn = document.getElementById('accept-terms-btn');
+        /// Get IP address function
+        async function getUserIpAddress() {
+            try {
+                const response = await fetch('https://api.ipify.org?format=json');
+                const data = await response.json();
+                return data.ip;
+            } catch (error) {
+                console.error('Error getting IP:', error);
+                return 'unknown';
+            }
+        }
 
-            // Accept terms button
-            acceptBtn.addEventListener('click', function() {
-                termsModal.classList.add('hidden');
-                document.getElementById('chat-input').focus();
-                updateMessageCounter();
-            });
+        // Store IP address globally
+        let userIpAddress = null;
+
+        document.getElementById('accept-terms-btn').addEventListener('click', async function() {
+            // Capture IP address
+            userIpAddress = await getUserIpAddress();
+            console.log('User IP captured:', userIpAddress);
+            
+            // Hide modal and show chat
+            document.getElementById('terms-modal').style.display = 'none';
+            document.getElementById('chat-interface').style.display = 'flex';
+            
+            // Send initial greeting
+            sendMessage();
         });
     </script>
 

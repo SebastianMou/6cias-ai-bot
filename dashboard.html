@@ -251,17 +251,174 @@
             align-items: center;
             justify-content: space-between;
         }
+
+        /* Privacy Warning Modal */
+        .privacy-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .privacy-modal.show {
+            display: flex;
+        }
+
+        .privacy-content {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            max-width: 600px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .privacy-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .privacy-icon {
+            font-size: 60px;
+            margin-bottom: 15px;
+        }
+
+        .privacy-title {
+            color: #dc2626;
+            font-size: 28px;
+            font-weight: bold;
+            margin: 0 0 10px 0;
+        }
+
+        .privacy-subtitle {
+            color: #666;
+            font-size: 16px;
+            margin: 0;
+        }
+
+        .privacy-body {
+            background: #fef2f2;
+            border-left: 4px solid #dc2626;
+            padding: 20px;
+            margin-bottom: 25px;
+            border-radius: 5px;
+        }
+
+        .privacy-body h3 {
+            color: #991b1b;
+            margin-top: 0;
+            font-size: 18px;
+        }
+
+        .privacy-body ul {
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+
+        .privacy-body li {
+            margin: 10px 0;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .privacy-warning {
+            background: #fff7ed;
+            border: 2px solid #f59e0b;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+
+        .privacy-warning strong {
+            color: #92400e;
+        }
+
+        .privacy-checkbox {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+
+        .privacy-checkbox input {
+            margin-right: 10px;
+            margin-top: 4px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .privacy-checkbox label {
+            cursor: pointer;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .privacy-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .privacy-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .privacy-btn-accept {
+            background: #059669;
+            color: white;
+        }
+
+        .privacy-btn-accept:hover {
+            background: #047857;
+        }
+
+        .privacy-btn-accept:disabled {
+            background: #d1d5db;
+            cursor: not-allowed;
+        }
+
+        .privacy-btn-decline {
+            background: #dc2626;
+            color: white;
+        }
+
+        .privacy-btn-decline:hover {
+            background: #b91c1c;
+        }
     </style>
 </head>
 <body>
     <div class="header">
-        <div style="flex: 1;">
-            <h1>Dashboard de Reclutamiento</h1>
-            <p>6Cias - Gestión de Candidatos</p>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <img src="https://res.cloudinary.com/dzinwey2x/image/upload/v1769564931/photo_2026-01-27_19-46-01_ui7pwg.jpg" 
+                alt="6Cias Logo" 
+                style="height: 60px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div style="flex: 1;">
+                <h1>Dashboard de Reclutamiento</h1>
+                <p>6Cias - Gestión de Candidatos</p>
+            </div>
         </div>
         <div style="display: flex; align-items: center; gap: 15px;">
             <button onclick="showJobsModal()" style="padding: 10px 20px; background: #427174; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px;">
                 📋 Gestionar Vacantes
+            </button>
+            <button onclick="window.location.href='/survey-dashboard'" style="background: #10b98178; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.3s;">
+                📋 Encuestas Socioeconómicas
             </button>
             <button onclick="window.location.href='/admin'" style="padding: 10px 20px; background: #008386; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px;">
                 ⚙️ Admin Panel
@@ -312,6 +469,50 @@
         <!-- Candidates Grid -->
         <div id="candidates-container" class="loading">
             Cargando candidatos...
+        </div>
+    </div>
+
+    <!-- Privacy Warning Modal -->
+    <div id="privacy-modal" class="privacy-modal show">
+        <div class="privacy-content">
+            <div class="privacy-header">
+                <div class="privacy-icon">🔒</div>
+                <h2 class="privacy-title">AVISO DE CONFIDENCIALIDAD</h2>
+                <p class="privacy-subtitle">Información Privada y Confidencial - 6Cias</p>
+            </div>
+
+            <div class="privacy-body">
+                <h3>⚠️ ADVERTENCIA IMPORTANTE</h3>
+                <p><strong>La información contenida en este sistema es estrictamente confidencial y de uso exclusivo autorizado.</strong></p>
+                
+                <ul>
+                    <li><strong>Prohibido compartir</strong> con competidores, terceros no autorizados o fuera de la organización</li>
+                    <li><strong>Prohibido copiar, descargar o distribuir</strong> datos personales de candidatos sin autorización expresa</li>
+                    <li><strong>Uso exclusivo</strong> para fines de reclutamiento y selección de personal de 6Cias</li>
+                    <li><strong>Acceso monitoreado:</strong> Todas las acciones son registradas y auditadas</li>
+                    <li><strong>Sanciones:</strong> El incumplimiento puede resultar en acciones disciplinarias y legales</li>
+                </ul>
+            </div>
+
+            <div class="privacy-warning">
+                <strong>📋 Normativa Legal:</strong> El manejo inadecuado de datos personales viola la Ley Federal de Protección de Datos Personales en Posesión de Particulares (LFPDPPP) y puede resultar en multas económicas y responsabilidad penal.
+            </div>
+
+            <div class="privacy-checkbox">
+                <input type="checkbox" id="privacy-accept-checkbox">
+                <label for="privacy-accept-checkbox">
+                    <strong>He leído y entiendo</strong> que la información en este sistema es confidencial. Me comprometo a no compartir, copiar o distribuir información de candidatos fuera de los procesos autorizados de 6Cias. Entiendo que el incumplimiento puede resultar en consecuencias disciplinarias y legales.
+                </label>
+            </div>
+
+            <div class="privacy-actions">
+                <button class="privacy-btn privacy-btn-decline" onclick="declinePrivacy()">
+                    Rechazar y Salir
+                </button>
+                <button id="accept-privacy-btn" class="privacy-btn privacy-btn-accept" disabled onclick="acceptPrivacy()">
+                    Aceptar y Continuar
+                </button>
+            </div>
         </div>
     </div>
 
@@ -908,6 +1109,42 @@
             } catch (error) {
                 console.error('Error updating job:', error);
                 alert('Error al actualizar la vacante');
+            }
+        }
+
+        // Privacy Modal Logic
+        const privacyCheckbox = document.getElementById('privacy-accept-checkbox');
+        const acceptBtn = document.getElementById('accept-privacy-btn');
+        const privacyModal = document.getElementById('privacy-modal');
+
+        // Enable accept button only when checkbox is checked
+        privacyCheckbox.addEventListener('change', function() {
+            acceptBtn.disabled = !this.checked;
+        });
+
+        // Check if user already accepted (using localStorage)
+        if (localStorage.getItem('privacy_accepted') === 'true') {
+            privacyModal.classList.remove('show');
+        }
+
+        function acceptPrivacy() {
+            if (!privacyCheckbox.checked) {
+                alert('Debes aceptar los términos de confidencialidad para continuar');
+                return;
+            }
+            
+            // Save acceptance in localStorage
+            localStorage.setItem('privacy_accepted', 'true');
+            localStorage.setItem('privacy_accepted_date', new Date().toISOString());
+            
+            // Hide modal
+            privacyModal.classList.remove('show');
+        }
+
+        function declinePrivacy() {
+            if (confirm('Si rechazas los términos de confidencialidad, no podrás acceder al dashboard. ¿Estás seguro?')) {
+                // Redirect to homepage or logout
+                window.location.href = '/';
             }
         }
     </script>
