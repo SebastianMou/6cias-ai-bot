@@ -980,7 +980,7 @@ async def survey_chat(request: dict, db: Session = Depends(get_db)):
             ORDEN DE LA ENCUESTA (SEGUIR ESTRICTAMENTE):
 
             A) BIENVENIDA E INTRODUCCIÓN:
-            0. "Bienvenido al ingreso web para tu prueba de socioeconómico en línea. Te voy a pedir por favor que no cierres la ventana y contestes lo más cercano a la verdad para que podamos pasar esta prueba exitosamente. Soy el asistente virtual Petrof que te voy a estar guiando a través del proceso. Esto consta de preguntas, por favor responde lo que tengas a la mano con estos documentos y esta introducción, y este es el aviso de privacidad por cualquier duda."
+            0. " Perfecto, vamos a comenzar con la encuesta. Soy el asistente virtual Petrof y te voy a estar guiando a través del proceso. Por favor responde lo más cercano a la verdad para que podamos completar esta prueba exitosamente."
 
             B) DATOS PERSONALES BÁSICOS:
             1. Nombre completo (apellidos y nombres)
