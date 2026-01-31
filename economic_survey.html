@@ -59,9 +59,12 @@
             </div>
         </div>
         <div id="input-container">
+            <input type="file" id="file-input" accept="image/*,.pdf,.doc,.docx" style="display: none;" multiple>
+            <button id="attach-btn" title="Adjuntar archivo">📎</button>
             <input type="text" id="chat-input" placeholder="Escribe tu respuesta...">
             <button id="send-btn">Enviar</button>
         </div>
+        <div id="file-preview" style="display: none;"></div>
     </div>
 
     <style>
@@ -420,6 +423,84 @@
         #accept-terms-btn:active {
             transform: translateY(0);
         }
+
+        #attach-btn {
+            padding: 12px 15px;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #attach-btn:hover {
+            background: #e0e0e0;
+            transform: scale(1.1);
+        }
+
+        #file-preview {
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .file-preview-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 15px;
+            font-size: 12px;
+        }
+
+        .file-preview-item img {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 5px;
+        }
+
+        .file-preview-item .remove-file {
+            cursor: pointer;
+            color: #dc3545;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+        .file-preview-item .remove-file:hover {
+            color: #a02622;
+        }
+
+        .message-file {
+            margin-top: 8px;
+            padding: 8px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            display: inline-block;
+        }
+
+        .message-file img {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 5px;
+            display: block;
+        }
+
+        .message-file .file-icon {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
     </style>
 
     <script>
@@ -483,7 +564,8 @@
             const sendBtn = document.getElementById('send-btn');
             const message = input.value.trim();
 
-            if (!message) return;
+            // Allow sending if there's a message OR files selected
+            if (!message && selectedFiles.length === 0) return;
 
             // Disable input while processing
             input.disabled = true;
@@ -493,12 +575,43 @@
             const chatMessages = document.getElementById('chat-messages');
             const userMessageDiv = document.createElement('div');
             userMessageDiv.className = 'message user-message';
-            userMessageDiv.innerHTML = `
-                <div class="message-content">
-                ${message}
-                <div class="timestamp">${getCurrentTime()}</div>
-                </div>
-            `;
+            
+            let messageHTML = '<div class="message-content">';
+            
+            // Add text message if exists
+            if (message) {
+                messageHTML += message;
+            }
+            
+            // Add file previews
+            if (selectedFiles.length > 0) {
+                messageHTML += '<div class="message-files" style="margin-top: 8px;">';
+                
+                selectedFiles.forEach(file => {
+                    if (file.type.startsWith('image/')) {
+                        // For images, create a preview
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const img = document.createElement('img');
+                            img.src = e.target.result;
+                            img.style.maxWidth = '150px';
+                            img.style.borderRadius = '8px';
+                            img.style.marginTop = '5px';
+                            img.style.display = 'block';
+                            userMessageDiv.querySelector('.message-files').appendChild(img);
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                        // For other files, show file icon and name
+                        messageHTML += `<div style="padding: 5px; background: rgba(0,0,0,0.1); border-radius: 5px; margin-top: 5px;">📄 ${file.name}</div>`;
+                    }
+                });
+                
+                messageHTML += '</div>';
+            }
+            
+            messageHTML += `<div class="timestamp">${getCurrentTime()}</div></div>`;
+            userMessageDiv.innerHTML = messageHTML;
             chatMessages.appendChild(userMessageDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
 
@@ -510,17 +623,21 @@
             try {
                 console.log('Sending message with IP:', userIpAddress);
 
+                // Create FormData for file upload
+                const formData = new FormData();
+                formData.append('session_id', sessionId);
+                formData.append('message', message || 'Archivo adjunto');
+                formData.append('ip_address', userIpAddress || 'unknown');
+                
+                // Append all selected files
+                selectedFiles.forEach((file) => {
+                    formData.append('files', file);
+                });
+
                 // Call your FastAPI backend
                 const response = await fetch(`${API_URL}/survey/chat`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        session_id: sessionId,
-                        message: message,
-                        ip_address: userIpAddress
-                    })
+                    body: formData  // NO headers needed - FormData sets them automatically
                 });
 
                 if (!response.ok) {
@@ -549,8 +666,15 @@
                 `;
                 chatMessages.appendChild(botMessageDiv);
                 chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                // Clear selected files after sending
+                selectedFiles = [];
+                displayFilePreview();
+                document.getElementById('file-input').value = '';
 
             } catch (error) {
+                console.error('Error sending message:', error);
+                
                 // Hide typing indicator
                 hideTypingIndicator();
 
@@ -612,6 +736,65 @@
             // Send initial greeting
             sendMessage();
         });
+
+        // File handling
+        let selectedFiles = [];
+
+        // Attach button click
+        document.getElementById('attach-btn').addEventListener('click', function() {
+            document.getElementById('file-input').click();
+        });
+
+        // File selection
+        document.getElementById('file-input').addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
+            selectedFiles = selectedFiles.concat(files);
+            displayFilePreview();
+        });
+
+        // Display file preview
+        function displayFilePreview() {
+            const preview = document.getElementById('file-preview');
+            
+            if (selectedFiles.length === 0) {
+                preview.style.display = 'none';
+                return;
+            }
+            
+            preview.style.display = 'flex';
+            preview.innerHTML = '';
+            
+            selectedFiles.forEach((file, index) => {
+                const item = document.createElement('div');
+                item.className = 'file-preview-item';
+                
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        item.innerHTML = `
+                            <img src="${e.target.result}" alt="${file.name}">
+                            <span>${file.name.substring(0, 15)}${file.name.length > 15 ? '...' : ''}</span>
+                            <span class="remove-file" onclick="removeFile(${index})">✕</span>
+                        `;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    item.innerHTML = `
+                        <span>📄</span>
+                        <span>${file.name.substring(0, 20)}${file.name.length > 20 ? '...' : ''}</span>
+                        <span class="remove-file" onclick="removeFile(${index})">✕</span>
+                    `;
+                }
+                
+                preview.appendChild(item);
+            });
+        }
+
+        // Remove file from selection
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            displayFilePreview();
+        }
     </script>
 
 </body>

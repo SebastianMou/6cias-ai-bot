@@ -1,4 +1,7 @@
-from fastapi import FastAPI, Depends, Request, HTTPException
+from fastapi import FastAPI, Depends, Request, HTTPException, File, UploadFile, Form
+from typing import List
+import shutil
+import uuid
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
@@ -22,6 +25,9 @@ from pathlib import Path
 import re
 import unicodedata
 
+SURVEY_FILES_DIR = Path("survey_files")
+SURVEY_FILES_DIR.mkdir(exist_ok=True)
+
 # Directory where job descriptions are stored
 JOBS_DIR = Path("jobs")
 
@@ -41,7 +47,6 @@ app.add_middleware(
 
 Base.metadata.create_all(bind=engine)
 
-# Updated Gemini configuration
 client = genai.Client(api_key=settings.gemini_api_key)
 
 async def get_ip_geolocation(ip_address: str):
@@ -923,9 +928,9 @@ async def get_survey_conversation(session_id: str, db: Session = Depends(get_db)
     }
 
 @app.post("/survey/chat")
-async def survey_chat(request: dict, db: Session = Depends(get_db)):
-    """Handle survey chat messages"""
+async def survey_chat(session_id: str = Form(...),message: str = Form(...),ip_address: str = Form(None),files: List[UploadFile] = File(None),db: Session = Depends(get_db)):
     try:
+        # Check if survey chat is enabled
         chat_setting = db.query(SystemSettings).filter(
             SystemSettings.setting_key == "survey_chat_enabled"
         ).first()
@@ -933,16 +938,56 @@ async def survey_chat(request: dict, db: Session = Depends(get_db)):
         if chat_setting and chat_setting.setting_value == "false":
             return {
                 "response": "Lo siento, el chat de encuestas está temporalmente desactivado. Por favor, intenta más tarde.",
-                "session_id": request.get("session_id", ""),
+                "session_id": session_id,
                 "progress": 0
             }
-
-        session_id = request.get("session_id")
-        message = request.get("message")
-        ip_address = request.get("ip_address")
         
         if not session_id or not message:
             raise HTTPException(status_code=400, detail="Missing session_id or message")
+        
+        # Handle file uploads
+        uploaded_files_info = []
+        if files:
+            session_folder = SURVEY_FILES_DIR / session_id
+            session_folder.mkdir(exist_ok=True)
+            
+            for file in files:
+                if file.filename:
+                    # Generate unique filename
+                    file_extension = Path(file.filename).suffix
+                    unique_filename = f"{uuid.uuid4()}{file_extension}"
+                    file_path = session_folder / unique_filename
+                    
+                    # Save file
+                    with open(file_path, "wb") as buffer:
+                        shutil.copyfileobj(file.file, buffer)
+                    
+                    # Store file info
+                    file_info = {
+                        "original_name": file.filename,
+                        "saved_path": str(file_path),
+                        "file_type": file.content_type,
+                        "file_size": file_path.stat().st_size
+                    }
+                    uploaded_files_info.append(file_info)
+                    
+                    # Save to database
+                    from models import SurveyFile
+                    db_file = SurveyFile(
+                        session_id=session_id,
+                        file_name=file.filename,
+                        file_path=str(file_path),
+                        file_type=file.content_type,
+                        file_size=file_path.stat().st_size
+                    )
+                    db.add(db_file)
+            
+            db.commit()
+            
+            # Append file info to message
+            if uploaded_files_info:
+                file_names = ", ".join([f["original_name"] for f in uploaded_files_info])
+                message = f"{message}\n[Archivos adjuntos: {file_names}]"
         
         # Get or create survey response
         survey = survey_crud.get_survey_by_session(db, session_id)
@@ -1665,6 +1710,57 @@ async def update_survey_chat_status(request: dict, db: Session = Depends(get_db)
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/survey/{session_id}/files")
+async def get_survey_files(session_id: str, db: Session = Depends(get_db)):
+    """Get all files uploaded for a survey session"""
+    from models import SurveyFile
+    
+    files = db.query(SurveyFile).filter(
+        SurveyFile.session_id == session_id
+    ).order_by(SurveyFile.uploaded_at.desc()).all()
+    
+    return {
+        "files": [
+            {
+                "id": f.id,
+                "file_name": f.file_name,
+                "file_type": f.file_type,
+                "file_size": f.file_size,
+                "uploaded_at": f.uploaded_at.isoformat()
+            }
+            for f in files
+        ]
+    }
+
+@app.get("/survey/file/{session_id}/{file_id}")
+async def get_survey_file(session_id: str, file_id: str, db: Session = Depends(get_db)):
+    """Serve a specific file by ID or search by original filename"""
+    from models import SurveyFile
+    
+    # Try to find by ID first
+    try:
+        file_id_int = int(file_id)
+        file_record = db.query(SurveyFile).filter(
+            SurveyFile.id == file_id_int,
+            SurveyFile.session_id == session_id
+        ).first()
+    except ValueError:
+        # If not a number, try to find by original filename
+        file_record = db.query(SurveyFile).filter(
+            SurveyFile.session_id == session_id,
+            SurveyFile.file_name == file_id
+        ).first()
+    
+    if not file_record:
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    file_path = Path(file_record.file_path)
+    
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found on disk")
+    
+    return FileResponse(file_path)
 
 if __name__ == "__main__":
     import uvicorn

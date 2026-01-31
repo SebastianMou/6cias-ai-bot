@@ -94,6 +94,7 @@
         .container {
             margin: 30px auto;
             padding: 0 20px;
+            max-width:2400px; /* Limits the width */
             display: grid;
             grid-template-columns: 300px 1fr;
             gap: 20px;
@@ -188,6 +189,27 @@
             background: #f8f9fa;
             border-bottom: 2px solid #e0e0e0;
             overflow-x: auto;
+            overflow-y: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: #008386 #f8f9fa;
+        }
+
+        /* Webkit scrollbar for tabs */
+        .tabs::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .tabs::-webkit-scrollbar-track {
+            background: #f8f9fa;
+        }
+
+        .tabs::-webkit-scrollbar-thumb {
+            background: #008386;
+            border-radius: 3px;
+        }
+
+        .tabs::-webkit-scrollbar-thumb:hover {
+            background: #006b6d;
         }
 
         .tab {
@@ -625,6 +647,148 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        /* File attachments in conversation */
+        .message-file-attachment {
+            margin-top: 8px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            display: inline-block;
+            max-width: 100%;
+        }
+
+        .message-file-attachment img {
+            max-width: 250px;
+            max-height: 250px;
+            border-radius: 5px;
+            display: block;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .message-file-attachment img:hover {
+            transform: scale(1.05);
+        }
+
+        .message-file-attachment .file-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background: white;
+            border-radius: 5px;
+            font-size: 13px;
+        }
+
+        .message-file-attachment .file-info:hover {
+            background: #f0f0f0;
+        }
+
+        .file-icon-large {
+            font-size: 24px;
+        }
+
+        /* Files tab gallery */
+        .files-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            padding: 20px;
+        }
+
+        .file-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+
+        .file-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .file-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .file-card .file-details {
+            padding: 12px;
+        }
+
+        .file-card .file-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+            word-break: break-word;
+        }
+
+        .file-card .file-meta {
+            font-size: 11px;
+            color: #999;
+        }
+
+        .file-card.document {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+        }
+
+        .file-card.document .doc-icon {
+            font-size: 48px;
+            margin-right: 15px;
+        }
+
+        /* Image modal for fullscreen view */
+        .image-modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .image-modal.show {
+            display: flex;
+        }
+
+        .image-modal img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 8px;
+        }
+
+        .image-modal .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .image-modal .close-modal:hover {
+            color: #ccc;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e0e0e0;
+            overflow-x: auto;
+        }
     </style>
 </head>
 
@@ -710,8 +874,15 @@
             </div>
         </div>
 
+        <style>
+            .main-content {
+                max-width: 92%;
+                width: 100%;
+            }
+        </style>
+
         <!-- Main Content -->
-        <div>
+        <div class="main-content">
             <!-- Summary Cards -->
             <div class="summary-cards">
                 <div class="summary-card">
@@ -751,6 +922,7 @@
                     <button class="tab" onclick="switchTab('vivienda')">🏘️ Vivienda</button>
                     <button class="tab" onclick="switchTab('licencias')">🚗 Licencias</button>
                     <button class="tab" onclick="switchTab('conversacion')">💬 Conversación</button>
+                    <button class="tab" onclick="switchTab('archivos')">📎 Archivos</button>
                 </div>
 
                 <!-- Tab: Info Básica -->
@@ -1112,6 +1284,16 @@
                     </div>
                 </div>
 
+                <!-- Tab: Archivos -->
+                <div id="tab-archivos" class="tab-content">
+                    <div class="data-section">
+                        <h3>📎 Archivos Adjuntos</h3>
+                        <div class="files-gallery" id="files-gallery">
+                            <div class="loading">Cargando archivos...</div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Tab: Conversación -->
                 <div id="tab-conversacion" class="tab-content">
                     <div class="data-section">
@@ -1124,6 +1306,12 @@
             </div>
         </div> <!-- Close main content div -->
     </div> <!-- Close container -->
+
+    <!-- Image Modal for Fullscreen -->
+    <div id="image-modal" class="image-modal" onclick="closeImageModal()">
+        <span class="close-modal">&times;</span>
+        <img id="modal-image" src="" alt="Imagen ampliada">
+    </div>
 
     <!-- Edit Modal -->
     <!-- Edit Modal - COMPLETE VERSION -->
@@ -1591,14 +1779,22 @@
 
         // Tab switching
         function switchTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(tab => tab.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+
+            const event = window.event;
             document.getElementById(`tab-${tabName}`).classList.add('active');
             event.target.classList.add('active');
+            
+            // Load data when switching to specific tabs
+            if (tabName === 'conversacion') {
+                loadConversation();
+            } else if (tabName === 'archivos') {
+                loadFiles();
+            }
         }
 
         async function auditSurvey() {
@@ -1888,11 +2084,69 @@
 
                 chatMessages.innerHTML = '';
 
+                // Get all files for this session to match with conversations
+                let filesMap = {};
+                try {
+                    const filesResponse = await fetch(`${API_URL}/survey/${sessionId}/files`);
+                    const filesData = await filesResponse.json();
+                    
+                    if (filesData.files) {
+                        // Create a map of original filename to file data
+                        filesData.files.forEach(file => {
+                            filesMap[file.file_name] = file;
+                        });
+                    }
+                } catch (err) {
+                    console.log('Could not load files for conversation');
+                }
+
                 data.conversations.forEach(conv => {
+                    // Extract file attachments from message
+                    const messageText = conv.user_message;
+                    const fileMatch = messageText.match(/\[Archivos adjuntos: ([^\]]+)\]/);
+                    const cleanMessage = messageText.replace(/\[Archivos adjuntos: [^\]]+\]/, '').trim();
+                    
+                    let fileAttachmentHTML = '';
+                    if (fileMatch) {
+                        const fileNames = fileMatch[1].split(', ');
+                        
+                        fileAttachmentHTML = '<div class="message-file-attachment">';
+                        fileNames.forEach(fileName => {
+                            const fileData = filesMap[fileName];
+                            
+                            if (fileData) {
+                                const fileUrl = `${API_URL}/survey/file/${sessionId}/${fileData.id}`;
+                                
+                                if (fileData.file_type && fileData.file_type.startsWith('image/')) {
+                                    // Show image thumbnail
+                                    fileAttachmentHTML += `
+                                        <img src="${fileUrl}" alt="${fileName}" onclick="showImageModal('${fileUrl}')" style="cursor: pointer; max-width: 200px; border-radius: 8px; margin: 5px 0;">
+                                    `;
+                                } else {
+                                    // Show file info
+                                    fileAttachmentHTML += `
+                                        <div class="file-info" onclick="window.open('${fileUrl}', '_blank')" style="cursor: pointer;">
+                                            📎 ${fileName}
+                                        </div>
+                                    `;
+                                }
+                            } else {
+                                // Fallback if file not found
+                                fileAttachmentHTML += `
+                                    <div class="file-info">
+                                        📎 ${fileName}
+                                    </div>
+                                `;
+                            }
+                        });
+                        fileAttachmentHTML += '</div>';
+                    }
+                    
                     chatMessages.innerHTML += `
                         <div class="message user-message">
                             <div class="message-content">
-                                ${conv.user_message}
+                                ${cleanMessage || 'Archivo adjunto'}
+                                ${fileAttachmentHTML}
                                 <div class="timestamp">${new Date(conv.created_at).toLocaleTimeString('es-MX')}</div>
                             </div>
                         </div>
@@ -1910,6 +2164,75 @@
             } catch (error) {
                 console.error('Error loading conversation:', error);
             }
+        }
+
+        async function loadFiles() {
+            try {
+                const response = await fetch(`${API_URL}/survey/${sessionId}/files`);
+                const data = await response.json();
+
+                const gallery = document.getElementById('files-gallery');
+
+                if (!data.files || data.files.length === 0) {
+                    gallery.innerHTML = '<div class="empty-state"><p>No hay archivos adjuntos</p></div>';
+                    return;
+                }
+
+                gallery.innerHTML = '';
+
+                data.files.forEach(file => {
+                    const fileCard = document.createElement('div');
+                    const fileUrl = `${API_URL}/survey/file/${sessionId}/${file.id}`;
+                    
+                    if (file.file_type && file.file_type.startsWith('image/')) {
+                        // Image file
+                        fileCard.className = 'file-card';
+                        fileCard.innerHTML = `
+                            <img src="${fileUrl}" alt="${file.file_name}" onclick="event.stopPropagation(); showImageModal('${fileUrl}')">
+                            <div class="file-details">
+                                <div class="file-name">${file.file_name}</div>
+                                <div class="file-meta">${formatFileSize(file.file_size)} • ${new Date(file.uploaded_at).toLocaleDateString('es-MX')}</div>
+                            </div>
+                        `;
+                    } else {
+                        // Document file
+                        fileCard.className = 'file-card document';
+                        fileCard.innerHTML = `
+                            <div class="doc-icon">📄</div>
+                            <div class="file-details">
+                                <div class="file-name">${file.file_name}</div>
+                                <div class="file-meta">${formatFileSize(file.file_size)} • ${new Date(file.uploaded_at).toLocaleDateString('es-MX')}</div>
+                            </div>
+                        `;
+                        fileCard.onclick = () => window.open(fileUrl, '_blank');
+                    }
+
+                    gallery.appendChild(fileCard);
+                });
+
+            } catch (error) {
+                console.error('Error loading files:', error);
+                document.getElementById('files-gallery').innerHTML = '<div class="empty-state"><p>Error al cargar archivos</p></div>';
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (!bytes) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        function showImageModal(imageSrc) {
+            const modal = document.getElementById('image-modal');
+            const modalImage = document.getElementById('modal-image');
+            modalImage.src = imageSrc;
+            modal.classList.add('show');
+        }
+
+        function closeImageModal() {
+            document.getElementById('image-modal').classList.remove('show');
         }
 
         function calculateProgress(survey) {

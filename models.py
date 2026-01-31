@@ -201,3 +201,14 @@ class SurveyConversation(Base):
     user_message = Column(Text, nullable=False)
     bot_response = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class SurveyFile(Base):
+    __tablename__ = "survey_files"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(String(100), index=True, nullable=False)
+    file_name = Column(String(255), nullable=False)
+    file_path = Column(String(500), nullable=False)
+    file_type = Column(String(50), nullable=True)  # image/pdf/document
+    file_size = Column(Integer, nullable=True)  # in bytes
+    uploaded_at = Column(DateTime, default=datetime.utcnow)
