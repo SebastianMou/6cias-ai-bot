@@ -68,11 +68,21 @@
     </div>
 
     <style>
-        /* Truly Responsive - Works on ALL screen sizes */
-        body {
+        /* Make chatbot fill iframe completely */
+        html, body {
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        @media (min-width: 769px) {
+            #chatbot-container {
+                border: 1px solid #ccc;
+                border-radius: 10px;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            }
         }
 
         #chat-input {
@@ -132,15 +142,13 @@
         }
 
         #chatbot-container {
-            width: 90%;
-            max-width: 500px;
-            height: 80vh;
-            max-height: 700px;
-            margin: 20px auto;
-            border: 1px solid #ccc;
-            border-radius: 10px;
+            width: 100%;
+            height: 100vh;
+            margin: 0;
+            border: none;
+            border-radius: 0;
             background: white;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            box-shadow: none;
             display: flex;
             flex-direction: column;
             overflow: hidden;
