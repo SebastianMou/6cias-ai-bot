@@ -909,6 +909,8 @@ async def get_survey_conversation(session_id: str, db: Session = Depends(get_db)
 
 @app.post("/survey/chat")
 async def survey_chat(session_id: str = Form(...),message: str = Form(...),ip_address: str = Form(None),files: List[UploadFile] = File(None),db: Session = Depends(get_db)):
+    print(f"[SURVEY CHAT] Received request - Session: {session_id}, Message: {message[:50]}...")  # ADD THIS LINE
+
     try:
         # Check if survey chat is enabled
         chat_setting = db.query(SystemSettings).filter(
