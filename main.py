@@ -1253,7 +1253,7 @@ async def survey_chat(session_id: str = Form(...),message: str = Form(...),ip_ad
         traceback.print_exc()
         return {
             "response": "Lo siento, hubo un error procesando tu respuesta. Por favor, intenta nuevamente.",
-            "session_id": request.get("session_id", ""),
+            "session_id": session_id,  # ✅ CORRECT
             "progress": 0
         }
 
