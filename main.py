@@ -1013,8 +1013,43 @@ async def survey_chat(session_id: str = Form(...),message: str = Form(...),ip_ad
                 "parts": [{"text": conv.bot_response}]
             })
         
+        # Track current section based on conversation length
+        current_section = "Inicio"
+        conversation_count = len(history)
+        if conversation_count >= 1: current_section = "A-Bienvenida"
+        if conversation_count >= 2: current_section = "B-Datos Básicos"
+        if conversation_count >= 6: current_section = "C-Documentos"
+        if conversation_count >= 10: current_section = "D-Referencias"
+        if conversation_count >= 12: current_section = "E-Gastos"
+        if conversation_count >= 15: current_section = "F-Bienes"
+        if conversation_count >= 17: current_section = "G-Deudas"
+        if conversation_count >= 19: current_section = "H-Familia"
+        if conversation_count >= 28: current_section = "I-Antecedentes"
+        if conversation_count >= 30: current_section = "J-Evidencias"
+        if conversation_count >= 35: current_section = "K-Cierre"
+        
+        # Update current section in database
+        survey_crud.update_survey_field(db, session_id, current_section=current_section)
+
+        current_section = "Inicio"
+        conversation_count = len(history)
+        if conversation_count >= 1: current_section = "A-Bienvenida"
+        if conversation_count >= 2: current_section = "B-Datos Básicos"
+        if conversation_count >= 6: current_section = "C-Documentos"
+        if conversation_count >= 10: current_section = "D-Referencias"
+        if conversation_count >= 12: current_section = "E-Gastos"
+        if conversation_count >= 15: current_section = "F-Bienes"
+        if conversation_count >= 17: current_section = "G-Deudas"
+        if conversation_count >= 19: current_section = "H-Familia"
+        if conversation_count >= 28: current_section = "I-Antecedentes"
+        if conversation_count >= 30: current_section = "J-Evidencias"
+        if conversation_count >= 35: current_section = "K-Cierre"
+        
+        # Update current section in database
+        survey_crud.update_survey_field(db, session_id, current_section=current_section)
+        
         # System prompt for economic survey
-        system_prompt = f"""Eres Petrof, un asistente virtual de verificación socioeconómica para 6Cias. Tu objetivo es recopilar información y evidencias de forma clara, ordenada y respetuosa, para completar la certificación de ingreso a un puesto de confianza.
+        system_prompt = f"""Eres Clippy, un asistente virtual de verificación socioeconómica para 6Cias. Tu objetivo es recopilar información y evidencias de forma clara, ordenada y respetuosa, para completar la certificación de ingreso a un puesto de confianza.
 
             REGLAS GENERALES:
             - Haz preguntas una por una y espera respuesta antes de seguir
@@ -1026,7 +1061,8 @@ async def survey_chat(session_id: str = Form(...),message: str = Form(...),ip_ad
 
             A) BIENVENIDA E INTRODUCCIÓN:
             0. " Perfecto, vamos a comenzar con la encuesta. Soy el asistente virtual Petrof y te voy a estar guiando a través del proceso. Por favor responde lo más cercano a la verdad para que podamos completar esta prueba exitosamente."
-
+            1. "¿Para qué empresa o compañía estás aplicando?"
+            
             B) DATOS PERSONALES BÁSICOS:
             1. Nombre completo (apellidos y nombres)
             2. Fecha y lugar de nacimiento (o donde te hayan registrado)
@@ -1122,26 +1158,121 @@ async def survey_chat(session_id: str = Form(...),message: str = Form(...),ip_ad
             db, session_id, message, bot_response
         )
         
-        # Extract data from user message and update survey
+        # Extract data from user message and update survey based on conversation context
         user_msg_lower = message.lower()
-        
+        bot_response_lower = bot_response.lower()
+
         # Detect name in first message
         if not survey.candidate_name and len(history) == 0:
             survey_crud.update_survey_field(db, session_id, candidate_name=message.strip())
+
+        # Extract data based on bot's last question context
+        # Check what the bot just asked to know what data we're receiving
+
+        # A) Personal documents
+        if "curp" in bot_response_lower and len(message) >= 16:
+            survey_crud.update_survey_field(db, session_id, curp=message.strip())
+        elif "seguridad social" in bot_response_lower or "imss" in bot_response_lower:
+            survey_crud.update_survey_field(db, session_id, nss_imss=message.strip())
+        elif "rfc" in bot_response_lower or "tax id" in bot_response_lower or "itin" in bot_response_lower:
+            survey_crud.update_survey_field(db, session_id, rfc_tax_id=message.strip())
+        elif "comprobante de domicilio" in bot_response_lower or "cfe" in bot_response_lower:
+            survey_crud.update_survey_field(db, session_id, utility_provider=message.strip())
+
+        # B) Birth information
+        if "fecha" in bot_response_lower and "nacimiento" in bot_response_lower:
+            survey_crud.update_survey_field(db, session_id, date_of_birth=message.strip())
+
+        # C) Contact info
+        if "correo" in bot_response_lower or "email" in bot_response_lower:
+            survey_crud.update_survey_field(db, session_id, email=message.strip())
+        elif "teléfono" in bot_response_lower or "celular" in bot_response_lower:
+            survey_crud.update_survey_field(db, session_id, phone_whatsapp=message.strip())
+
+        # D) Work references
+        if "referencia laboral" in bot_response_lower:
+            survey_crud.update_survey_field(db, session_id, work_references=message.strip())
+
+        # E) Expenses
+        if "gastas más dinero" in bot_response_lower or "áreas" in bot_response_lower:
+            survey_crud.update_survey_field(db, session_id, expenses_list=message.strip())
+        elif "gastas en total" in bot_response_lower or "aproximado" in bot_response_lower:
+            survey_crud.update_survey_field(db, session_id, expenses_amounts=message.strip())
+
+        # F) Income
+        if "ganando" in bot_response_lower or "percibiendo" in bot_response_lower:
+            survey_crud.update_survey_field(db, session_id, salary_bonus=message.strip())
+
+        # G) Assets
+        if "bienes patrimoniales" in bot_response_lower:
+            survey_crud.update_survey_field(db, session_id, real_estate=message.strip())
+
+        # H) Debts
+        if "deudas" in bot_response_lower and "tienes" in bot_response_lower:
+            survey_crud.update_survey_field(db, session_id, debts=message.strip())
+        elif "buró de crédito" in bot_response_lower:
+            survey_crud.update_survey_field(db, session_id, credit_bureau=message.strip())
+
+        # I) Family contacts
+        if "padre" in bot_response_lower or "madre" in bot_response_lower:
+            survey_crud.update_survey_field(db, session_id, primary_family_contacts=message.strip())
+        elif "hermanos" in bot_response_lower:
+            current = survey.primary_family_contacts or ""
+            survey_crud.update_survey_field(db, session_id, primary_family_contacts=current + "\n" + message.strip())
+        elif "pareja" in bot_response_lower and "nombre" in bot_response_lower:
+            survey_crud.update_survey_field(db, session_id, partner_name=message.strip())
+        elif "hijos" in bot_response_lower or "descendencia" in bot_response_lower:
+            survey_crud.update_survey_field(db, session_id, children_names=message.strip())
+
+        # J) Background check
+        if "demandas" in bot_response_lower or "antecedentes" in bot_response_lower:
+            has_issues = "sí" in user_msg_lower or "si" in user_msg_lower
+            survey_crud.update_survey_field(db, session_id, 
+                                        has_legal_issues=has_issues,
+                                        legal_issues_description=message.strip() if has_issues else None)
+
+        # K) Evidence tracking
+        if "facebook" in bot_response_lower:
+            survey_crud.update_survey_field(db, session_id, facebook_profile_url=message.strip())
         
-        # Calculate progress
+        # Calculate progress based on new prompt structure (11 main sections A-K)
         sections_completed = 0
+        total_sections = 11
+
+        # A) Welcome
         if survey.candidate_name: sections_completed += 1
-        if survey.real_estate or survey.vehicles or survey.businesses or survey.formal_savings:
-            sections_completed += 1
+
+        # B) Basic personal data (4 fields)
+        if survey.date_of_birth and survey.phone_whatsapp and survey.email: sections_completed += 1
+
+        # C) Personal documents (4 fields)
+        if survey.curp and survey.nss_imss and survey.rfc_tax_id: sections_completed += 1
+
+        # D) Work references
+        if survey.work_references: sections_completed += 1
+
+        # E) Socioeconomic - Expenses
+        if survey.expenses_list and survey.expenses_amounts: sections_completed += 1
+
+        # F) Assets
+        if survey.real_estate: sections_completed += 1
+
+        # G) Debts
         if survey.debts or survey.credit_bureau: sections_completed += 1
-        if survey.salary_bonus: sections_completed += 1
-        if survey.groceries: sections_completed += 1
+
+        # H) Family survey
         if survey.primary_family_contacts: sections_completed += 1
-        if survey.home_references: sections_completed += 1
-        if survey.bedrooms: sections_completed += 1
-        
-        progress = int((sections_completed / 8) * 100)
+
+        # I) Background check
+        if survey.has_legal_issues is not None: sections_completed += 1
+
+        # J) Evidence
+        if survey.facebook_profile_url or survey.home_photos_submitted: sections_completed += 1
+
+        # K) Closure (always true if we reach here)
+        if len(history) > 25: sections_completed += 1  # Approximate completion
+
+        progress = int((sections_completed / total_sections) * 100)
         
         return {
             "response": bot_response,

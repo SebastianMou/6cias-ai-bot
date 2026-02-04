@@ -73,6 +73,7 @@ class SurveyResponse(Base):
     id = Column(Integer, primary_key=True, index=True)
     session_id = Column(String(100), unique=True, index=True)
     candidate_name = Column(String(100), nullable=True)
+    company_name = Column(String(100), nullable=True)
     user_ip = Column(String(50), nullable=True)  
     
     # A) Basic info
@@ -84,7 +85,15 @@ class SurveyResponse(Base):
     full_address = Column(Text, nullable=True)
     share_location = Column(Boolean, nullable=True)
     
-    # C) Housing
+    # C) Personal Documents
+    curp = Column(String(18), nullable=True)
+    nss_imss = Column(String(20), nullable=True)  # Número de seguridad social
+    rfc_tax_id = Column(String(20), nullable=True)  # RFC, tax ID or ITIN
+    utility_provider = Column(String(100), nullable=True)  # CFE, company name
+    utility_contract_number = Column(String(100), nullable=True)
+    utility_account_holder = Column(String(100), nullable=True)  # A nombre de quién
+    
+    # D) Housing
     housing_type = Column(String(50), nullable=True)  # propia/rentada/prestada
     lives_with = Column(Text, nullable=True)
     dependents_count = Column(Integer, nullable=True)
@@ -93,21 +102,21 @@ class SurveyResponse(Base):
     has_internet = Column(Boolean, nullable=True)
     has_gas = Column(Boolean, nullable=True)
     
-    # D) Section 7.1 - Assets
+    # E) Section 7.1 - Assets
     real_estate = Column(Text, nullable=True)
     vehicles = Column(Text, nullable=True)
     businesses = Column(Text, nullable=True)
     formal_savings = Column(Text, nullable=True)
     
-    # E) Section 7.2 - Debt
+    # F) Section 7.2 - Debt
     debts = Column(Text, nullable=True)
     credit_bureau = Column(String(50), nullable=True)
     
-    # F) Education
+    # G) Education
     education_level = Column(String(100), nullable=True)
     has_education_proof = Column(Boolean, nullable=True)
     
-    # G) Employment
+    # H) Employment
     position_applying = Column(String(100), nullable=True)
     organization = Column(String(100), nullable=True)
     area_division = Column(String(100), nullable=True)
@@ -116,12 +125,12 @@ class SurveyResponse(Base):
     current_employment = Column(Text, nullable=True)
     previous_employment = Column(Text, nullable=True)
     
-    # H) Section 7.3 - Income
+    # I) Section 7.3 - Income
     salary_bonus = Column(String(100), nullable=True)
     family_support = Column(String(100), nullable=True)
     informal_business_income = Column(String(100), nullable=True)
     
-    # I) Section 7.4 - Expenses
+    # J) Section 7.4 - Expenses
     expenses_list = Column(Text, nullable=True)  # Which expenses they have
     expenses_amounts = Column(Text, nullable=True)  # Amounts for each
     groceries = Column(String(50), nullable=True)
@@ -143,24 +152,47 @@ class SurveyResponse(Base):
     laundry = Column(String(50), nullable=True)
     internet_expenses = Column(String(50), nullable=True)
     
-    # J) Health
+    # K) Health
     has_medical_condition = Column(Boolean, nullable=True)
     takes_permanent_medication = Column(Boolean, nullable=True)
     
-    # K) Section 8.0 - Family contacts
+    # L) Section 8.0 - Family contacts
     primary_family_contacts = Column(Text, nullable=True)
     secondary_family_contacts = Column(Text, nullable=True)
     work_references = Column(Text, nullable=True)
     personal_reference = Column(Text, nullable=True)
     
-    # L) Section 9.0 - Home access
+    # M) Work References (detailed)
+    work_reference_1_name = Column(String(100), nullable=True)
+    work_reference_1_phone = Column(String(20), nullable=True)
+    work_reference_1_relationship = Column(String(100), nullable=True)
+    work_reference_2_name = Column(String(100), nullable=True)
+    work_reference_2_phone = Column(String(20), nullable=True)
+    work_reference_2_relationship = Column(String(100), nullable=True)
+    
+    # N) Family Emergency Contact
+    emergency_contact_name = Column(String(100), nullable=True)
+    emergency_contact_phone = Column(String(20), nullable=True)
+    emergency_contact_relationship = Column(String(50), nullable=True)
+    
+    # O) Partner Information
+    partner_name = Column(String(100), nullable=True)
+    partner_phone = Column(String(20), nullable=True)
+    partner_occupation = Column(String(100), nullable=True)
+    partner_relationship_quality = Column(String(100), nullable=True)
+    
+    # P) Children Information
+    children_names = Column(Text, nullable=True)  # JSON or comma-separated
+    children_count = Column(Integer, nullable=True)
+    
+    # Q) Section 9.0 - Home access
     home_references = Column(Text, nullable=True)
     crime_in_area = Column(String(50), nullable=True)
     services_quality = Column(String(50), nullable=True)
     security_quality = Column(String(50), nullable=True)
     surveillance_quality = Column(String(50), nullable=True)
     
-    # M) Section 9.1 - Property status
+    # R) Section 9.1 - Property status
     bedrooms = Column(String(20), nullable=True)
     dining_room = Column(String(20), nullable=True)
     living_room = Column(String(20), nullable=True)
@@ -175,7 +207,7 @@ class SurveyResponse(Base):
     sports_areas = Column(String(20), nullable=True)
     study_office = Column(String(20), nullable=True)
     
-    # N) Operators section
+    # S) Operators section
     has_federal_license = Column(Boolean, nullable=True)
     federal_license_number = Column(String(100), nullable=True)
     medical_folio = Column(String(100), nullable=True)
@@ -183,9 +215,19 @@ class SurveyResponse(Base):
     license_type = Column(String(50), nullable=True)
     has_state_license = Column(Boolean, nullable=True)
     state_license_info = Column(Text, nullable=True)
+    state_license_number = Column(String(100), nullable=True)
+    state_license_validity = Column(String(50), nullable=True)
     
-    # O) Evidence tracking
+    # T) Social Media & Evidence
+    facebook_profile_url = Column(String(255), nullable=True)
+    home_photos_submitted = Column(Boolean, default=False)
+    street_photos_submitted = Column(Boolean, default=False)
+    recommendation_letters_submitted = Column(Boolean, default=False)
     evidence_sent = Column(Text, nullable=True)
+    
+    # U) Background Check
+    has_legal_issues = Column(Boolean, nullable=True)
+    legal_issues_description = Column(Text, nullable=True)
     
     # Metadata
     survey_completed = Column(Boolean, default=False)
