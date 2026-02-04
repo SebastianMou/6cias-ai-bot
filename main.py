@@ -585,110 +585,87 @@ async def audit_survey_conversation(session_id: str, db: Session = Depends(get_d
             conversation_text += f"Bot: {conv.bot_response}\n\n"
         
         # Create extraction prompt
+        # Create extraction prompt - SIMPLIFIED to only extract mentioned fields
         extraction_prompt = f"""Analiza la siguiente conversación de una encuesta socioeconómica y extrae TODOS los datos mencionados.
 
             CONVERSACIÓN:
             {conversation_text}
 
-            INSTRUCCIONES:
-            - Extrae SOLO información explícitamente mencionada
-            - Si un dato no fue mencionado, devuelve null
-            - Para campos booleanos: usa true/false/null
-            - Para texto: usa el texto exacto mencionado
-            - Para números: usa el número mencionado
+            INSTRUCCIONES IMPORTANTES:
+            - Extrae SOLO información explícitamente mencionada en la conversación
+            - Si un dato no fue mencionado, NO lo incluyas en el JSON
+            - Para campos booleanos: usa true o false (sin comillas)
+            - Para texto: usa comillas dobles
+            - Para números: sin comillas
+            - Asegúrate de cerrar correctamente el JSON con llaves
 
-            Responde ÚNICAMENTE con un objeto JSON válido con estos campos (sin markdown, sin explicaciones):
+            Responde con un objeto JSON válido que contenga ÚNICAMENTE los campos mencionados en la conversación.
+            Campos disponibles: candidate_name, company_name, date_of_birth, phone_whatsapp, email, full_address, share_location, curp, nss_imss, rfc_tax_id, utility_provider, utility_contract_number, utility_account_holder, housing_type, lives_with, dependents_count, has_water, has_electricity, has_internet, has_gas, real_estate, vehicles, businesses, formal_savings, debts, credit_bureau, education_level, has_education_proof, position_applying, organization, area_division, application_reason, how_found_vacancy, current_employment, previous_employment, salary_bonus, family_support, informal_business_income, expenses_list, expenses_amounts, groceries, alimony, food_out, rent, utilities, internet_cable, transportation, uber_taxi, school_expenses, courses, books_supplies, entertainment, vacations, insurance, taxes, clothing, laundry, internet_expenses, has_medical_condition, takes_permanent_medication, primary_family_contacts, secondary_family_contacts, work_references, personal_reference, work_reference_1_name, work_reference_1_phone, work_reference_1_relationship, work_reference_2_name, work_reference_2_phone, work_reference_2_relationship, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, partner_name, partner_phone, partner_occupation, partner_relationship_quality, children_names, children_count, home_references, crime_in_area, services_quality, security_quality, surveillance_quality, bedrooms, dining_room, living_room, bathrooms, floors, garden, kitchen, air_conditioning, garage, laundry_area, pool, sports_areas, study_office, has_federal_license, federal_license_number, medical_folio, license_validity, license_type, has_state_license, state_license_info, state_license_number, state_license_validity, facebook_profile_url, home_photos_submitted, street_photos_submitted, recommendation_letters_submitted, has_legal_issues, legal_issues_description, evidence_sent
 
-            {{
-                "candidate_name": "nombre completo o null",
-                "date_of_birth": "fecha en formato DD/MM/AAAA o null",
-                "phone_whatsapp": "teléfono o null",
-                "email": "email o null",
-                "full_address": "dirección completa o null",
-                "share_location": true/false/null,
-                "housing_type": "propia/rentada/prestada o null",
-                "lives_with": "con quien vive o null",
-                "dependents_count": número o null,
-                "real_estate": "bienes inmuebles o null",
-                "vehicles": "vehículos o null",
-                "businesses": "negocios o null",
-                "formal_savings": "ahorros o null",
-                "debts": "deudas o null",
-                "credit_bureau": "información buró o null",
-                "education_level": "nivel educativo o null",
-                "has_education_proof": true/false/null,
-                "position_applying": "puesto o null",
-                "organization": "organización o null",
-                "area_division": "área o null",
-                "application_reason": "razón o null",
-                "how_found_vacancy": "cómo se enteró o null",
-                "current_employment": "empleo actual o null",
-                "previous_employment": "empleos anteriores o null",
-                "salary_bonus": "sueldo o null",
-                "family_support": "apoyo familiar o null",
-                "informal_business_income": "ingresos informales o null",
-                "expenses_list": "lista de gastos o null",
-                "expenses_amounts": "montos de gastos o null",
-                "has_medical_condition": true/false/null,
-                "takes_permanent_medication": true/false/null,
-                "primary_family_contacts": "contactos familia primaria o null",
-                "secondary_family_contacts": "contactos familia secundaria o null",
-                "work_references": "referencias laborales o null",
-                "personal_reference": "referencia personal o null",
-                "home_references": "referencias domicilio o null",
-                "crime_in_area": "Nada/Poco/Mucho/Demasiado o null",
-                "services_quality": "Nada/Poco/Mucho/Demasiado o null",
-                "security_quality": "Nada/Poco/Mucho/Demasiado o null",
-                "surveillance_quality": "Nada/Poco/Mucho/Demasiado o null",
-                "bedrooms": "número o respuesta o null",
-                "dining_room": "respuesta o null",
-                "living_room": "respuesta o null",
-                "bathrooms": "número o respuesta o null",
-                "floors": "número o null",
-                "garden": "respuesta o null",
-                "kitchen": "respuesta o null",
-                "air_conditioning": "respuesta o null",
-                "garage": "respuesta o null",
-                "laundry_area": "respuesta o null",
-                "pool": "respuesta o null",
-                "sports_areas": "respuesta o null",
-                "study_office": "respuesta o null",
-                "has_federal_license": true/false/null,
-                "federal_license_number": "número o null",
-                "medical_folio": "folio o null",
-                "license_validity": "vigencia o null",
-                "license_type": "tipo o null",
-                "evidence_sent": "evidencias enviadas o null"
-            }}"""
+            Ejemplo de respuesta correcta:
+            {{"candidate_name": "Juan Pérez", "phone_whatsapp": "5551234567", "email": "juan@example.com"}}
+            
+            Responde SOLO con el JSON, sin markdown ni explicaciones:"""
+        
+        print("[AUDIT] Calling Gemini API...")
 
         # Call Gemini API
-        response = client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=[{"role": "user", "parts": [{"text": extraction_prompt}]}],
-            config={
-                "temperature": 0.1,
-                "max_output_tokens": 2000
-            }
-        )
+        try:
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=[{"role": "user", "parts": [{"text": extraction_prompt}]}],
+                config={
+                    "temperature": 0.1,
+                    "max_output_tokens": 4096  # CHANGED from 2000 to 4096
+                }
+            )
+            print("[AUDIT] Gemini API response received successfully")
+        except Exception as api_error:
+            print(f"[AUDIT ERROR] Gemini API Error: {str(api_error)}")
+            raise HTTPException(status_code=500, detail=f"Gemini API Error: {str(api_error)}")
         
         # Parse JSON response
         import json
         import re
         
         response_text = response.text.strip()
+        print(f"[AUDIT] Raw response length: {len(response_text)} chars")
         
         # Remove markdown code blocks if present
         response_text = re.sub(r'^```json\s*', '', response_text)
         response_text = re.sub(r'^```\s*', '', response_text)
         response_text = re.sub(r'\s*```$', '', response_text)
+        response_text = response_text.strip()
+
+        print(f"[AUDIT] Cleaned response length: {len(response_text)} chars")
+        print(f"[AUDIT] About to parse JSON...")
         
-        extracted_data = json.loads(response_text)
+        try:
+            extracted_data = json.loads(response_text)
+            print(f"[AUDIT] Successfully parsed JSON with {len(extracted_data)} fields")
+            print(f"[AUDIT] Fields: {list(extracted_data.keys())[:10]}...")  # Print first 10 keys
+        except json.JSONDecodeError as json_err:
+            print(f"[AUDIT ERROR] JSON parsing failed: {str(json_err)}")
+            print(f"[AUDIT ERROR] Full response text:\n{response_text}")
+            raise HTTPException(status_code=500, detail=f"Error parsing AI response: {str(json_err)}")
         
         # Update survey with extracted data (only non-null values)
         update_data = {k: v for k, v in extracted_data.items() if v is not None}
         
+        print(f"[AUDIT] Preparing to update {len(update_data)} fields")
+        print(f"[AUDIT] Fields to update: {list(update_data.keys())[:10]}...")
+        
         if update_data:
-            survey_crud.update_survey_field(db, session_id, **update_data)
+            try:
+                survey_crud.update_survey_field(db, session_id, **update_data)
+                print(f"[AUDIT] Successfully updated database")
+            except Exception as db_error:
+                print(f"[AUDIT ERROR] Database update failed: {str(db_error)}")
+                import traceback
+                traceback.print_exc()
+                raise HTTPException(status_code=500, detail=f"Database update error: {str(db_error)}")
+        
+        print("[AUDIT] Audit completed successfully!")
         
         return {
             "message": "Audit completed successfully",
@@ -696,9 +673,10 @@ async def audit_survey_conversation(session_id: str, db: Session = Depends(get_d
             "extracted_data": update_data
         }
         
-    except json.JSONDecodeError as e:
-        raise HTTPException(status_code=500, detail=f"Error parsing AI response: {str(e)}")
+    except HTTPException:
+        raise  # Re-raise HTTP exceptions as-is
     except Exception as e:
+        print(f"[AUDIT ERROR] Unexpected error: {str(e)}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error during audit: {str(e)}")
@@ -737,6 +715,7 @@ async def get_all_surveys(db: Session = Depends(get_db)):
             {
                 "session_id": s.session_id,
                 "candidate_name": s.candidate_name,
+                "company_name": s.company_name,
                 "current_section": s.current_section,
                 "survey_completed": s.survey_completed,
                 "created_at": s.created_at.isoformat(),
@@ -788,6 +767,7 @@ async def get_survey_by_id(session_id: str, db: Session = Depends(get_db)):
     return {
         "session_id": survey.session_id,
         "candidate_name": survey.candidate_name,
+        "company_name": survey.company_name,
         "user_ip": survey.user_ip,
         "geo_country": geo_data.get('country') if geo_data else None,
         "geo_region": geo_data.get('regionName') if geo_data else None,
@@ -1017,33 +997,16 @@ async def survey_chat(session_id: str = Form(...),message: str = Form(...),ip_ad
         current_section = "Inicio"
         conversation_count = len(history)
         if conversation_count >= 1: current_section = "A-Bienvenida"
-        if conversation_count >= 2: current_section = "B-Datos Básicos"
-        if conversation_count >= 6: current_section = "C-Documentos"
-        if conversation_count >= 10: current_section = "D-Referencias"
-        if conversation_count >= 12: current_section = "E-Gastos"
-        if conversation_count >= 15: current_section = "F-Bienes"
-        if conversation_count >= 17: current_section = "G-Deudas"
-        if conversation_count >= 19: current_section = "H-Familia"
-        if conversation_count >= 28: current_section = "I-Antecedentes"
-        if conversation_count >= 30: current_section = "J-Evidencias"
-        if conversation_count >= 35: current_section = "K-Cierre"
-        
-        # Update current section in database
-        survey_crud.update_survey_field(db, session_id, current_section=current_section)
-
-        current_section = "Inicio"
-        conversation_count = len(history)
-        if conversation_count >= 1: current_section = "A-Bienvenida"
-        if conversation_count >= 2: current_section = "B-Datos Básicos"
-        if conversation_count >= 6: current_section = "C-Documentos"
-        if conversation_count >= 10: current_section = "D-Referencias"
-        if conversation_count >= 12: current_section = "E-Gastos"
-        if conversation_count >= 15: current_section = "F-Bienes"
-        if conversation_count >= 17: current_section = "G-Deudas"
-        if conversation_count >= 19: current_section = "H-Familia"
-        if conversation_count >= 28: current_section = "I-Antecedentes"
-        if conversation_count >= 30: current_section = "J-Evidencias"
-        if conversation_count >= 35: current_section = "K-Cierre"
+        if conversation_count >= 3: current_section = "B-Datos Básicos"
+        if conversation_count >= 7: current_section = "C-Documentos"
+        if conversation_count >= 11: current_section = "D-Referencias"
+        if conversation_count >= 13: current_section = "E-Gastos"
+        if conversation_count >= 16: current_section = "F-Bienes"
+        if conversation_count >= 18: current_section = "G-Deudas"
+        if conversation_count >= 20: current_section = "H-Familia"
+        if conversation_count >= 29: current_section = "I-Antecedentes"
+        if conversation_count >= 31: current_section = "J-Evidencias"
+        if conversation_count >= 36: current_section = "K-Cierre"
         
         # Update current section in database
         survey_crud.update_survey_field(db, session_id, current_section=current_section)
@@ -1060,12 +1023,13 @@ async def survey_chat(session_id: str = Form(...),message: str = Form(...),ip_ad
             ORDEN DE LA ENCUESTA (SEGUIR ESTRICTAMENTE):
 
             A) BIENVENIDA E INTRODUCCIÓN:
-            0. " Perfecto, vamos a comenzar con la encuesta. Soy el asistente virtual Petrof y te voy a estar guiando a través del proceso. Por favor responde lo más cercano a la verdad para que podamos completar esta prueba exitosamente."
-            1. "¿Para qué empresa o compañía estás aplicando?"
+            0. "Perfecto, vamos a comenzar con la encuesta. Soy el asistente virtual Clippy y te voy a estar guiando a través del proceso. Por favor responde lo más cercano a la verdad para que podamos completar esta prueba exitosamente."
+            1. "¿Qué empresa está pidiendo tu certification y qué puesto es para certificar?"
             
-            B) DATOS PERSONALES BÁSICOS:
-            1. Nombre completo (apellidos y nombres)
-            2. Fecha y lugar de nacimiento (o donde te hayan registrado)
+            DATOS PERSONALES BÁSICOS:
+            2. Nombre completo (apellidos y nombres)
+            3. Fecha y lugar de nacimiento (o donde te hayan registrado)
+
             3. Correo electrónico
             4. Teléfono celular donde tengas habilitados mensajes electrónicos
 
@@ -1163,8 +1127,10 @@ async def survey_chat(session_id: str = Form(...),message: str = Form(...),ip_ad
         bot_response_lower = bot_response.lower()
 
         # Detect name in first message
-        if not survey.candidate_name and len(history) == 0:
-            survey_crud.update_survey_field(db, session_id, candidate_name=message.strip())
+        if "empresa" in bot_response_lower or "compañía" in bot_response_lower:
+            if "aplicando" in bot_response_lower or "trabajar" in bot_response_lower:
+                survey_crud.update_survey_field(db, session_id, company_name=message.strip())
+
 
         # Extract data based on bot's last question context
         # Check what the bot just asked to know what data we're receiving
