@@ -119,6 +119,7 @@ SYSTEM_PROMPT = f"""Eres Petrof, asistente de reclutamiento de 6Cias.
 
     Vacantes disponibles:
     - {jobs_list}
+    Note: si el candidato menciona un trabajo que no figura en la lista, se limita a la entrevista, obviamente, surgen preguntas como "¿Qué te pareció más llamativo de la vacante y te interesó?" (porque no hay listado para ese puesto)
 
     IMPORTANTE - Orden de la entrevista:
     1. PRIMERO: Pregunta qué puesto de trabajo están solicitando
@@ -1470,6 +1471,8 @@ async def create_job(request: dict):
 
             Vacantes disponibles:
             - {jobs_list}
+            Note: si el candidato menciona un trabajo que no figura en la lista, se limita a la entrevista, obviamente, surgen preguntas como "¿Qué te pareció más llamativo de la vacante y te interesó?" (porque no hay listado para ese puesto)
+
 
             IMPORTANTE - Orden de la entrevista:
             1. PRIMERO: Pregunta qué puesto de trabajo están solicitando
@@ -1555,6 +1558,7 @@ async def delete_job(filename: str):
 
             Vacantes disponibles:
             - {jobs_list}
+            Note: si el candidato menciona un trabajo que no figura en la lista, se limita a la entrevista, obviamente, surgen preguntas como "¿Qué te pareció más llamativo de la vacante y te interesó?" (porque no hay listado para ese puesto)
 
             IMPORTANTE - Orden de la entrevista:
             1. PRIMERO: Pregunta qué puesto de trabajo están solicitando
