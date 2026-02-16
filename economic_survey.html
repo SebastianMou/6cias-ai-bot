@@ -166,6 +166,7 @@
             align-items: center;
             gap: 10px;
             border-radius: 10px 10px 0 0;
+            position: relative;  /* ADD THIS LINE */
         }
 
         #bot-avatar {
@@ -691,9 +692,38 @@
     </style>
 
     <script>
-        // Generate unique session ID for this user
-        const sessionId = 'survey_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        const API_URL = window.location.origin;
+        // Cookie management functions
+        function setCookie(name, value, days) {
+            const expires = new Date();
+            expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+            document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+        }
+
+        function getCookie(name) {
+            const nameEQ = name + "=";
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                let cookie = cookies[i].trim();
+                if (cookie.indexOf(nameEQ) === 0) {
+                    return cookie.substring(nameEQ.length);
+                }
+            }
+            return null;
+        }
+
+        function generateSessionId() {
+            return 'survey_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        // Get or create session ID from cookie
+        let sessionId = getCookie('survey_session_id');
+        if (!sessionId) {
+            sessionId = generateSessionId();
+            setCookie('survey_session_id', sessionId, 30); // Cookie expires in 30 days
+            console.log('✅ New session created:', sessionId);
+        } else {
+            console.log('✅ Resuming existing session:', sessionId);
+        }        const API_URL = window.location.origin;
 
         let currentProgress = 0;
         const TOTAL_SECTIONS = 8; // 7.1, 7.2, 7.3, 7.4, 8.0, 9.0, 9.1
@@ -743,6 +773,273 @@
         function getCurrentTime() {
             const now = new Date();
             return now.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Connection monitoring
+        let connectionQuality = 'good';
+        let lastConnectionCheck = Date.now();
+
+        // Function to check connection speed and quality
+        async function checkConnectionQuality() {
+            if (!navigator.onLine) {
+                return {
+                    status: 'offline',
+                    quality: 'sin conexión',
+                    speed: 0,
+                    effectiveType: 'offline'
+                };
+            }
+            
+            // Get connection info from browser API
+            const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            
+            let quality = 'buena';
+            let status = 'online';
+            let effectiveType = 'unknown';
+            let downlink = 0;
+            
+            if (connection) {
+                effectiveType = connection.effectiveType; // '4g', '3g', '2g', 'slow-2g'
+                downlink = connection.downlink; // Mbps
+                
+                // Determine quality based on effective type and speed
+                if (effectiveType === 'slow-2g' || downlink < 0.5) {
+                    quality = 'muy baja';
+                    status = 'poor';
+                } else if (effectiveType === '2g' || downlink < 1) {
+                    quality = 'baja';
+                    status = 'poor';
+                } else if (effectiveType === '3g' || downlink < 3) {
+                    quality = 'regular';
+                    status = 'moderate';
+                } else {
+                    quality = 'buena';
+                    status = 'good';
+                }
+            }
+            
+            return {
+                status: status,
+                quality: quality,
+                speed: downlink,
+                effectiveType: effectiveType,
+                rtt: connection?.rtt || 0, // Round-trip time (latency)
+                saveData: connection?.saveData || false
+            };
+        }
+
+        // Function to update connection indicator in UI
+        function updateConnectionIndicator(connectionData) {
+            let indicator = document.getElementById('connection-indicator');
+            
+            if (!indicator) {
+                // Create indicator if it doesn't exist
+                indicator = document.createElement('div');
+                indicator.id = 'connection-indicator';
+                indicator.style.cssText = `
+                    position: absolute;
+                    top: 10px;
+                    right: 10px;
+                    background: rgba(255, 255, 255, 0.2);
+                    padding: 5px 10px;
+                    border-radius: 15px;
+                    font-size: 10px;
+                    opacity: 0.8;
+                    display: flex;
+                    align-items: center;
+                    gap: 5px;
+                `;
+                document.getElementById('chatbot-header').style.position = 'relative';
+                document.getElementById('chatbot-header').appendChild(indicator);
+            }
+            
+            // Update indicator based on connection quality
+            let icon = '📶';
+            let color = '#4CAF50'; // Green
+            
+            if (connectionData.status === 'offline') {
+                icon = '📵';
+                color = '#f44336'; // Red
+            } else if (connectionData.status === 'poor') {
+                icon = '📶';
+                color = '#ff9800'; // Orange
+            } else if (connectionData.status === 'moderate') {
+                icon = '📶';
+                color = '#FFC107'; // Yellow
+            }
+            
+            indicator.innerHTML = `
+                <span style="filter: grayscale(${connectionData.status === 'good' ? '0%' : '50%'});">${icon}</span>
+                <span style="color: white; font-weight: 500;">${connectionData.quality}</span>
+            `;
+            indicator.style.background = color;
+            indicator.title = `Conexión: ${connectionData.quality}\nVelocidad: ${connectionData.speed} Mbps\nTipo: ${connectionData.effectiveType}\nLatencia: ${connectionData.rtt}ms`;
+        }
+
+        // Function to send connection data to backend
+        async function sendConnectionData(connectionData) {
+            try {
+                const formData = new FormData();
+                formData.append('session_id', sessionId);
+                formData.append('connection_quality', connectionData.quality);
+                formData.append('connection_speed', connectionData.speed);
+                formData.append('connection_type', connectionData.effectiveType);
+                formData.append('latency', connectionData.rtt || 0);
+                formData.append('event_type', connectionData.event_type || 'quality_check');  // ADD THIS
+                
+                await fetch(`${API_URL}/survey/connection-log`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                console.log('📊 Connection data logged:', connectionData);
+            } catch (error) {
+                console.error('Error logging connection:', error);
+            }
+        }
+        
+        // Monitor connection continuously
+        async function startConnectionMonitoring() {
+            // Check immediately
+            const connectionData = await checkConnectionQuality();
+            updateConnectionIndicator(connectionData);
+            
+            // Send to backend every 30 seconds
+            setInterval(async () => {
+                const data = await checkConnectionQuality();
+                updateConnectionIndicator(data);
+                
+                // Only send to backend if connection changed or every 2 minutes
+                const now = Date.now();
+                if (data.status !== connectionQuality || now - lastConnectionCheck > 120000) {
+                    await sendConnectionData(data);
+                    connectionQuality = data.status;
+                    lastConnectionCheck = now;
+                }
+            }, 30000); // Check every 30 seconds
+        }
+
+        // Listen for online/offline events
+        window.addEventListener('online', async () => {
+            console.log('✅ Conexión restaurada');
+            const data = await checkConnectionQuality();
+            updateConnectionIndicator(data);
+            
+            // Log the online event to backend
+            await sendConnectionData({
+                ...data,
+                event_type: 'online'
+            });
+            
+            // Show notification
+            const chatMessages = document.getElementById('chat-messages');
+            const notification = document.createElement('div');
+            notification.className = 'message bot-message';
+            notification.innerHTML = `
+                <div class="message-content" style="background: #d4edda; border-left: 3px solid #28a745;">
+                    <strong>Sistema</strong>
+                    <p>✅ Conexión a internet restaurada</p>
+                    <div class="timestamp">${getCurrentTime()}</div>
+                </div>
+            `;
+            chatMessages.appendChild(notification);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        });
+
+        window.addEventListener('offline', async () => {
+            console.log('❌ Sin conexión a internet');
+            updateConnectionIndicator({ status: 'offline', quality: 'sin conexión', speed: 0, effectiveType: 'offline', rtt: 0 });
+            
+            // Log the offline event to backend
+            await sendConnectionData({
+                status: 'offline',
+                quality: 'sin conexión',
+                speed: 0,
+                effectiveType: 'offline',
+                rtt: 0,
+                event_type: 'offline'
+            });
+            
+            // Show notification
+            const chatMessages = document.getElementById('chat-messages');
+            const notification = document.createElement('div');
+            notification.className = 'message bot-message';
+            notification.innerHTML = `
+                <div class="message-content" style="background: #f8d7da; border-left: 3px solid #dc3545;">
+                    <strong>Sistema</strong>
+                    <p>⚠️ Sin conexión a internet. Por favor, verifica tu conexión.</p>
+                    <div class="timestamp">${getCurrentTime()}</div>
+                </div>
+            `;
+            chatMessages.appendChild(notification);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        });
+
+        window.addEventListener('offline', () => {
+            console.log('❌ Sin conexión a internet');
+            updateConnectionIndicator({ status: 'offline', quality: 'sin conexión', speed: 0, effectiveType: 'offline', rtt: 0 });
+            
+            // Show notification
+            const chatMessages = document.getElementById('chat-messages');
+            const notification = document.createElement('div');
+            notification.className = 'message bot-message';
+            notification.innerHTML = `
+                <div class="message-content" style="background: #f8d7da; border-left: 3px solid #dc3545;">
+                    <strong>Sistema</strong>
+                    <p>⚠️ Sin conexión a internet. Por favor, verifica tu conexión.</p>
+                    <div class="timestamp">${getCurrentTime()}</div>
+                </div>
+            `;
+            chatMessages.appendChild(notification);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        });
+
+        async function loadConversationHistory(sessionId) {
+            try {
+                const response = await fetch(`${API_URL}/survey/${sessionId}/conversation`);
+                
+                if (!response.ok) {
+                    console.log('No conversation history found');
+                    return;
+                }
+                
+                const data = await response.json();
+                const chatMessages = document.getElementById('chat-messages');
+                
+                // Clear the initial welcome message
+                chatMessages.innerHTML = '';
+                
+                // Add each conversation turn
+                data.conversations.forEach(conv => {
+                    // Add user message
+                    const userMessageDiv = document.createElement('div');
+                    userMessageDiv.className = 'message user-message';
+                    userMessageDiv.innerHTML = `
+                        <div class="message-content">
+                            ${conv.user_message}
+                            <div class="timestamp">${new Date(conv.created_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</div>
+                        </div>
+                    `;
+                    chatMessages.appendChild(userMessageDiv);
+                    
+                    // Add bot message
+                    const botMessageDiv = document.createElement('div');
+                    botMessageDiv.className = 'message bot-message';
+                    botMessageDiv.innerHTML = `
+                        <div class="message-content">
+                            <strong>Asistente</strong>
+                            <p>${conv.bot_response}</p>
+                            <div class="timestamp">${new Date(conv.created_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</div>
+                        </div>
+                    `;
+                    chatMessages.appendChild(botMessageDiv);
+                });
+                
+                console.log(`✅ Loaded ${data.conversations.length} previous messages`);
+                
+            } catch (error) {
+                console.error('Error loading conversation history:', error);
+            }
         }
 
         // Function to send message
@@ -922,6 +1219,61 @@
             
             // Send initial greeting
             sendMessage();
+            
+            // START CONNECTION MONITORING - ADD THIS LINE
+            startConnectionMonitoring();
+        });
+
+        // Check if user has an existing session when page loads
+        window.addEventListener('DOMContentLoaded', async function() {
+            const existingSessionId = getCookie('survey_session_id');
+            
+            if (existingSessionId) {
+                // Check if this session has data in the backend
+                try {
+                    const response = await fetch(`${API_URL}/survey/${existingSessionId}`);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        
+                        // If survey has data, automatically resume
+                        // If survey has data, automatically resume
+                        if (data.candidate_name || data.current_section) {
+                            userIpAddress = await getUserIpAddress();
+                            document.getElementById('terms-modal').style.display = 'none';
+                            
+                            // Load conversation history
+                            await loadConversationHistory(existingSessionId);
+                            
+                            // Show a welcome back message
+                            const chatMessages = document.getElementById('chat-messages');
+                            const welcomeBack = document.createElement('div');
+                            welcomeBack.className = 'message bot-message';
+                            welcomeBack.innerHTML = `
+                                <div class="message-content">
+                                    <strong>Asistente</strong>
+                                    <p>¡Bienvenido de vuelta! Continuaremos donde lo dejamos.</p>
+                                    <div class="timestamp">${getCurrentTime()}</div>
+                                </div>
+                            `;
+                            chatMessages.appendChild(welcomeBack);
+                            chatMessages.scrollTop = chatMessages.scrollHeight;
+                            
+                            // Update progress from survey data
+                            if (data.progress !== undefined) {
+                                updateProgressCounter(data.progress);
+                            }
+                            
+                            console.log('✅ Auto-resumed session:', existingSessionId);
+                            
+                            // START CONNECTION MONITORING - ADD THIS LINE
+                            startConnectionMonitoring();
+                        }
+                    }
+                } catch (error) {
+                    console.log('ℹ️ No existing session data found');
+                }
+            }
         });
 
         // File handling

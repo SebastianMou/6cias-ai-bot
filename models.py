@@ -254,3 +254,25 @@ class SurveyFile(Base):
     file_type = Column(String(50), nullable=True)  # image/pdf/document
     file_size = Column(Integer, nullable=True)  # in bytes
     uploaded_at = Column(DateTime, default=datetime.utcnow)
+
+class SurveyPrompt(Base):
+    __tablename__ = "survey_prompts"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    prompt_name = Column(String(100), default="clippy_system_prompt")
+    prompt_content = Column(Text, nullable=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class ConnectionLog(Base):
+    __tablename__ = "connection_logs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(String(100), index=True, nullable=False)
+    connection_quality = Column(String(50), nullable=True)  # buena/regular/baja/muy baja/sin conexión
+    connection_speed = Column(String(50), nullable=True)  # Mbps
+    connection_type = Column(String(50), nullable=True)  # 4g/3g/2g/offline
+    latency = Column(Integer, nullable=True)  # milliseconds
+    event_type = Column(String(50), nullable=True)  # online/offline/quality_change
+    created_at = Column(DateTime, default=datetime.utcnow)

@@ -13,11 +13,12 @@ import survey_crud
 import httpx
 from config import settings
 from database import engine, get_db, Base
-from models import Conversation, Candidate, InterviewQuestion, SystemSettings, SurveyResponse, SurveyConversation
+from models import Conversation, Candidate, InterviewQuestion, SystemSettings, SurveyResponse, SurveyConversation, ConnectionLog
 from schemas import (
     ChatRequest, ChatResponse, ChatHistoryResponse,
     ConversationCreate, CandidateCreate
 )
+from models import ConnectionLog
 import crud
 from datetime import datetime
 import os
@@ -183,10 +184,16 @@ class SurveyConversationAdmin(ModelView, model=SurveyConversation):
     name = "Conversación de Encuesta"
     name_plural = "Conversaciones de Encuestas"
 
+class ConnectionLogAdmin(ModelView, model=ConnectionLog):
+    column_list = [ConnectionLog.id, ConnectionLog.session_id, ConnectionLog.connection_quality, ConnectionLog.event_type, ConnectionLog.created_at]
+    name = "Log de Conexión"
+    name_plural = "Logs de Conexión"
+
 admin.add_view(SurveyConversationAdmin)
 admin.add_view(SurveyResponseAdmin)
 admin.add_view(CandidateAdmin)
 admin.add_view(ConversationAdmin)
+admin.add_view(ConnectionLogAdmin)  
 
 @app.get("/")
 async def root():
@@ -697,63 +704,110 @@ async def survey_detail():
 
 @app.get("/survey/all")
 async def get_all_surveys(db: Session = Depends(get_db)):
-    """Get all survey responses with statistics"""
-    from datetime import datetime
+    """Get all surveys with statistics"""
+    try:
+        from models import ConnectionLog
+        
+        surveys = db.query(SurveyResponse).order_by(SurveyResponse.created_at.desc()).all()
+        
+        total = len(surveys)
+        completed = sum(1 for s in surveys if s.survey_completed)
+        in_progress = sum(1 for s in surveys if s.current_section and not s.survey_completed)
+        
+        # Today's surveys
+        today = datetime.utcnow().date()
+        today_count = sum(1 for s in surveys if s.created_at.date() == today)
+        
+        # Format surveys with connection data
+        formatted_surveys = []
+        for survey in surveys:
+            try:
+                # Get connection stats for this survey
+                connection_logs = db.query(ConnectionLog).filter(
+                    ConnectionLog.session_id == survey.session_id
+                ).order_by(ConnectionLog.created_at.desc()).all()
+                
+                # Calculate connection stats
+                total_logs = len(connection_logs)
+                offline_count = sum(1 for log in connection_logs if log.event_type == 'offline')
+                poor_quality_count = sum(1 for log in connection_logs if log.connection_quality in ['muy baja', 'baja'])
+                
+                # Get latest connection status
+                latest_connection = connection_logs[0] if connection_logs else None
+                
+                connection_stats = {
+                    "total_checks": total_logs,
+                    "offline_events": offline_count,
+                    "poor_quality_count": poor_quality_count,
+                    "latest_quality": latest_connection.connection_quality if latest_connection else "desconocida",
+                    "latest_speed": latest_connection.connection_speed if latest_connection else "N/A",
+                    "has_issues": offline_count > 0 or poor_quality_count > 2
+                }
+            except Exception as e:
+                print(f"Error getting connection stats for {survey.session_id}: {e}")
+                connection_stats = {
+                    "total_checks": 0,
+                    "offline_events": 0,
+                    "poor_quality_count": 0,
+                    "latest_quality": "desconocida",
+                    "latest_speed": "N/A",
+                    "has_issues": False
+                }
+            
+            formatted_surveys.append({
+                "session_id": survey.session_id,
+                "candidate_name": survey.candidate_name,
+                "company_name": survey.company_name,
+                "current_section": survey.current_section,
+                "survey_completed": survey.survey_completed,
+                "created_at": survey.created_at.isoformat() if survey.created_at else None,
+                "updated_at": survey.updated_at.isoformat() if survey.updated_at else None,
+                "date_of_birth": survey.date_of_birth,
+                "phone_whatsapp": survey.phone_whatsapp,
+                "email": survey.email,
+                "full_address": survey.full_address,
+                "housing_type": survey.housing_type,
+                "lives_with": survey.lives_with,
+                "real_estate": survey.real_estate,
+                "vehicles": survey.vehicles,
+                "businesses": survey.businesses,
+                "formal_savings": survey.formal_savings,
+                "debts": survey.debts,
+                "credit_bureau": survey.credit_bureau,
+                "education_level": survey.education_level,
+                "position_applying": survey.position_applying,
+                "organization": survey.organization,
+                "current_employment": survey.current_employment,
+                "salary_bonus": survey.salary_bonus,
+                "expenses_list": survey.expenses_list,
+                "expenses_amounts": survey.expenses_amounts,
+                "has_medical_condition": survey.has_medical_condition,
+                "primary_family_contacts": survey.primary_family_contacts,
+                "work_references": survey.work_references,
+                "personal_reference": survey.personal_reference,
+                "home_references": survey.home_references,
+                "crime_in_area": survey.crime_in_area,
+                "bedrooms": survey.bedrooms,
+                "has_federal_license": survey.has_federal_license,
+                "evidence_sent": survey.evidence_sent,
+                
+                # ADD CONNECTION DATA HERE
+                "connection_stats": connection_stats
+            })
+        
+        return {
+            "total": total,
+            "completed": completed,
+            "in_progress": in_progress,
+            "today": today_count,
+            "surveys": formatted_surveys
+        }
     
-    surveys = db.query(SurveyResponse).order_by(SurveyResponse.created_at.desc()).all()
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
     
-    today = datetime.utcnow().date()
-    today_count = len([s for s in surveys if s.created_at.date() == today])
-    completed_count = len([s for s in surveys if s.survey_completed])
-    in_progress_count = len([s for s in surveys if s.current_section and not s.survey_completed])
-    
-    return {
-        "total": len(surveys),
-        "completed": completed_count,
-        "in_progress": in_progress_count,
-        "today": today_count,
-        "surveys": [
-            {
-                "session_id": s.session_id,
-                "candidate_name": s.candidate_name,
-                "company_name": s.company_name,
-                "current_section": s.current_section,
-                "survey_completed": s.survey_completed,
-                "created_at": s.created_at.isoformat(),
-                "updated_at": s.updated_at.isoformat(),
-                "date_of_birth": s.date_of_birth,
-                "phone_whatsapp": s.phone_whatsapp,
-                "email": s.email,
-                "full_address": s.full_address,
-                "housing_type": s.housing_type,
-                "lives_with": s.lives_with,
-                "real_estate": s.real_estate,
-                "vehicles": s.vehicles,
-                "businesses": s.businesses,
-                "formal_savings": s.formal_savings,
-                "debts": s.debts,
-                "credit_bureau": s.credit_bureau,
-                "education_level": s.education_level,
-                "position_applying": s.position_applying,
-                "organization": s.organization,
-                "current_employment": s.current_employment,
-                "salary_bonus": s.salary_bonus,
-                "expenses_list": s.expenses_list,
-                "expenses_amounts": s.expenses_amounts,
-                "has_medical_condition": s.has_medical_condition,
-                "primary_family_contacts": s.primary_family_contacts,
-                "work_references": s.work_references,
-                "personal_reference": s.personal_reference,
-                "home_references": s.home_references,
-                "crime_in_area": s.crime_in_area,
-                "bedrooms": s.bedrooms,
-                "has_federal_license": s.has_federal_license,
-                "evidence_sent": s.evidence_sent,
-            }
-            for s in surveys
-        ]
-    }
-
 @app.get("/survey/{session_id}")
 async def get_survey_by_id(session_id: str, db: Session = Depends(get_db)):
     """Get a specific survey response"""
@@ -1014,8 +1068,16 @@ async def survey_chat(session_id: str = Form(...),message: str = Form(...),ip_ad
         # Update current section in database
         survey_crud.update_survey_field(db, session_id, current_section=current_section)
         
-        # System prompt for economic survey
-        system_prompt = f"""Eres Clippy, un asistente virtual de verificación socioeconómica para 6Cias. Tu objetivo es recopilar información y evidencias de forma clara, ordenada y respetuosa, para completar la certificación de ingreso a un puesto de confianza.
+        # Get system prompt from database or use default
+        prompt_setting = db.query(SystemSettings).filter(
+            SystemSettings.setting_key == "survey_system_prompt"
+        ).first()
+        
+        if prompt_setting and prompt_setting.setting_value:
+            system_prompt = prompt_setting.setting_value
+        else:
+            # Default prompt if not found in database
+            system_prompt = f"""Eres Clippy, un asistente virtual de verificación socioeconómica para 6Cias. Tu objetivo es recopilar información y evidencias de forma clara, ordenada y respetuosa, para completar la certificación de ingreso a un puesto de confianza.
 
             REGLAS GENERALES:
             - Haz preguntas una por una y espera respuesta antes de seguir
@@ -1864,6 +1926,186 @@ async def get_survey_file(session_id: str, file_id: str, db: Session = Depends(g
         raise HTTPException(status_code=404, detail="File not found on disk")
     
     return FileResponse(file_path)
+
+@app.get("/api/settings/survey_prompt")
+async def get_survey_prompt(db: Session = Depends(get_db)):
+    """Get the current survey system prompt"""
+    try:
+        setting = db.query(SystemSettings).filter(
+            SystemSettings.setting_key == "survey_system_prompt"
+        ).first()
+        
+        if setting:
+            return {"prompt": setting.setting_value}
+        else:
+            # Return default prompt if not found
+            return {"prompt": "DEFAULT_PROMPT_NOT_SET"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/settings/survey_prompt")
+async def update_survey_prompt(request: dict, db: Session = Depends(get_db)):
+    """Update the survey system prompt"""
+    try:
+        prompt = request.get("prompt", "")
+        
+        if not prompt:
+            raise HTTPException(status_code=400, detail="Prompt cannot be empty")
+        
+        setting = db.query(SystemSettings).filter(
+            SystemSettings.setting_key == "survey_system_prompt"
+        ).first()
+        
+        if setting:
+            setting.setting_value = prompt
+            setting.updated_at = datetime.utcnow()
+        else:
+            setting = SystemSettings(
+                setting_key="survey_system_prompt",
+                setting_value=prompt
+            )
+            db.add(setting)
+        
+        db.commit()
+        db.refresh(setting)
+        
+        return {"message": "Survey prompt updated successfully", "prompt": prompt}
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/survey/connection-log")
+async def log_connection(
+    session_id: str = Form(...),
+    connection_quality: str = Form(...),
+    connection_speed: float = Form(0),
+    connection_type: str = Form(...),
+    latency: int = Form(0),
+    event_type: str = Form("quality_check"),
+    db: Session = Depends(get_db)
+):
+    """Log user connection quality for monitoring"""
+    try:
+        from models import ConnectionLog
+        
+        # Create connection log entry
+        connection_log = ConnectionLog(
+            session_id=session_id,
+            connection_quality=connection_quality,
+            connection_speed=str(connection_speed),
+            connection_type=connection_type,
+            latency=latency,
+            event_type=event_type
+        )
+        db.add(connection_log)
+        db.commit()
+        
+        # Also update the survey's IP and add a note about connection issues
+        survey = survey_crud.get_survey_by_session(db, session_id)
+        if survey and connection_quality in ['muy baja', 'baja', 'sin conexión']:
+            # Log connection problems
+            existing_notes = survey.notes or ""
+            timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M")
+            new_note = f"\n[{timestamp}] ⚠️ Conexión {connection_quality} ({connection_type}, {connection_speed} Mbps)"
+            survey_crud.update_survey_field(db, session_id, notes=existing_notes + new_note)
+        
+        print(f"📊 [CONNECTION LOG] Session: {session_id} | Quality: {connection_quality} | Speed: {connection_speed} Mbps | Type: {connection_type} | Latency: {latency}ms | Event: {event_type}")
+        
+        return {"message": "Connection logged successfully"}
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print(f"❌ Error logging connection: {e}")
+        return {"message": "Error logging connection"}
+    
+@app.get("/survey/{session_id}/connection-history")
+async def get_connection_history(session_id: str, db: Session = Depends(get_db)):
+    """Get connection history for a survey session"""
+    from models import ConnectionLog
+    
+    logs = db.query(ConnectionLog).filter(
+        ConnectionLog.session_id == session_id
+    ).order_by(ConnectionLog.created_at.desc()).limit(50).all()
+    
+    return {
+        "logs": [
+            {
+                "id": log.id,
+                "quality": log.connection_quality,
+                "speed": log.connection_speed,
+                "type": log.connection_type,
+                "latency": log.latency,
+                "event": log.event_type,
+                "timestamp": log.created_at.isoformat()
+            }
+            for log in logs
+        ]
+    }
+
+@app.get("/survey/all")
+async def get_all_surveys(db: Session = Depends(get_db)):
+    """Get all surveys with statistics"""
+    from models import ConnectionLog
+    
+    surveys = db.query(SurveyResponse).order_by(SurveyResponse.created_at.desc()).all()
+    
+    total = len(surveys)
+    completed = sum(1 for s in surveys if s.survey_completed)
+    in_progress = sum(1 for s in surveys if s.current_section and not s.survey_completed)
+    
+    # Today's surveys
+    today = datetime.utcnow().date()
+    today_count = sum(1 for s in surveys if s.created_at.date() == today)
+    
+    # Format surveys with connection data
+    formatted_surveys = []
+    for survey in surveys:
+        # Get connection stats for this survey
+        connection_logs = db.query(ConnectionLog).filter(
+            ConnectionLog.session_id == survey.session_id
+        ).order_by(ConnectionLog.created_at.desc()).all()
+        
+        # Calculate connection stats
+        total_logs = len(connection_logs)
+        offline_count = sum(1 for log in connection_logs if log.event_type == 'offline')
+        poor_quality_count = sum(1 for log in connection_logs if log.connection_quality in ['muy baja', 'baja'])
+        
+        # Get latest connection status
+        latest_connection = connection_logs[0] if connection_logs else None
+        
+        formatted_surveys.append({
+            "id": survey.id,
+            "session_id": survey.session_id,
+            "candidate_name": survey.candidate_name,
+            "email": survey.email,
+            "phone_whatsapp": survey.phone_whatsapp,
+            "current_section": survey.current_section,
+            "survey_completed": survey.survey_completed,
+            "created_at": survey.created_at.isoformat() if survey.created_at else None,
+            "updated_at": survey.updated_at.isoformat() if survey.updated_at else None,
+            
+            # ADD CONNECTION DATA
+            "connection_stats": {
+                "total_checks": total_logs,
+                "offline_events": offline_count,
+                "poor_quality_count": poor_quality_count,
+                "latest_quality": latest_connection.connection_quality if latest_connection else "desconocida",
+                "latest_speed": latest_connection.connection_speed if latest_connection else "N/A",
+                "has_issues": offline_count > 0 or poor_quality_count > 2
+            }
+        })
+    
+    return {
+        "total": total,
+        "completed": completed,
+        "in_progress": in_progress,
+        "today": today_count,
+        "surveys": formatted_surveys
+    }
 
 if __name__ == "__main__":
     import uvicorn

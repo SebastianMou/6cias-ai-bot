@@ -103,13 +103,13 @@
         .summary-cards {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
+            gap: 10px;
             margin-bottom: 30px;
         }
 
         .summary-card {
             background: white;
-            padding: 20px;
+            padding:15px;
             border-radius: 10px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             border-left: 4px solid #008386;
@@ -789,6 +789,673 @@
             border-bottom: 2px solid #e0e0e0;
             overflow-x: auto;
         }
+
+        .connection-log {
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid;
+            border-radius: 4px;
+            background: #f8f9fa;
+        }
+
+        .connection-log.good {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+
+        .connection-log.moderate {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+        }
+
+        .connection-log.poor {
+            border-left-color: #ff9800;
+            background: #ffe5cc;
+        }
+
+        .connection-log.offline {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+
+        .connection-log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .connection-log-quality {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .connection-log-time {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .connection-log-details {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .connection-stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+
+        .connection-stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .connection-stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+        }
+
+        :root {
+            --bg-primary: #f5f7fa;
+            --bg-secondary: #ffffff;
+            --bg-header: linear-gradient(135deg, #008386 0%, #427174 100%);
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --text-muted: #999999;
+            --border-color: #e0e0e0;
+            --shadow: rgba(0, 0, 0, 0.08);
+            --accent: #008386;
+            --accent-hover: #006668;
+            --input-bg: #ffffff;
+            --card-bg: #ffffff;
+        }
+
+        /* Dark Mode Variables */
+        [data-theme="dark"] {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --bg-header: linear-gradient(135deg, #005557 0%, #2a3a3c 100%);
+            --text-primary: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --text-muted: #888888;
+            --border-color: #3a3a3a;
+            --shadow: rgba(0, 0, 0, 0.3);
+            --accent: #00a8ab;
+            --accent-hover: #008386;
+            --input-bg: #3a3a3a;
+            --card-bg: #2d2d2d;
+        }
+
+        /* Auto Dark Mode (respects system preference) */
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) {
+                --bg-primary: #1a1a1a;
+                --bg-secondary: #2d2d2d;
+                --bg-header: linear-gradient(135deg, #005557 0%, #2a3a3c 100%);
+                --text-primary: #e0e0e0;
+                --text-secondary: #b0b0b0;
+                --text-muted: #888888;
+                --border-color: #3a3a3a;
+                --shadow: rgba(0, 0, 0, 0.3);
+                --accent: #00a8ab;
+                --accent-hover: #008386;
+                --input-bg: #3a3a3a;
+                --card-bg: #2d2d2d;
+            }
+        }
+
+        /* Apply Variables to Body */
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .header {
+            background: var(--bg-header);
+        }
+
+        /* Dark Mode Overrides */
+        [data-theme="dark"] .sidebar,
+        [data-theme="dark"] .summary-card,
+        [data-theme="dark"] .tabs-container,
+        [data-theme="dark"] .tab-content,
+        [data-theme="dark"] .data-section,
+        [data-theme="dark"] .connection-stat-card,
+        [data-theme="dark"] .file-card,
+        [data-theme="dark"] .modal-content {
+            background: var(--card-bg);
+            color: var(--text-primary);
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        [data-theme="dark"] .sidebar-label,
+        [data-theme="dark"] .summary-card h3,
+        [data-theme="dark"] .data-label,
+        [data-theme="dark"] .connection-stat-label {
+            color: var(--text-secondary);
+        }
+
+        [data-theme="dark"] .sidebar-value,
+        [data-theme="dark"] .data-value,
+        [data-theme="dark"] .summary-card .value {
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] .tabs {
+            background: var(--bg-primary);
+            border-bottom-color: var(--border-color);
+        }
+
+        [data-theme="dark"] .tab {
+            color: var(--text-secondary);
+        }
+
+        [data-theme="dark"] .tab:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] .tab.active {
+            background: var(--card-bg);
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        [data-theme="dark"] input,
+        [data-theme="dark"] textarea,
+        [data-theme="dark"] select {
+            background: var(--input-bg);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] input:focus,
+        [data-theme="dark"] textarea:focus,
+        [data-theme="dark"] select:focus {
+            border-color: var(--accent);
+        }
+
+        [data-theme="dark"] .data-item,
+        [data-theme="dark"] .sidebar-section {
+            border-bottom-color: var(--border-color);
+        }
+
+        [data-theme="dark"] .sidebar-btn {
+            background: var(--accent);
+        }
+
+        [data-theme="dark"] .sidebar-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        [data-theme="dark"] .sidebar-btn.edit {
+            background: #1e40af;
+        }
+
+        [data-theme="dark"] .sidebar-btn.edit:hover {
+            background: #2563eb;
+        }
+
+        [data-theme="dark"] .sidebar-btn.delete {
+            background: #b91c1c;
+        }
+
+        [data-theme="dark"] .sidebar-btn.delete:hover {
+            background: #dc2626;
+        }
+
+        [data-theme="dark"] .status-complete {
+            background: #1a3a2a;
+            color: #4ade80;
+        }
+
+        [data-theme="dark"] .status-in-progress {
+            background: #3a3520;
+            color: #fbbf24;
+        }
+
+        [data-theme="dark"] .status-incomplete {
+            background: #3a1a1a;
+            color: #f87171;
+        }
+
+        [data-theme="dark"] .progress-bar {
+            background: var(--border-color);
+        }
+
+        [data-theme="dark"] .message-bubble {
+            background: var(--card-bg);
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] .message-bubble.user {
+            background: var(--accent);
+            color: white;
+        }
+
+        [data-theme="dark"] .message-time {
+            color: var(--text-muted);
+        }
+
+        [data-theme="dark"] .connection-log.good {
+            background: #1a3a2a;
+            border-left-color: #28a745;
+        }
+
+        [data-theme="dark"] .connection-log.moderate {
+            background: #3a3520;
+            border-left-color: #ffc107;
+        }
+
+        [data-theme="dark"] .connection-log.poor {
+            background: #3a2a20;
+            border-left-color: #ff9800;
+        }
+
+        [data-theme="dark"] .connection-log.offline {
+            background: #3a1a1a;
+            border-left-color: #dc3545;
+        }
+
+        [data-theme="dark"] .back-btn {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        [data-theme="dark"] .back-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        /* Dark Mode Toggle Button */
+        .dark-mode-toggle {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+
+        .dark-mode-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+         /* Data Grid and Items - Force dark mode */
+        [data-theme="dark"] .data-grid {
+            background: transparent;
+            border-top-color: var(--border-color);
+        }
+
+        [data-theme="dark"] .data-item {
+            background: transparent;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        [data-theme="dark"] .data-section {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        [data-theme="dark"] .data-section h3 {
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        /* Summary Cards Grid */
+        [data-theme="dark"] .summary-cards {
+            background: transparent;
+        }
+
+        [data-theme="dark"] .summary-card {
+            background: var(--card-bg) !important;
+            color: var(--text-primary) !important;
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        [data-theme="dark"] .summary-card h3 {
+            color: var(--text-secondary) !important;
+        }
+
+        [data-theme="dark"] .summary-card .value {
+            color: var(--text-primary) !important;
+        }
+
+        [data-theme="dark"] .summary-card .sub-value {
+            color: var(--text-muted) !important;
+        }
+
+        /* Tabs Container */
+        [data-theme="dark"] .tabs-container {
+            background: var(--card-bg);
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        /* All Tab Content Panels */
+        [data-theme="dark"] .tab-content {
+            background: var(--card-bg);
+            padding: 20px;
+        }
+
+        [data-theme="dark"] #tab-info-basica,
+        [data-theme="dark"] #tab-domicilio,
+        [data-theme="dark"] #tab-patrimonial,
+        [data-theme="dark"] #tab-empleo,
+        [data-theme="dark"] #tab-finanzas,
+        [data-theme="dark"] #tab-salud,
+        [data-theme="dark"] #tab-contactos,
+        [data-theme="dark"] #tab-vivienda,
+        [data-theme="dark"] #tab-licencias,
+        [data-theme="dark"] #tab-conversacion,
+        [data-theme="dark"] #tab-connection,
+        [data-theme="dark"] #tab-archivos {
+            background: var(--bg-secondary);
+        }
+
+        /* Container */
+        [data-theme="dark"] .container {
+            background: transparent;
+        }
+
+        /* Main Content Area */
+        [data-theme="dark"] .main-content {
+            background: transparent;
+        }
+
+        /* Chat Messages Container */
+        [data-theme="dark"] .chat-messages {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        [data-theme="dark"] #chat-messages {
+            background: var(--card-bg);
+        }
+
+        /* Files Gallery */
+        [data-theme="dark"] .files-gallery {
+            background: transparent;
+        }
+
+        [data-theme="dark"] .file-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] .file-card:hover {
+            border-color: var(--accent);
+            background: var(--bg-secondary);
+        }
+
+        /* Connection Summary and Timeline */
+        [data-theme="dark"] #connection-summary {
+            background: transparent;
+        }
+
+        [data-theme="dark"] #connection-timeline {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        [data-theme="dark"] #connection-logs {
+            background: transparent;
+        }
+
+        /* Connection Stats */
+        [data-theme="dark"] .connection-stat-card {
+            background: var(--card-bg) !important;
+            box-shadow: 0 2px 4px var(--shadow);
+        }
+
+        [data-theme="dark"] .connection-stat-value {
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] .connection-stat-label {
+            color: var(--text-secondary);
+        }
+
+        /* Loading and No Data States */
+        [data-theme="dark"] .loading {
+            color: var(--text-muted);
+            background: transparent;
+        }
+
+        [data-theme="dark"] .no-data {
+            color: var(--text-muted);
+        }
+
+        /* Form Modal */
+        [data-theme="dark"] .modal {
+            background: rgba(0, 0, 0, 0.85);
+        }
+
+        [data-theme="dark"] .modal-content {
+            background: var(--card-bg);
+        }
+
+        [data-theme="dark"] .modal-header {
+            background: var(--accent);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        [data-theme="dark"] .modal-body {
+            background: var(--card-bg);
+        }
+
+        [data-theme="dark"] .modal-footer {
+            background: var(--card-bg);
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* Form Sections */
+        [data-theme="dark"] .form-section {
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+
+        [data-theme="dark"] .form-section h3 {
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] .form-group {
+            background: transparent;
+        }
+
+        [data-theme="dark"] .form-group label {
+            color: var(--text-secondary);
+        }
+
+        /* Form Actions */
+        [data-theme="dark"] .form-actions {
+            background: var(--card-bg);
+            border-top: 1px solid var(--border-color);
+        }
+
+        [data-theme="dark"] .form-actions button {
+            background: var(--accent);
+            color: white;
+        }
+
+        [data-theme="dark"] .form-actions button:hover {
+            background: var(--accent-hover);
+        }
+
+        /* Close Button */
+        [data-theme="dark"] .close-btn {
+            color: white;
+        }
+
+        /* Audit Notification */
+        [data-theme="dark"] .audit-notification {
+            background: var(--card-bg);
+            border: 2px solid var(--accent);
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] .audit-notification h3 {
+            color: var(--text-primary);
+        }
+
+        /* Image Modal */
+        [data-theme="dark"] .image-modal {
+            background: rgba(0, 0, 0, 0.95);
+        }
+
+        [data-theme="dark"] .close-modal {
+            color: white;
+        }
+
+        /* Scrollbars for Dark Mode (Webkit browsers) */
+        [data-theme="dark"] ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        [data-theme="dark"] ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        [data-theme="dark"] ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 5px;
+        }
+
+        [data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* Connection Details in Summary Card */
+        [data-theme="dark"] #connection-status {
+            color: var(--text-primary) !important;
+        }
+
+        [data-theme="dark"] #connection-details {
+            color: var(--text-secondary) !important;
+        }
+
+        /* Progress Fill */
+        [data-theme="dark"] .progress-fill {
+            background: linear-gradient(90deg, var(--accent) 0%, var(--accent-hover) 100%);
+        }
+
+        /* Status Display */
+        [data-theme="dark"] #status-display {
+            color: var(--text-primary);
+        }
+
+        /* Text Elements */
+        [data-theme="dark"] p,
+        [data-theme="dark"] span,
+        [data-theme="dark"] div {
+            color: inherit;
+        }
+
+        /* Links */
+        [data-theme="dark"] a {
+            color: var(--accent);
+        }
+
+        [data-theme="dark"] a:hover {
+            color: var(--accent-hover);
+        }
+
+        /* Location Map Modal Dark Mode */
+        [data-theme="dark"] #location-map-modal {
+            background: rgba(0, 0, 0, 0.9);
+        }
+
+        [data-theme="dark"] #location-map-modal > div {
+            background: var(--card-bg) !important;
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] #location-map-modal h3 {
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] #location-map-modal h4 {
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] #location-map-modal button {
+            background: #dc3545;
+        }
+
+        [data-theme="dark"] #location-map-modal button:hover {
+            background: #c82333;
+        }
+
+        [data-theme="dark"] #map-ip-info,
+        [data-theme="dark"] #map-declared-info {
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] #location-map-modal > div > div:nth-child(2) > div:nth-child(1) {
+            background: #1e3a5f !important;
+            border-left-color: #3b82f6;
+        }
+
+        [data-theme="dark"] #location-map-modal > div > div:nth-child(2) > div:nth-child(2) {
+            background: #3a2f1f !important;
+            border-left-color: #f59e0b;
+        }
+
+        [data-theme="dark"] #verification-status {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] #location-map-container {
+            border-color: var(--border-color);
+        }
+        /* Location Map Modal - Force Text Colors in Dark Mode */
+        [data-theme="dark"] #map-ip-info,
+        [data-theme="dark"] #map-declared-info,
+        [data-theme="dark"] #map-ip-info *,
+        [data-theme="dark"] #map-declared-info * {
+            color: var(--text-primary) !important;
+        }
+
+        [data-theme="dark"] #location-map-modal div[style*="font-size: 14px"] {
+            color: var(--text-primary) !important;
+        }
+
+        [data-theme="dark"] #verification-status {
+            background: var(--bg-secondary) !important;
+            color: var(--text-primary) !important;
+        }
+
+        /* Info boxes text */
+        [data-theme="dark"] #location-map-modal div[style*="background: #f0f9ff"] {
+            background: #1e3a5f !important;
+        }
+
+        [data-theme="dark"] #location-map-modal div[style*="background: #fef3c7"] {
+            background: #3a2f1f !important;
+        }
+
+        [data-theme="dark"] #location-map-modal div[style*="color: #1e40af"] {
+            color: #60a5fa !important;
+        }
+
+        [data-theme="dark"] #location-map-modal div[style*="color: #92400e"] {
+            color: #fbbf24 !important;
+        }
     </style>
 </head>
 
@@ -811,6 +1478,9 @@
                 <h1>Detalle de Encuesta Económica</h1>
             </div>
         </div>
+        <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="Cambiar tema">
+            <span id="theme-icon">🌙</span>
+        </button>
     </div>
 
     <div class="container">
@@ -876,7 +1546,7 @@
 
         <style>
             .main-content {
-                max-width: 92%;
+                max-width: 80%;
                 width: 100%;
             }
         </style>
@@ -885,10 +1555,7 @@
         <div class="main-content">
             <!-- Summary Cards -->
             <div class="summary-cards">
-                <div class="summary-card">
-                    <h3>Estado</h3>
-                    <div id="status-display">-</div>
-                </div>
+                
                 <div class="summary-card">
                     <h3>Progreso</h3>
                     <div class="value" id="progress-value">0%</div>
@@ -907,6 +1574,11 @@
                     <div class="value" id="created-date" style="font-size: 16px;">-</div>
                     <div class="sub-value" id="updated-date">-</div>
                 </div>
+                <div class="summary-card">
+                    <h3>📶 Conexión</h3>
+                    <div id="connection-status" class="value" style="font-size: 18px;">-</div>
+                    <div id="connection-details" class="sub-value"></div>
+                </div>
             </div>
 
             <!-- Tabs -->
@@ -922,6 +1594,7 @@
                     <button class="tab" onclick="switchTab('vivienda')">🏘️ Vivienda</button>
                     <button class="tab" onclick="switchTab('licencias')">🚗 Licencias</button>
                     <button class="tab" onclick="switchTab('conversacion')">💬 Conversación</button>
+                    <button class="tab" onclick="switchTab('connection')">📶 Historial de Conexión</button>
                     <button class="tab" onclick="switchTab('archivos')">📎 Archivos</button>
                 </div>
 
@@ -1300,6 +1973,21 @@
                         <h3>💬 Historial de Conversación</h3>
                         <div class="chat-messages" id="chat-messages">
                             <div class="loading">Cargando conversación...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-connection" class="tab-content">
+                    <div class="data-section">
+                        <h2 style="margin-bottom: 20px; font-size: 20px; color: #333;">📊 Historial de Calidad de Conexión</h2>
+                        
+                        <div id="connection-summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
+                            <!-- Stats will be populated here -->
+                        </div>
+                        
+                        <div id="connection-timeline" style="background: white; padding: 20px; border-radius: 8px;">
+                            <h3 style="margin-bottom: 15px; font-size: 16px; color: #666;">Línea de Tiempo</h3>
+                            <div id="connection-logs"></div>
                         </div>
                     </div>
                 </div>
@@ -1965,7 +2653,6 @@
                     currentSurvey.current_section ?
                         '<span class="status-badge status-in-progress">⏳ En progreso</span>' :
                         '<span class="status-badge status-incomplete">⊘ Incompleta</span>';
-                document.getElementById('status-display').innerHTML = statusHTML;
 
                 const progress = calculateProgress(currentSurvey);
                 document.getElementById('progress-value').textContent = progress + '%';
@@ -1979,6 +2666,11 @@
 
                 // Load conversation
                 loadConversation();
+
+                loadFiles();
+
+                await loadConnectionHistory();
+
 
             } catch (error) {
                 console.error('Error loading survey details:', error);
@@ -2528,6 +3220,177 @@
         }
 
         loadSurveyDetails();
+
+        async function loadConnectionHistory() {
+            try {
+                const response = await fetch(`${API_URL}/survey/${sessionId}/connection-history`);
+                
+                if (!response.ok) {
+                    console.log('No connection history available');
+                    return;
+                }
+                
+                const data = await response.json();
+                const logs = data.logs || [];
+                
+                updateConnectionSummary(logs);
+                updateConnectionStats(logs);
+                displayConnectionTimeline(logs);
+                
+            } catch (error) {
+                console.error('Error loading connection history:', error);
+            }
+        }
+
+        function updateConnectionSummary(logs) {
+            if (logs.length === 0) {
+                document.getElementById('connection-status').textContent = 'Sin datos';
+                document.getElementById('connection-details').textContent = 'No se han registrado conexiones';
+                return;
+            }
+            
+            const latest = logs[0];
+            const offlineCount = logs.filter(l => l.event === 'offline').length;
+            const poorCount = logs.filter(l => l.quality === 'baja' || l.quality === 'muy baja').length;
+            
+            let statusIcon = '📶';
+            let statusText = latest.quality || 'desconocida';
+            
+            if (offlineCount > 0) {
+                statusIcon = '🔴';
+                statusText = 'Con problemas';
+            } else if (poorCount > 2) {
+                statusIcon = '⚠️';
+                statusText = 'Irregular';
+            }
+            
+            document.getElementById('connection-status').innerHTML = `${statusIcon} ${statusText}`;
+            document.getElementById('connection-details').innerHTML = `
+                ${logs.length} verificaciones<br>
+                ${offlineCount > 0 ? `🔴 ${offlineCount} desconexión(es)<br>` : ''}
+                ${poorCount > 0 ? `⚠️ ${poorCount} problema(s)` : '✅ Sin problemas'}
+            `;
+        }
+
+        function updateConnectionStats(logs) {
+            if (logs.length === 0) return;
+            
+            const offlineCount = logs.filter(l => l.event === 'offline').length;
+            const poorCount = logs.filter(l => l.quality === 'baja' || l.quality === 'muy baja').length;
+            const avgSpeed = logs.filter(l => l.speed).reduce((sum, l) => sum + parseFloat(l.speed), 0) / logs.filter(l => l.speed).length || 0;
+            
+            const summaryHTML = `
+                <div class="connection-stat-card">
+                    <div class="connection-stat-label">Total Verificaciones</div>
+                    <div class="connection-stat-value" style="color: #008386;">${logs.length}</div>
+                </div>
+                <div class="connection-stat-card">
+                    <div class="connection-stat-label">Desconexiones</div>
+                    <div class="connection-stat-value" style="color: ${offlineCount > 0 ? '#dc3545' : '#28a745'};">${offlineCount}</div>
+                </div>
+                <div class="connection-stat-card">
+                    <div class="connection-stat-label">Problemas de Calidad</div>
+                    <div class="connection-stat-value" style="color: ${poorCount > 0 ? '#ff9800' : '#28a745'};">${poorCount}</div>
+                </div>
+                <div class="connection-stat-card">
+                    <div class="connection-stat-label">Velocidad Promedio</div>
+                    <div class="connection-stat-value" style="color: #008386;">${avgSpeed.toFixed(1)} Mbps</div>
+                </div>
+            `;
+            
+            document.getElementById('connection-summary').innerHTML = summaryHTML;
+        }
+
+        function displayConnectionTimeline(logs) {
+            if (logs.length === 0) {
+                document.getElementById('connection-logs').innerHTML = '<p style="text-align: center; color: #999; padding: 40px;">No hay registros de conexión</p>';
+                return;
+            }
+            
+            const timelineHTML = logs.map(log => {
+                let className = 'good';
+                let icon = '📶';
+                
+                if (log.event === 'offline') {
+                    className = 'offline';
+                    icon = '📵';
+                } else if (log.quality === 'muy baja' || log.quality === 'baja') {
+                    className = 'poor';
+                    icon = '⚠️';
+                } else if (log.quality === 'regular') {
+                    className = 'moderate';
+                    icon = '📶';
+                }
+                
+                const date = new Date(log.timestamp);
+                const timeString = date.toLocaleString('es-MX');
+                
+                return `
+                    <div class="connection-log ${className}">
+                        <div class="connection-log-header">
+                            <span class="connection-log-quality">${icon} ${log.quality || log.event}</span>
+                            <span class="connection-log-time">${timeString}</span>
+                        </div>
+                        <div class="connection-log-details">
+                            Velocidad: ${log.speed || 'N/A'} Mbps | 
+                            Tipo: ${log.type || 'N/A'} | 
+                            Latencia: ${log.latency || 'N/A'}ms
+                            ${log.event ? ` | Evento: ${log.event}` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('connection-logs').innerHTML = timelineHTML;
+        }
+
+        // Dark Mode Functions
+        const themeToggle = {
+            init() {
+                const savedTheme = localStorage.getItem('theme');
+                const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                
+                if (savedTheme) {
+                    this.setTheme(savedTheme);
+                } else if (systemPrefersDark) {
+                    this.setTheme('dark');
+                }
+                
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                    if (!localStorage.getItem('theme')) {
+                        this.setTheme(e.matches ? 'dark' : 'light');
+                    }
+                });
+            },
+            
+            setTheme(theme) {
+                document.documentElement.setAttribute('data-theme', theme);
+                this.updateIcon(theme);
+            },
+            
+            toggle() {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                this.setTheme(newTheme);
+                localStorage.setItem('theme', newTheme);
+            },
+            
+            updateIcon(theme) {
+                const icon = document.getElementById('theme-icon');
+                if (icon) {
+                    icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+                }
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            themeToggle.init();
+        });
+
+        function toggleDarkMode() {
+            themeToggle.toggle();
+        }
+
     </script>
 </body>
 

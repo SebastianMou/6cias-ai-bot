@@ -334,6 +334,330 @@
         input:checked + .toggle-slider:before {
             transform: translateX(30px);
         }
+
+        /* Prompt Editor Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .modal-header {
+            background: #008386;
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            line-height: 1;
+        }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            max-height: calc(90vh - 140px);
+        }
+
+        .modal-body textarea {
+            width: 100%;
+            min-height: 400px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            resize: vertical;
+        }
+
+        .modal-body textarea:focus {
+            outline: none;
+            border-color: #008386;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #008386;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #006668;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .edit-prompt-btn {
+            background: #008386;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            margin-left: 15px;
+            transition: all 0.2s;
+        }
+
+        .edit-prompt-btn:hover {
+            background: #006668;
+        }
+
+        /* Connection quality indicators */
+        .connection-good {
+            background: #d4edda;
+            border-left-color: #28a745;
+        }
+
+        .connection-moderate {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+        }
+
+        .connection-poor {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+        }
+
+        .connection-offline {
+            background: #f8d7da;
+            border-left-color: #721c24;
+        }
+
+        /* CSS Variables for Theming */
+        :root {
+            --bg-primary: #f5f7fa;
+            --bg-secondary: #ffffff;
+            --bg-header: linear-gradient(135deg, #008386 0%, #427174 100%);
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --text-muted: #999999;
+            --border-color: #e0e0e0;
+            --shadow: rgba(0, 0, 0, 0.08);
+            --accent: #008386;
+            --accent-hover: #006668;
+            --input-bg: #ffffff;
+            --card-bg: #ffffff;
+        }
+
+        /* Dark Mode Variables */
+        [data-theme="dark"] {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --bg-header: linear-gradient(135deg, #005557 0%, #2a3a3c 100%);
+            --text-primary: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --text-muted: #888888;
+            --border-color: #3a3a3a;
+            --shadow: rgba(0, 0, 0, 0.3);
+            --accent: #00a8ab;
+            --accent-hover: #008386;
+            --input-bg: #3a3a3a;
+            --card-bg: #2d2d2d;
+        }
+
+        /* Auto Dark Mode (respects system preference) */
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) {
+                --bg-primary: #1a1a1a;
+                --bg-secondary: #2d2d2d;
+                --bg-header: linear-gradient(135deg, #005557 0%, #2a3a3c 100%);
+                --text-primary: #e0e0e0;
+                --text-secondary: #b0b0b0;
+                --text-muted: #888888;
+                --border-color: #3a3a3a;
+                --shadow: rgba(0, 0, 0, 0.3);
+                --accent: #00a8ab;
+                --accent-hover: #008386;
+                --input-bg: #3a3a3a;
+                --card-bg: #2d2d2d;
+            }
+        }
+
+        /* Apply Variables to Elements */
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .header {
+            background: var(--bg-header);
+        }
+
+        .stat-card,
+        .candidate-card,
+        .filter-bar,
+        .sidebar,
+        .summary-card,
+        .tabs-container,
+        .survey-card,
+        .data-section,
+        .modal-content,
+        .connection-stat-card {
+            background: var(--card-bg);
+            color: var(--text-primary);
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        input,
+        textarea,
+        select {
+            background: var(--input-bg);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            border-color: var(--accent);
+        }
+
+        .candidate-name,
+        .stat-card .number,
+        .sidebar-value,
+        .data-value {
+            color: var(--text-primary);
+        }
+
+        .candidate-position,
+        .info-row,
+        .stat-card h3,
+        .sidebar-label,
+        .data-label {
+            color: var(--text-secondary);
+        }
+
+        .data-item,
+        .sidebar-section {
+            border-bottom-color: var(--border-color);
+        }
+
+        .tabs {
+            background: var(--bg-primary);
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .tab,
+        .tab-btn {
+            color: var(--text-secondary);
+        }
+
+        .tab:hover,
+        .tab-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .tab.active,
+        .tab-btn.active {
+            background: var(--card-bg);
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        /* Force dark mode on survey cards - ADD THIS AT THE END */
+        [data-theme="dark"] .survey-card,
+        [data-theme="dark"] .candidate-card,
+        [data-theme="dark"] .stat-card {
+            background: var(--card-bg) !important;
+            color: var(--text-primary) !important;
+        }
+
+        [data-theme="dark"] .candidate-name {
+            color: #ffffff !important;
+        }
+
+        [data-theme="dark"] .candidate-position {
+            color: var(--text-secondary) !important;
+        }
+
+        [data-theme="dark"] .info-row {
+            color: var(--text-secondary) !important;
+        }
+
+        [data-theme="dark"] .candidate-info {
+            border-top-color: var(--border-color);
+        }
+
+        /* Keep status badges readable in dark mode */
+        [data-theme="dark"] .completion-badge.completion-complete {
+            background: #1a3a2a;
+            color: #4ade80;
+        }
+
+        [data-theme="dark"] .completion-badge.completion-in-progress {
+            background: #3a3520;
+            color: #fbbf24;
+        }
+
+        [data-theme="dark"] .completion-badge.completion-incomplete {
+            background: #3a1a1a;
+            color: #f87171;
+        }
+
     </style>
 </head>
 
@@ -357,6 +681,9 @@
                 <input type="checkbox" id="survey-chat-toggle" onchange="toggleSurveyChat()">
                 <span class="toggle-slider"></span>
             </label>
+            <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="Cambiar tema">
+                <span id="theme-icon">🌙</span>
+            </button>
         </div>
     </div>
 
@@ -381,15 +708,42 @@
             </div>
         </div>
 
-        <!-- Filter Bar -->
         <div class="filter-bar">
-            <input type="text" id="search-input" placeholder="🔍 Buscar por nombre..." style="flex: 1;">
+            <input type="text" id="search-input" placeholder="Buscar por nombre...">
             <select id="status-filter">
                 <option value="">Todos los estados</option>
                 <option value="completed">Completas</option>
                 <option value="in-progress">En progreso</option>
                 <option value="incomplete">Incompletas</option>
             </select>
+            
+            <div style="margin-left: auto; display: flex; align-items: center; gap: 15px;">
+                <!-- <span id="survey-chat-status-text" style="font-weight: 500;">Chat: Cargando...</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="survey-chat-toggle" onchange="toggleSurveyChat()">
+                    <span class="toggle-slider"></span>
+                </label> -->
+                <button class="edit-prompt-btn" onclick="openPromptEditor()">
+                    ✏️ Editar Prompt
+                </button>
+            </div>
+        </div>
+
+        <!-- Prompt Editor Modal -->
+        <div id="prompt-modal" class="modal-overlay">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Editar Prompt del Asistente Clippy</h2>
+                    <button class="modal-close" onclick="closePromptEditor()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <textarea id="prompt-textarea" placeholder="Ingresa el prompt del sistema para Clippy..."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closePromptEditor()">Cancelar</button>
+                    <button class="btn btn-primary" onclick="savePrompt()">Guardar Cambios</button>
+                </div>
+            </div>
         </div>
 
         <!-- Surveys Grid -->
@@ -406,6 +760,12 @@
             try {
                 const response = await fetch(`${API_URL}/survey/all`);
                 const data = await response.json();
+
+                console.log('📊 Full API Response:', data);
+                console.log('📋 Survey Data:', data.surveys);
+                if (data.surveys.length > 0) {
+                    console.log('🔍 First Survey Connection Stats:', data.surveys[0].connection_stats);
+                }
 
                 // Update statistics
                 document.getElementById('total-surveys').textContent = data.total || 0;
@@ -455,6 +815,37 @@
                 '??';
 
             const progressPercent = calculateProgress(survey);
+            
+            // Connection quality badge
+            let connectionBadge = '';
+            if (survey.connection_stats) {
+                const stats = survey.connection_stats;
+                let connectionIcon = '📶';
+                let connectionColor = '#4CAF50'; // Green
+                let connectionText = stats.latest_quality || 'desconocida';
+                
+                if (stats.has_issues) {
+                    connectionIcon = '⚠️';
+                    connectionColor = '#ff9800'; // Orange
+                    connectionText = 'con problemas';
+                }
+                
+                if (stats.offline_events > 0) {
+                    connectionIcon = '📵';
+                    connectionColor = '#f44336'; // Red
+                }
+                
+                connectionBadge = `
+                    <div style="margin-top: 10px; padding: 8px; background: ${connectionColor}20; border-left: 3px solid ${connectionColor}; border-radius: 4px;">
+                        <div style="display: flex; align-items: center; gap: 5px; font-size: 12px;">
+                            <span>${connectionIcon}</span>
+                            <span style="font-weight: 600;">Conexión: ${connectionText}</span>
+                        </div>
+                        ${stats.offline_events > 0 ? `<div style="font-size: 11px; color: #666; margin-top: 3px;">🔴 ${stats.offline_events} desconexión(es)</div>` : ''}
+                        ${stats.poor_quality_count > 0 ? `<div style="font-size: 11px; color: #666; margin-top: 3px;">⚠️ ${stats.poor_quality_count} problema(s) de calidad</div>` : ''}
+                    </div>
+                `;
+            }
 
             return `
                 <div class="survey-card" data-session="${survey.session_id}">
@@ -480,11 +871,13 @@
                                 Progreso: ${progressPercent}%
                             </div>
                         </div>
+                        
+                        ${connectionBadge}
                     </div>
                 </div>
             `;
         }
-
+        
         function calculateProgress(survey) {
             let completed = 0;
             const totalSections = 15; // A through O sections
@@ -536,6 +929,67 @@
 
             return Math.round((completed / totalSections) * 100);
         }
+
+        // Prompt Editor Functions
+        let currentPrompt = '';
+
+        async function loadPrompt() {
+            try {
+                const response = await fetch('/api/settings/survey_prompt');
+                const data = await response.json();
+                currentPrompt = data.prompt || '';
+                return currentPrompt;
+            } catch (error) {
+                console.error('Error loading prompt:', error);
+                return '';
+            }
+        }
+
+        async function openPromptEditor() {
+            const prompt = await loadPrompt();
+            document.getElementById('prompt-textarea').value = prompt;
+            document.getElementById('prompt-modal').classList.add('active');
+        }
+
+        function closePromptEditor() {
+            document.getElementById('prompt-modal').classList.remove('active');
+        }
+
+        async function savePrompt() {
+            const promptText = document.getElementById('prompt-textarea').value;
+            
+            if (!promptText.trim()) {
+                alert('El prompt no puede estar vacío');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/settings/survey_prompt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ prompt: promptText })
+                });
+                
+                if (response.ok) {
+                    alert('✅ Prompt actualizado exitosamente');
+                    closePromptEditor();
+                } else {
+                    alert('❌ Error al actualizar el prompt');
+                }
+            } catch (error) {
+                console.error('Error saving prompt:', error);
+                alert('❌ Error al guardar el prompt');
+            }
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('prompt-modal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePromptEditor();
+            }
+        });
 
         // Search and filter functionality
         document.getElementById('search-input').addEventListener('input', filterSurveys);
@@ -624,6 +1078,57 @@
 
         // Load chat status on page load
         loadSurveyChatStatus();
+
+        // Theme Management
+        const themeToggle = {
+            init() {
+                // Load saved preference or use system preference
+                const savedTheme = localStorage.getItem('theme');
+                const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                
+                if (savedTheme) {
+                    this.setTheme(savedTheme);
+                } else if (systemPrefersDark) {
+                    this.setTheme('dark');
+                }
+                
+                // Listen for system theme changes
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                    if (!localStorage.getItem('theme')) {
+                        this.setTheme(e.matches ? 'dark' : 'light');
+                    }
+                });
+            },
+            
+            setTheme(theme) {
+                document.documentElement.setAttribute('data-theme', theme);
+                this.updateIcon(theme);
+            },
+            
+            toggle() {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                this.setTheme(newTheme);
+                localStorage.setItem('theme', newTheme);
+            },
+            
+            updateIcon(theme) {
+                const icon = document.getElementById('theme-icon');
+                if (icon) {
+                    icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+                }
+            }
+        };
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            themeToggle.init();
+        });
+
+        // Toggle function for button
+        function toggleDarkMode() {
+            themeToggle.toggle();
+        }
     </script>
 </body>
 </html>
