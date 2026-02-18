@@ -49,11 +49,9 @@ app.add_middleware(
 # Run migrations on startup
 @app.on_event("startup")
 async def startup_event():
-    print("🔄 Recreating database tables...")
-    Base.metadata.drop_all(bind=engine)
-    Base.metadata.create_all(bind=engine)
-    print("✅ Database tables recreated!")
-client = genai.Client(api_key=settings.gemini_api_key)
+    print("🔄 Ensuring database tables exist...")
+    Base.metadata.create_all(bind=engine)  # Only creates missing tables
+    print("✅ Database ready!")
 
 async def get_ip_geolocation(ip_address: str):
     """Get comprehensive geolocation data for an IP address"""
