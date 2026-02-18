@@ -72,9 +72,79 @@ class SurveyResponse(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     session_id = Column(String(100), unique=True, index=True)
+    notes = Column(Text, nullable=True)  
     candidate_name = Column(String(100), nullable=True)
     company_name = Column(String(100), nullable=True)
     user_ip = Column(String(50), nullable=True)  
+    # IP Geolocation Data
+    ip_city = Column(String(100), nullable=True)
+    ip_region = Column(String(100), nullable=True)
+    ip_country = Column(String(100), nullable=True)
+    ip_postal_code = Column(String(20), nullable=True)
+    ip_latitude = Column(String(50), nullable=True)
+    ip_longitude = Column(String(50), nullable=True)
+    ip_timezone = Column(String(100), nullable=True)
+    ip_isp = Column(String(255), nullable=True)
+    ip_organization = Column(String(255), nullable=True)
+    ip_asn = Column(String(100), nullable=True)
+    ip_is_proxy = Column(Boolean, default=False)
+    ip_is_mobile = Column(Boolean, default=False)
+    
+    # Browser Fingerprinting Data
+    browser_user_agent = Column(String(500), nullable=True)
+    browser_name = Column(String(100), nullable=True)
+    browser_version = Column(String(50), nullable=True)
+    browser_os = Column(String(100), nullable=True)
+    browser_platform = Column(String(100), nullable=True)
+    browser_language = Column(String(50), nullable=True)
+    browser_languages = Column(String(200), nullable=True)  # All languages
+    browser_timezone = Column(String(100), nullable=True)
+    browser_timezone_offset = Column(Integer, nullable=True)
+    
+    # Screen & Display
+    screen_width = Column(Integer, nullable=True)
+    screen_height = Column(Integer, nullable=True)
+    screen_avail_width = Column(Integer, nullable=True)
+    screen_avail_height = Column(Integer, nullable=True)
+    screen_color_depth = Column(Integer, nullable=True)
+    screen_pixel_depth = Column(Integer, nullable=True)
+    device_pixel_ratio = Column(String(20), nullable=True)
+    
+    # Hardware Info
+    cpu_cores = Column(Integer, nullable=True)
+    device_memory = Column(Integer, nullable=True)  # in GB
+    max_touch_points = Column(Integer, nullable=True)
+    has_touch_support = Column(Boolean, nullable=True)
+    
+    # Network Info
+    connection_type = Column(String(50), nullable=True)  # wifi/cellular/ethernet
+    connection_downlink = Column(String(50), nullable=True)  # Mbps
+    connection_rtt = Column(Integer, nullable=True)  # Round trip time in ms
+    connection_effective_type = Column(String(20), nullable=True)  # 4g/3g/2g
+    
+    # Canvas & WebGL Fingerprints
+    canvas_fingerprint = Column(String(100), nullable=True)
+    webgl_vendor = Column(String(100), nullable=True)
+    webgl_renderer = Column(String(200), nullable=True)
+    
+    # Additional Browser Features
+    do_not_track = Column(String(10), nullable=True)
+    cookies_enabled = Column(Boolean, nullable=True)
+    local_storage_enabled = Column(Boolean, nullable=True)
+    session_storage_enabled = Column(Boolean, nullable=True)
+    indexed_db_enabled = Column(Boolean, nullable=True)
+    
+    # Permissions & Capabilities
+    permissions_notifications = Column(String(20), nullable=True)
+    permissions_geolocation = Column(String(20), nullable=True)
+    
+    # Battery (if available)
+    battery_charging = Column(Boolean, nullable=True)
+    battery_level = Column(Integer, nullable=True)  # 0-100
+    
+    # Plugins & Fonts
+    plugins_list = Column(Text, nullable=True)  # JSON array
+    fonts_available = Column(Text, nullable=True)  # JSON array
     
     # A) Basic info
     date_of_birth = Column(String(20), nullable=True)

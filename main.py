@@ -51,17 +51,52 @@ Base.metadata.create_all(bind=engine)
 client = genai.Client(api_key=settings.gemini_api_key)
 
 async def get_ip_geolocation(ip_address: str):
-    """Get geolocation data for an IP address using ip-api.com"""
+    """Get comprehensive geolocation data for an IP address"""
     if not ip_address or ip_address == 'unknown':
         return None
     
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get(f'http://ip-api.com/json/{ip_address}')
+            # Use ip-api.com with all available fields
+            # Free tier: 45 requests per minute
+            response = await client.get(
+                f'http://ip-api.com/json/{ip_address}',
+                params={
+                    'fields': 'status,message,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,proxy,mobile,query'
+                }
+            )
+            
             if response.status_code == 200:
-                return response.json()
+                data = response.json()
+                
+                if data.get('status') == 'success':
+                    # Format the geolocation data
+                    geo_data = {
+                        'ip': data.get('query'),
+                        'city': data.get('city'),
+                        'region': data.get('regionName'),
+                        'region_code': data.get('region'),
+                        'country': data.get('country'),
+                        'country_code': data.get('countryCode'),
+                        'postal_code': data.get('zip'),
+                        'latitude': data.get('lat'),
+                        'longitude': data.get('lon'),
+                        'timezone': data.get('timezone'),
+                        'isp': data.get('isp'),
+                        'organization': data.get('org'),
+                        'asn': data.get('as'),
+                        'is_proxy': data.get('proxy', False),
+                        'is_mobile': data.get('mobile', False)
+                    }
+                    
+                    print(f"📍 [IP GEO] {ip_address} → {geo_data['city']}, {geo_data['region']}, {geo_data['country']}")
+                    return geo_data
+                else:
+                    print(f"❌ Geolocation API error: {data.get('message')}")
+                    return None
+                    
     except Exception as e:
-        print(f"Error getting geolocation: {e}")
+        print(f"❌ Error getting geolocation: {e}")
     
     return None
 
@@ -813,22 +848,37 @@ async def get_survey_by_id(session_id: str, db: Session = Depends(get_db)):
     """Get a specific survey response"""
     survey = survey_crud.get_survey_by_session(db, session_id)
     if not survey:
-        raise HTTPException(status_code=404, detail="Survey not found")
+            # Return empty survey structure instead of 404
+            return {
+                "session_id": session_id,
+                "candidate_name": None,
+                "survey_completed": False,
+                "current_section": None,
+                "created_at": None,
+                "updated_at": None
+            }
     
-    # Get geolocation data
-    geo_data = await get_ip_geolocation(survey.user_ip) if survey.user_ip else None
-    
-    # Return ALL fields
+    # Return ALL fields (use saved IP geolocation data from database)
     return {
         "session_id": survey.session_id,
         "candidate_name": survey.candidate_name,
         "company_name": survey.company_name,
         "user_ip": survey.user_ip,
-        "geo_country": geo_data.get('country') if geo_data else None,
-        "geo_region": geo_data.get('regionName') if geo_data else None,
-        "geo_city": geo_data.get('city') if geo_data else None,
-        "geo_lat": geo_data.get('lat') if geo_data else None,
-        "geo_lon": geo_data.get('lon') if geo_data else None,
+        
+        # IP Geolocation fields (from database)
+        "ip_city": survey.ip_city,
+        "ip_region": survey.ip_region,
+        "ip_country": survey.ip_country,
+        "ip_postal_code": survey.ip_postal_code,
+        "ip_latitude": survey.ip_latitude,
+        "ip_longitude": survey.ip_longitude,
+        "ip_timezone": survey.ip_timezone,
+        "ip_isp": survey.ip_isp,
+        "ip_organization": survey.ip_organization,
+        "ip_asn": survey.ip_asn,
+        "ip_is_proxy": survey.ip_is_proxy,
+        "ip_is_mobile": survey.ip_is_mobile,
+
         "survey_completed": survey.survey_completed,
         "current_section": survey.current_section,
         "created_at": survey.created_at.isoformat(),
@@ -883,6 +933,47 @@ async def get_survey_by_id(session_id: str, db: Session = Depends(get_db)):
         # I) Expenses 7.4
         "expenses_list": survey.expenses_list,
         "expenses_amounts": survey.expenses_amounts,
+
+        # Browser Fingerprinting
+        "browser_user_agent": survey.browser_user_agent,
+        "browser_name": survey.browser_name,
+        "browser_version": survey.browser_version,
+        "browser_os": survey.browser_os,
+        "browser_platform": survey.browser_platform,
+        "browser_language": survey.browser_language,
+        "browser_languages": survey.browser_languages,
+        "browser_timezone": survey.browser_timezone,
+        "browser_timezone_offset": survey.browser_timezone_offset,
+        "screen_width": survey.screen_width,
+        "screen_height": survey.screen_height,
+        "screen_avail_width": survey.screen_avail_width,
+        "screen_avail_height": survey.screen_avail_height,
+        "screen_color_depth": survey.screen_color_depth,
+        "screen_pixel_depth": survey.screen_pixel_depth,
+        "device_pixel_ratio": survey.device_pixel_ratio,
+        "cpu_cores": survey.cpu_cores,
+        "device_memory": survey.device_memory,
+        "max_touch_points": survey.max_touch_points,
+        "has_touch_support": survey.has_touch_support,
+        "connection_type": survey.connection_type,
+        "connection_downlink": survey.connection_downlink,
+        "connection_rtt": survey.connection_rtt,
+        "connection_effective_type": survey.connection_effective_type,
+        "canvas_fingerprint": survey.canvas_fingerprint,
+        "webgl_vendor": survey.webgl_vendor,
+        "webgl_renderer": survey.webgl_renderer,
+        "do_not_track": survey.do_not_track,
+        "cookies_enabled": survey.cookies_enabled,
+        "local_storage_enabled": survey.local_storage_enabled,
+        "session_storage_enabled": survey.session_storage_enabled,
+        "indexed_db_enabled": survey.indexed_db_enabled,
+        "permissions_notifications": survey.permissions_notifications,
+        "permissions_geolocation": survey.permissions_geolocation,
+        "battery_charging": survey.battery_charging,
+        "battery_level": survey.battery_level,
+        "plugins_list": survey.plugins_list,
+        "fonts_available": survey.fonts_available,
+
         "groceries": survey.groceries,
         "alimony": survey.alimony,
         "food_out": survey.food_out,
@@ -1031,9 +1122,33 @@ async def survey_chat(session_id: str = Form(...),message: str = Form(...),ip_ad
         if not survey:
             survey = survey_crud.create_survey_response(db, session_id)
 
-        # Save IP address (on first interaction or update if changed) 
-        if ip_address and not survey.user_ip:
+        # Save IP address and get geolocation data
+        if ip_address and (not survey.user_ip or not survey.ip_city):
             survey_crud.update_survey_field(db, session_id, user_ip=ip_address)
+            
+            # Get comprehensive geolocation data
+            geo_data = await get_ip_geolocation(ip_address)
+
+            if geo_data:
+                # Store geolocation data in dedicated fields
+                survey_crud.update_survey_field(
+                    db, 
+                    session_id,
+                    ip_city=geo_data.get('city'),
+                    ip_region=geo_data.get('region'),
+                    ip_country=geo_data.get('country'),
+                    ip_postal_code=geo_data.get('postal_code'),
+                    ip_latitude=str(geo_data.get('latitude')),
+                    ip_longitude=str(geo_data.get('longitude')),
+                    ip_timezone=geo_data.get('timezone'),
+                    ip_isp=geo_data.get('isp'),
+                    ip_organization=geo_data.get('organization'),
+                    ip_asn=geo_data.get('asn'),
+                    ip_is_proxy=geo_data.get('is_proxy', False),
+                    ip_is_mobile=geo_data.get('is_mobile', False)
+                )
+                
+                print(f"✅ [IP GEO SAVED] {geo_data.get('city')}, {geo_data.get('region')}, {geo_data.get('country')}")
         
         # Get conversation history
         history = survey_crud.get_survey_conversations(db, session_id)
@@ -2106,6 +2221,136 @@ async def get_all_surveys(db: Session = Depends(get_db)):
         "today": today_count,
         "surveys": formatted_surveys
     }
+
+@app.post("/survey/gps-location")
+async def save_gps_location(
+    session_id: str = Form(...),
+    latitude: float = Form(...),
+    longitude: float = Form(...),
+    accuracy: float = Form(None),
+    gps_timestamp: str = Form(None),
+    db: Session = Depends(get_db)
+):
+    """Save GPS location for survey session"""
+    try:
+        survey = survey_crud.get_survey_by_session(db, session_id)
+        
+        if not survey:
+            survey = survey_crud.create_survey_response(db, session_id)
+        
+        # Store GPS data in notes or create new fields
+        gps_data = f"GPS: {latitude}, {longitude} (Accuracy: {accuracy}m) at {gps_timestamp}"
+        
+        existing_notes = survey.notes or ""
+        updated_notes = f"{existing_notes}\n{gps_data}" if existing_notes else gps_data
+        
+        survey_crud.update_survey_field(
+            db, 
+            session_id, 
+            notes=updated_notes
+        )
+        
+        print(f"📍 [GPS] Session: {session_id} | Lat: {latitude}, Lng: {longitude} | Accuracy: {accuracy}m")
+        
+        return {"message": "GPS location saved", "latitude": latitude, "longitude": longitude}
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))    
+
+@app.post("/survey/browser-fingerprint")
+async def save_browser_fingerprint(
+    session_id: str = Form(...),
+    browser_user_agent: str = Form(None),
+    browser_name: str = Form(None),
+    browser_version: str = Form(None),
+    browser_os: str = Form(None),
+    browser_platform: str = Form(None),
+    browser_language: str = Form(None),
+    browser_languages: str = Form(None),
+    browser_timezone: str = Form(None),
+    browser_timezone_offset: int = Form(None),
+    screen_width: int = Form(None),
+    screen_height: int = Form(None),
+    screen_avail_width: int = Form(None),
+    screen_avail_height: int = Form(None),
+    screen_color_depth: int = Form(None),
+    screen_pixel_depth: int = Form(None),
+    device_pixel_ratio: str = Form(None),
+    cpu_cores: int = Form(None),
+    device_memory: int = Form(None),
+    max_touch_points: int = Form(None),
+    has_touch_support: bool = Form(None),
+    connection_type: str = Form(None),
+    connection_downlink: str = Form(None),
+    connection_rtt: int = Form(None),
+    connection_effective_type: str = Form(None),
+    canvas_fingerprint: str = Form(None),
+    webgl_vendor: str = Form(None),
+    webgl_renderer: str = Form(None),
+    do_not_track: str = Form(None),
+    cookies_enabled: bool = Form(None),
+    local_storage_enabled: bool = Form(None),
+    session_storage_enabled: bool = Form(None),
+    indexed_db_enabled: bool = Form(None),
+    permissions_notifications: str = Form(None),
+    permissions_geolocation: str = Form(None),
+    battery_charging: bool = Form(None),
+    battery_level: int = Form(None),
+    plugins_list: str = Form(None),
+    fonts_available: str = Form(None),
+    db: Session = Depends(get_db)
+):
+    """Save browser fingerprint data"""
+    
+    survey_crud.update_survey_field(
+        db, 
+        session_id,
+        browser_user_agent=browser_user_agent,
+        browser_name=browser_name,
+        browser_version=browser_version,
+        browser_os=browser_os,
+        browser_platform=browser_platform,
+        browser_language=browser_language,
+        browser_languages=browser_languages,
+        browser_timezone=browser_timezone,
+        browser_timezone_offset=browser_timezone_offset,
+        screen_width=screen_width,
+        screen_height=screen_height,
+        screen_avail_width=screen_avail_width,
+        screen_avail_height=screen_avail_height,
+        screen_color_depth=screen_color_depth,
+        screen_pixel_depth=screen_pixel_depth,
+        device_pixel_ratio=device_pixel_ratio,
+        cpu_cores=cpu_cores,
+        device_memory=device_memory,
+        max_touch_points=max_touch_points,
+        has_touch_support=has_touch_support,
+        connection_type=connection_type,
+        connection_downlink=connection_downlink,
+        connection_rtt=connection_rtt,
+        connection_effective_type=connection_effective_type,
+        canvas_fingerprint=canvas_fingerprint,
+        webgl_vendor=webgl_vendor,
+        webgl_renderer=webgl_renderer,
+        do_not_track=do_not_track,
+        cookies_enabled=cookies_enabled,
+        local_storage_enabled=local_storage_enabled,
+        session_storage_enabled=session_storage_enabled,
+        indexed_db_enabled=indexed_db_enabled,
+        permissions_notifications=permissions_notifications,
+        permissions_geolocation=permissions_geolocation,
+        battery_charging=battery_charging,
+        battery_level=battery_level,
+        plugins_list=plugins_list,
+        fonts_available=fonts_available
+    )
+    
+    print(f"🔍 [FINGERPRINT] {session_id} | Browser: {browser_name} {browser_version} | OS: {browser_os} | Screen: {screen_width}x{screen_height}")
+    
+    return {"status": "success", "message": "Browser fingerprint saved"}
+
 
 if __name__ == "__main__":
     import uvicorn

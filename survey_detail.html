@@ -5,6 +5,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Detalle de Encuesta</title>
+
+    <!-- PDF Generation Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <!-- Word Document Generation Library - Using jsdelivr -->
+    <script src="https://cdn.jsdelivr.net/npm/docx@9.5.3/dist/index.iife.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+
+        <!-- Fallback check for docx library -->
+    <script>
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                if (typeof docx === 'undefined' && typeof window.docx === 'undefined') {
+                    console.warn('⚠️ docx library failed to load - tracking prevention may be blocking it');
+                } else {
+                    console.log('✅ docx library loaded successfully');
+                }
+            }, 1000);
+        });
+    </script>
+    
     <style>
         * {
             margin: 0;
@@ -529,7 +551,10 @@
             background: white;
             border-radius: 12px;
             padding: 25px;
-            height: fit-content;
+            height: calc(100vh - 120px);  /* Full screen height minus header and margin */
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;  /* Make it scrollable */
+            overflow-x: hidden;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             position: sticky;
             top: 20px;
@@ -695,6 +720,19 @@
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 15px;
             padding: 20px;
+        }
+
+        #download-all-btn:hover {
+            background: #059669;
+        }
+
+        #download-all-btn:active {
+            transform: scale(0.98);
+        }
+
+        #download-all-btn:disabled {
+            background: #6b7280;
+            cursor: not-allowed;
         }
 
         .file-card {
@@ -1183,6 +1221,14 @@
             background: var(--card-bg);
         }
 
+        [data-theme="dark"] #download-all-btn {
+            background: #059669;
+        }
+
+        [data-theme="dark"] #download-all-btn:hover {
+            background: #047857;
+        }
+
         /* Files Gallery */
         [data-theme="dark"] .files-gallery {
             background: transparent;
@@ -1456,6 +1502,135 @@
         [data-theme="dark"] #location-map-modal div[style*="color: #92400e"] {
             color: #fbbf24 !important;
         }
+
+        [data-theme="dark"] #location-map-modal div[style*="background: #e0f2fe"] {
+            background: #1e3a5f !important;
+            border-color: #3b82f6 !important;
+        }
+        
+        [data-theme="dark"] #location-map-modal div[style*="color: #0369a1"] {
+            color: #60a5fa !important;
+        }
+        
+        /* Declared Address Box - Yellow */
+        [data-theme="dark"] #location-map-modal div[style*="background: #fef3c7"] {
+            background: #3a2f1f !important;
+            border-color: #f59e0b !important;
+        }
+        
+        [data-theme="dark"] #location-map-modal div[style*="color: #92400e"] {
+            color: #fbbf24 !important;
+        }
+        
+        /* Browser Box - Light Blue */
+        [data-theme="dark"] #location-map-modal div[style*="background: #dbeafe"] {
+            background: #1e40af33 !important;
+            border-color: #3b82f6 !important;
+        }
+        
+        [data-theme="dark"] #location-map-modal div[style*="color: #1e40af"] {
+            color: #93c5fd !important;
+        }
+        
+        /* Screen Box - Purple */
+        [data-theme="dark"] #location-map-modal div[style*="background: #e9d5ff"] {
+            background: #4c1d9533 !important;
+            border-color: #a855f7 !important;
+        }
+        
+        [data-theme="dark"] #location-map-modal div[style*="color: #6b21a8"] {
+            color: #d8b4fe !important;
+        }
+        
+        /* Hardware Box - Green */
+        [data-theme="dark"] #location-map-modal div[style*="background: #d1fae5"] {
+            background: #06573333 !important;
+            border-color: #10b981 !important;
+        }
+        
+        [data-theme="dark"] #location-map-modal div[style*="color: #065f46"] {
+            color: #6ee7b7 !important;
+        }
+        
+        /* Network Box - Orange */
+        [data-theme="dark"] #location-map-modal div[style*="background: #fed7aa"] {
+            background: #7c290633 !important;
+            border-color: #f97316 !important;
+        }
+        
+        [data-theme="dark"] #location-map-modal div[style*="color: #9a3412"] {
+            color: #fdba74 !important;
+        }
+        
+        /* Privacy Box - Red */
+        [data-theme="dark"] #location-map-modal div[style*="background: #fecaca"] {
+            background: #7f1d1d33 !important;
+            border-color: #ef4444 !important;
+        }
+        
+        [data-theme="dark"] #location-map-modal div[style*="color: #991b1b"] {
+            color: #fca5a5 !important;
+        }
+        
+        /* Battery Box - Yellow */
+        [data-theme="dark"] #location-map-modal div[style*="background: #fef08a"] {
+            background: #78350f33 !important;
+            border-color: #eab308 !important;
+        }
+        
+        [data-theme="dark"] #location-map-modal div[style*="color: #713f12"] {
+            color: #fde047 !important;
+        }
+        
+        /* All text inside info boxes should be readable */
+        [data-theme="dark"] #location-map-modal div[style*="margin-bottom: 5px"],
+        [data-theme="dark"] #location-map-modal div[style*="font-size: 11px"],
+        [data-theme="dark"] #location-map-modal div[style*="font-size: 12px"],
+        [data-theme="dark"] #location-map-modal div[style*="font-size: 13px"] {
+            color: #e5e7eb !important;
+        }
+        
+        /* Strong tags in modal */
+        [data-theme="dark"] #location-map-modal strong {
+            color: #f3f4f6 !important;
+        }
+        
+        /* Map info sections */
+        [data-theme="dark"] #map-browser-info,
+        [data-theme="dark"] #map-screen-info,
+        [data-theme="dark"] #map-hardware-info,
+        [data-theme="dark"] #map-network-info,
+        [data-theme="dark"] #map-privacy-info,
+        [data-theme="dark"] #map-battery-info {
+            color: #e5e7eb !important;
+        }
+        
+        [data-theme="dark"] #map-browser-info *,
+        [data-theme="dark"] #map-screen-info *,
+        [data-theme="dark"] #map-hardware-info *,
+        [data-theme="dark"] #map-network-info *,
+        [data-theme="dark"] #map-privacy-info *,
+        [data-theme="dark"] #map-battery-info * {
+            color: inherit !important;
+        }
+        
+        /* Override any inline color styles in dark mode */
+        [data-theme="dark"] #location-map-modal div[style*="color: #666"] {
+            color: #9ca3af !important;
+        }
+        
+        /* Scrollbar for sidebar in dark mode */
+        [data-theme="dark"] #location-map-modal > div > div:first-child::-webkit-scrollbar-track {
+            background: #374151;
+        }
+        
+        [data-theme="dark"] #location-map-modal > div > div:first-child::-webkit-scrollbar-thumb {
+            background: #6b7280;
+        }
+        
+        [data-theme="dark"] #location-map-modal > div > div:first-child::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
     </style>
 </head>
 
@@ -1477,7 +1652,16 @@
             <div class="header-info">
                 <h1>Detalle de Encuesta Económica</h1>
             </div>
+            <div class="header-actions">
+                <button class="header-btn" onclick="exportToPDF()" style="background: #ef4444; border-color: #ef4444;">
+                    PDF
+                </button>
+                <button class="header-btn" onclick="exportToWord()" style="background: #2563eb; border-color: #2563eb;">
+                    Word
+                </button>
+            </div>
         </div>
+        
         <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="Cambiar tema">
             <span id="theme-icon">🌙</span>
         </button>
@@ -1532,11 +1716,35 @@
             </div>
 
             <div class="sidebar-section">
+                <div class="sidebar-label">Navegador</div>
+                <div class="sidebar-value" id="sidebar-browser">-</div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-label">Sistema Operativo</div>
+                <div class="sidebar-value" id="sidebar-os">-</div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-label">Pantalla</div>
+                <div class="sidebar-value" id="sidebar-screen">-</div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-label">Conexión</div>
+                <div class="sidebar-value" id="sidebar-connection">-</div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-label">Hardware</div>
+                <div class="sidebar-value" id="sidebar-hardware">-</div>
+            </div>
+
+            <div class="sidebar-section">
                 <button class="sidebar-btn" id="show-map-btn" onclick="showLocationMap()" style="background: #3b82f6; display: none;">
                     🗺️ Ver Mapa de Ubicación
                 </button>
             </div>
-
             <div class="sidebar-section" style="border-bottom: none;">
                 <button class="sidebar-btn edit" onclick="if(currentSurvey) openEditModal(); else alert('Cargando datos...');">✏️ Editar Datos</button>
                 <button class="sidebar-btn" onclick="auditSurvey()" style="background: #2563eb;">🔍 Auditar Conversación</button>
@@ -1960,7 +2168,12 @@
                 <!-- Tab: Archivos -->
                 <div id="tab-archivos" class="tab-content">
                     <div class="data-section">
-                        <h3>📎 Archivos Adjuntos</h3>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h3 style="margin: 0;">📎 Archivos Adjuntos</h3>
+                            <button id="download-all-btn" onclick="downloadAllFiles()" style="display: none; background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; transition: background 0.3s;">
+                                ⬇️ Descargar Todos
+                            </button>
+                        </div>
                         <div class="files-gallery" id="files-gallery">
                             <div class="loading">Cargando archivos...</div>
                         </div>
@@ -2426,27 +2639,71 @@
         </div>
     </div>
 
-    <!-- Location Map Modal -->
-    <div id="location-map-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; justify-content: center; align-items: center;">
-        <div style="background: white; border-radius: 15px; width: 90%; max-width: 900px; padding: 20px; position: relative; max-height: 90vh; overflow-y: auto;">
-            <button onclick="closeLocationMap()" style="position: absolute; top: 15px; right: 15px; background: #ef4444; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 18px; z-index: 1;">×</button>
-            
-            <h3 style="margin-top: 0;">📍 Comparación de Ubicaciones</h3>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-                <div style="background: #f0f9ff; padding: 15px; border-radius: 10px; border-left: 4px solid #3b82f6;">
-                    <h4 style="margin: 0 0 10px 0; color: #1e40af;">🌐 Ubicación IP</h4>
-                    <div id="map-ip-info" style="font-size: 14px;"></div>
-                </div>
-                <div style="background: #fef3c7; padding: 15px; border-radius: 10px; border-left: 4px solid #f59e0b;">
-                    <h4 style="margin: 0 0 10px 0; color: #92400e;">📝 Dirección Declarada</h4>
-                    <div id="map-declared-info" style="font-size: 14px;"></div>
-                </div>
+    <div id="location-map-modal" class="modal">
+        <div class="modal-content" style="max-width: 1400px; height: 85vh;">
+            <div class="modal-header">
+                <h2>📍 Comparación de Ubicaciones y Dispositivo</h2>
+                <button class="close-btn" onclick="closeLocationMap()">✕</button>
             </div>
             
-            <div id="location-map-container" style="width: 100%; height: 500px; border-radius: 10px; overflow: hidden; border: 2px solid #e5e7eb;"></div>
-            
-            <div id="verification-status" style="margin-top: 15px; padding: 15px; border-radius: 10px; text-align: center; font-weight: bold;"></div>
+            <div style="display: grid; grid-template-columns: 280px 1fr; gap: 20px; height: calc(100% - 60px); overflow: hidden;">
+                <!-- Left sidebar with info - NOW SCROLLABLE -->
+                <div style="overflow-y: auto; padding-right: 10px;">
+                    <!-- IP Location Info -->
+                    <div style="background: #e0f2fe; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <h3 style="margin-top: 0; color: #0369a1;">🌐 Ubicación IP</h3>
+                        <div id="map-ip-info" style="font-size: 13px;"></div>
+                    </div>
+                    
+                    <!-- Declared Address -->
+                    <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <h3 style="margin-top: 0; color: #92400e;">📝 Dirección Declarada</h3>
+                        <div id="map-declared-info" style="font-size: 13px;"></div>
+                    </div>
+                    
+                    <!-- Verification Status -->
+                    <div id="verification-status" style="padding: 10px; border-radius: 5px; font-size: 12px; font-weight: 600; text-align: center; margin-bottom: 15px;"></div>
+                    
+                    <!-- ADD THIS NEW SECTION: Browser Info -->
+                    <div style="background: #dbeafe; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <h3 style="margin-top: 0; color: #1e40af;">🌐 Navegador</h3>
+                        <div id="map-browser-info" style="font-size: 12px;"></div>
+                    </div>
+                    
+                    <!-- ADD THIS NEW SECTION: Screen Info -->
+                    <div style="background: #e9d5ff; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <h3 style="margin-top: 0; color: #6b21a8;">📱 Pantalla</h3>
+                        <div id="map-screen-info" style="font-size: 12px;"></div>
+                    </div>
+                    
+                    <!-- ADD THIS NEW SECTION: Hardware Info -->
+                    <div style="background: #d1fae5; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <h3 style="margin-top: 0; color: #065f46;">⚙️ Hardware</h3>
+                        <div id="map-hardware-info" style="font-size: 12px;"></div>
+                    </div>
+                    
+                    <!-- ADD THIS NEW SECTION: Network Info -->
+                    <div style="background: #fed7aa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <h3 style="margin-top: 0; color: #9a3412;">📡 Conexión</h3>
+                        <div id="map-network-info" style="font-size: 12px;"></div>
+                    </div>
+                    
+                    <!-- ADD THIS NEW SECTION: Privacy Info -->
+                    <div style="background: #fecaca; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <h3 style="margin-top: 0; color: #991b1b;">🔒 Privacidad</h3>
+                        <div id="map-privacy-info" style="font-size: 12px;"></div>
+                    </div>
+                    
+                    <!-- ADD THIS NEW SECTION: Battery (if available) -->
+                    <div id="map-battery-section" style="background: #fef08a; padding: 15px; border-radius: 8px; margin-bottom: 15px; display: none;">
+                        <h3 style="margin-top: 0; color: #713f12;">🔋 Batería</h3>
+                        <div id="map-battery-info" style="font-size: 12px;"></div>
+                    </div>
+                </div>
+                
+                <!-- Map container -->
+                <div id="location-map-container" style="border-radius: 8px; overflow: hidden;"></div>
+            </div>
         </div>
     </div>
 
@@ -2543,7 +2800,7 @@
         let locationMap = null;
 
         function showLocationMap() {
-            if (!currentSurvey.geo_lat || !currentSurvey.geo_lon) {
+            if (!currentSurvey.ip_latitude || !currentSurvey.ip_longitude) {
                 alert('No hay datos de geolocalización disponibles');
                 return;
             }
@@ -2557,9 +2814,11 @@
             // Show IP info
             ipInfo.innerHTML = `
                 <div style="margin-bottom: 5px;"><strong>IP:</strong> ${currentSurvey.user_ip}</div>
-                <div style="margin-bottom: 5px;"><strong>Ciudad:</strong> ${currentSurvey.geo_city}</div>
-                <div style="margin-bottom: 5px;"><strong>Región:</strong> ${currentSurvey.geo_region}</div>
-                <div><strong>País:</strong> ${currentSurvey.geo_country}</div>
+                <div style="margin-bottom: 5px;"><strong>Ciudad:</strong> ${currentSurvey.ip_city}</div>
+                <div style="margin-bottom: 5px;"><strong>Región:</strong> ${currentSurvey.ip_region}</div>
+                <div style="margin-bottom: 5px;"><strong>País:</strong> ${currentSurvey.ip_country}</div>
+                <div style="margin-bottom: 5px;"><strong>ISP:</strong> ${currentSurvey.ip_isp || 'N/A'}</div>
+                <div style="font-size: 11px; color: #666;"><strong>Coordenadas:</strong> ${currentSurvey.ip_latitude}, ${currentSurvey.ip_longitude}</div>
             `;
 
             // Show declared address
@@ -2567,21 +2826,100 @@
                 <div style="word-wrap: break-word;">${currentSurvey.full_address || 'No proporcionado'}</div>
             `;
 
+            // Populate browser info
+            const browserInfo = document.getElementById('map-browser-info');
+            if (currentSurvey.browser_name) {
+                browserInfo.innerHTML = `
+                    <div style="margin-bottom: 5px;"><strong>Navegador:</strong> ${currentSurvey.browser_name} ${currentSurvey.browser_version || ''}</div>
+                    <div style="margin-bottom: 5px;"><strong>OS:</strong> ${currentSurvey.browser_os || 'N/A'}</div>
+                    <div style="margin-bottom: 5px;"><strong>Plataforma:</strong> ${currentSurvey.browser_platform || 'N/A'}</div>
+                    <div style="margin-bottom: 5px;"><strong>Idioma:</strong> ${currentSurvey.browser_language || 'N/A'}</div>
+                    <div style="font-size: 11px; color: #666; margin-top: 5px; word-break: break-all;"><strong>User Agent:</strong> ${currentSurvey.browser_user_agent || 'N/A'}</div>
+                `;
+            } else {
+                browserInfo.innerHTML = '<div style="color: #999;">No disponible</div>';
+            }
+
+            // Populate screen info
+            const screenInfo = document.getElementById('map-screen-info');
+            if (currentSurvey.screen_width) {
+                screenInfo.innerHTML = `
+                    <div style="margin-bottom: 5px;"><strong>Resolución:</strong> ${currentSurvey.screen_width}x${currentSurvey.screen_height}</div>
+                    <div style="margin-bottom: 5px;"><strong>Disponible:</strong> ${currentSurvey.screen_avail_width}x${currentSurvey.screen_avail_height}</div>
+                    <div style="margin-bottom: 5px;"><strong>Color:</strong> ${currentSurvey.screen_color_depth} bits</div>
+                    <div style="margin-bottom: 5px;"><strong>Pixel Ratio:</strong> ${currentSurvey.device_pixel_ratio || 'N/A'}</div>
+                    <div style="margin-bottom: 5px;"><strong>Touch:</strong> ${currentSurvey.has_touch_support ? 'Sí (' + (currentSurvey.max_touch_points || 0) + ' puntos)' : 'No'}</div>
+                `;
+            } else {
+                screenInfo.innerHTML = '<div style="color: #999;">No disponible</div>';
+            }
+
+            // Populate hardware info
+            const hardwareInfo = document.getElementById('map-hardware-info');
+            if (currentSurvey.cpu_cores || currentSurvey.device_memory) {
+                hardwareInfo.innerHTML = `
+                    <div style="margin-bottom: 5px;"><strong>CPU:</strong> ${currentSurvey.cpu_cores || 'N/A'} cores</div>
+                    <div style="margin-bottom: 5px;"><strong>RAM:</strong> ${currentSurvey.device_memory || 'N/A'} GB</div>
+                    <div style="margin-bottom: 5px;"><strong>GPU Vendor:</strong> ${currentSurvey.webgl_vendor || 'N/A'}</div>
+                    <div style="font-size: 11px; color: #666; margin-top: 5px; word-break: break-all;"><strong>GPU:</strong> ${currentSurvey.webgl_renderer || 'N/A'}</div>
+                    <div style="font-size: 11px; color: #666; margin-top: 5px;"><strong>Canvas:</strong> ${currentSurvey.canvas_fingerprint || 'N/A'}</div>
+                `;
+            } else {
+                hardwareInfo.innerHTML = '<div style="color: #999;">No disponible</div>';
+            }
+
+            // Populate network info
+            const networkInfo = document.getElementById('map-network-info');
+            if (currentSurvey.connection_effective_type) {
+                networkInfo.innerHTML = `
+                    <div style="margin-bottom: 5px;"><strong>Tipo:</strong> ${currentSurvey.connection_type || 'N/A'}</div>
+                    <div style="margin-bottom: 5px;"><strong>Efectivo:</strong> ${currentSurvey.connection_effective_type.toUpperCase()}</div>
+                    <div style="margin-bottom: 5px;"><strong>Velocidad:</strong> ${currentSurvey.connection_downlink || 'N/A'} Mbps</div>
+                    <div style="margin-bottom: 5px;"><strong>Latencia:</strong> ${currentSurvey.connection_rtt || 'N/A'} ms</div>
+                `;
+            } else {
+                networkInfo.innerHTML = '<div style="color: #999;">No disponible</div>';
+            }
+
+            // Populate privacy info
+            const privacyInfo = document.getElementById('map-privacy-info');
+            privacyInfo.innerHTML = `
+                <div style="margin-bottom: 5px;"><strong>Do Not Track:</strong> ${currentSurvey.do_not_track || 'N/A'}</div>
+                <div style="margin-bottom: 5px;"><strong>Cookies:</strong> ${currentSurvey.cookies_enabled ? '✅ Sí' : '❌ No'}</div>
+                <div style="margin-bottom: 5px;"><strong>LocalStorage:</strong> ${currentSurvey.local_storage_enabled ? '✅ Sí' : '❌ No'}</div>
+                <div style="margin-bottom: 5px;"><strong>SessionStorage:</strong> ${currentSurvey.session_storage_enabled ? '✅ Sí' : '❌ No'}</div>
+                <div style="margin-bottom: 5px;"><strong>IndexedDB:</strong> ${currentSurvey.indexed_db_enabled ? '✅ Sí' : '❌ No'}</div>
+            `;
+
+            // Populate battery info (if available)
+            if (currentSurvey.battery_level !== null && currentSurvey.battery_level !== undefined) {
+                document.getElementById('map-battery-section').style.display = 'block';
+                document.getElementById('map-battery-info').innerHTML = `
+                    <div style="margin-bottom: 5px;"><strong>Nivel:</strong> ${currentSurvey.battery_level}%</div>
+                    <div style="margin-bottom: 5px;"><strong>Cargando:</strong> ${currentSurvey.battery_charging ? '⚡ Sí' : '🔌 No'}</div>
+                `;
+            } else {
+                document.getElementById('map-battery-section').style.display = 'none';
+            }
+
             modal.style.display = 'flex';
 
             setTimeout(() => {
                 // Clear previous map
                 container.innerHTML = '<div id="leaflet-map" style="width: 100%; height: 100%;"></div>';
 
-                // Create map
-                locationMap = L.map('leaflet-map').setView([currentSurvey.geo_lat, currentSurvey.geo_lon], 13);
+                // Create map (convert string coordinates to numbers)
+                const lat = parseFloat(currentSurvey.ip_latitude);
+                const lon = parseFloat(currentSurvey.ip_longitude);
+                
+                locationMap = L.map('leaflet-map').setView([lat, lon], 13);
 
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '© OpenStreetMap contributors'
                 }).addTo(locationMap);
 
                 // Add marker for IP location
-                L.marker([currentSurvey.geo_lat, currentSurvey.geo_lon], {
+                L.marker([lat, lon], {
                     icon: L.icon({
                         iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
                         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
@@ -2591,13 +2929,13 @@
                         shadowSize: [41, 41]
                     })
                 }).addTo(locationMap)
-                    .bindPopup(`<b>📍 Ubicación IP</b><br>${currentSurvey.geo_city}, ${currentSurvey.geo_region}<br>${currentSurvey.geo_country}`)
+                    .bindPopup(`<b>📍 Ubicación IP</b><br>${currentSurvey.ip_city}, ${currentSurvey.ip_region}<br>${currentSurvey.ip_country}`)
                     .openPopup();
 
                 // Simple verification message
                 const declaredLower = (currentSurvey.full_address || '').toLowerCase();
-                const cityMatch = declaredLower.includes(currentSurvey.geo_city.toLowerCase());
-                const regionMatch = declaredLower.includes(currentSurvey.geo_region.toLowerCase());
+                const cityMatch = declaredLower.includes((currentSurvey.ip_city || '').toLowerCase());
+                const regionMatch = declaredLower.includes((currentSurvey.ip_region || '').toLowerCase());
 
                 if (cityMatch || regionMatch) {
                     verificationStatus.style.background = '#d1fae5';
@@ -2622,29 +2960,122 @@
         async function loadSurveyDetails() {
             try {
                 const response = await fetch(`${API_URL}/survey/${sessionId}`);
+                
+                // Check if response is OK
+                if (!response.ok) {
+                    console.error('Survey not found:', sessionId);
+                    throw new Error('Survey not found');
+                }
+                
                 currentSurvey = await response.json();
+                
+                // Check if survey has minimal data
+                if (!currentSurvey || !currentSurvey.session_id) {
+                    console.error('Invalid survey data');
+                    throw new Error('Invalid survey data');
+                }
 
                 // Sidebar
                 document.getElementById('sidebar-name').textContent = currentSurvey.candidate_name || 'No proporcionado';
                 document.getElementById('sidebar-email').textContent = currentSurvey.email || 'No proporcionado';
                 document.getElementById('sidebar-phone').textContent = currentSurvey.phone_whatsapp || 'No proporcionado';
                 document.getElementById('sidebar-session').textContent = currentSurvey.session_id;
-                document.getElementById('sidebar-created').textContent = new Date(currentSurvey.created_at).toLocaleDateString('es-MX');
-                document.getElementById('sidebar-updated').textContent = new Date(currentSurvey.updated_at).toLocaleDateString('es-MX');
+                
+                // Safe date formatting
+                document.getElementById('sidebar-created').textContent = currentSurvey.created_at 
+                    ? new Date(currentSurvey.created_at).toLocaleDateString('es-MX') 
+                    : 'No disponible';
+                document.getElementById('sidebar-updated').textContent = currentSurvey.updated_at 
+                    ? new Date(currentSurvey.updated_at).toLocaleDateString('es-MX') 
+                    : 'No disponible';
 
                 // Populate IP and geolocation data
                 document.getElementById('sidebar-ip').textContent = currentSurvey.user_ip || 'No disponible';
 
-                if (currentSurvey.geo_city && currentSurvey.geo_region && currentSurvey.geo_country) {
+                // Populate browser/device info (safe version)
+                const browserElem = document.getElementById('sidebar-browser');
+                if (browserElem) {
+                    if (currentSurvey.browser_name) {
+                        browserElem.textContent = `${currentSurvey.browser_name} ${currentSurvey.browser_version || ''}`;
+                    } else {
+                        browserElem.textContent = 'No disponible';
+                    }
+                }
+
+                const osElem = document.getElementById('sidebar-os');
+                if (osElem) {
+                    osElem.textContent = currentSurvey.browser_os || 'No disponible';
+                }
+
+                const screenElem = document.getElementById('sidebar-screen');
+                if (screenElem) {
+                    if (currentSurvey.screen_width && currentSurvey.screen_height) {
+                        screenElem.textContent = `${currentSurvey.screen_width}x${currentSurvey.screen_height}`;
+                    } else {
+                        screenElem.textContent = 'No disponible';
+                    }
+                }
+
+                const connectionElem = document.getElementById('sidebar-connection');
+                if (connectionElem) {
+                    if (currentSurvey.connection_effective_type) {
+                        connectionElem.textContent = `${currentSurvey.connection_effective_type.toUpperCase()} (${currentSurvey.connection_type || 'unknown'})`;
+                    } else {
+                        connectionElem.textContent = 'No disponible';
+                    }
+                }
+
+                const hardwareElem = document.getElementById('sidebar-hardware');
+                if (hardwareElem) {
+                    if (currentSurvey.cpu_cores || currentSurvey.device_memory) {
+                        hardwareElem.textContent = `CPU: ${currentSurvey.cpu_cores || '?'} cores, RAM: ${currentSurvey.device_memory || '?'} GB`;
+                    } else {
+                        hardwareElem.textContent = 'No disponible';
+                    }
+                }
+
+                // Populate browser/device info
+                if (currentSurvey.browser_name) {
+                    document.getElementById('sidebar-browser').textContent = 
+                        `${currentSurvey.browser_name} ${currentSurvey.browser_version || ''}`;
+                } else {
+                    document.getElementById('sidebar-browser').textContent = 'No disponible';
+                }
+
+                document.getElementById('sidebar-os').textContent = currentSurvey.browser_os || 'No disponible';
+
+                if (currentSurvey.screen_width && currentSurvey.screen_height) {
+                    document.getElementById('sidebar-screen').textContent = 
+                        `${currentSurvey.screen_width}x${currentSurvey.screen_height}`;
+                } else {
+                    document.getElementById('sidebar-screen').textContent = 'No disponible';
+                }
+
+                if (currentSurvey.connection_effective_type) {
+                    document.getElementById('sidebar-connection').textContent = 
+                        `${currentSurvey.connection_effective_type.toUpperCase()} (${currentSurvey.connection_type || 'unknown'})`;
+                } else {
+                    document.getElementById('sidebar-connection').textContent = 'No disponible';
+                }
+
+                if (currentSurvey.cpu_cores || currentSurvey.device_memory) {
+                    document.getElementById('sidebar-hardware').textContent = 
+                        `CPU: ${currentSurvey.cpu_cores || '?'} cores, RAM: ${currentSurvey.device_memory || '?'} GB`;
+                } else {
+                    document.getElementById('sidebar-hardware').textContent = 'No disponible';
+                }
+
+                if (currentSurvey.ip_city && currentSurvey.ip_region && currentSurvey.ip_country) {
                     document.getElementById('sidebar-geo').innerHTML = `
-                        <div><strong>${currentSurvey.geo_city}</strong></div>
-                        <div>${currentSurvey.geo_region}, ${currentSurvey.geo_country}</div>
+                        <div><strong>${currentSurvey.ip_city}</strong></div>
+                        <div>${currentSurvey.ip_region}, ${currentSurvey.ip_country}</div>
+                        <div style="font-size: 11px; color: #666; margin-top: 3px;">📍 ${currentSurvey.ip_latitude}, ${currentSurvey.ip_longitude}</div>
                     `;
-                    document.getElementById('show-map-btn').style.display = 'block';
+                    document.getElementById('show-map-btn').style.display = 'block'; // ← BUTTON ONLY SHOWS HERE
                 } else {
                     document.getElementById('sidebar-geo').textContent = 'No disponible';
                 }
-
+                
                 document.getElementById('sidebar-declared-address').textContent = currentSurvey.full_address || 'No proporcionado';
 
                 // Summary cards
@@ -2867,10 +3298,21 @@
 
                 if (!data.files || data.files.length === 0) {
                     gallery.innerHTML = '<div class="empty-state"><p>No hay archivos adjuntos</p></div>';
+                    // Hide download button
+                    const downloadBtn = document.getElementById('download-all-btn');
+                    if (downloadBtn) {
+                        downloadBtn.style.display = 'none';
+                    }
                     return;
                 }
 
                 gallery.innerHTML = '';
+
+                // Show download all button if there are files
+                const downloadBtn = document.getElementById('download-all-btn');
+                if (downloadBtn) {
+                    downloadBtn.style.display = 'block';
+                }
 
                 data.files.forEach(file => {
                     const fileCard = document.createElement('div');
@@ -2905,6 +3347,59 @@
             } catch (error) {
                 console.error('Error loading files:', error);
                 document.getElementById('files-gallery').innerHTML = '<div class="empty-state"><p>Error al cargar archivos</p></div>';
+            }
+        }
+
+        // Global variable to store files
+        let allFiles = [];
+
+        async function downloadAllFiles() {
+            const btn = document.getElementById('download-all-btn');
+            const originalText = btn.innerHTML;
+            
+            try {
+                btn.disabled = true;
+                btn.innerHTML = '⏳ Descargando...';
+                
+                const response = await fetch(`${API_URL}/survey/${sessionId}/files`);
+                const data = await response.json();
+                
+                if (!data.files || data.files.length === 0) {
+                    alert('No hay archivos para descargar');
+                    return;
+                }
+                
+                // Download each file
+                for (let i = 0; i < data.files.length; i++) {
+                    const file = data.files[i];
+                    const fileUrl = `${API_URL}/survey/file/${sessionId}/${file.id}`;
+                    
+                    btn.innerHTML = `⏳ Descargando ${i + 1}/${data.files.length}...`;
+                    
+                    // Create temporary link and trigger download
+                    const link = document.createElement('a');
+                    link.href = fileUrl;
+                    link.download = file.file_name;
+                    link.target = '_blank';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    // Small delay between downloads to avoid blocking
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                
+                btn.innerHTML = '✅ Descargado!';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Error downloading files:', error);
+                alert('Error al descargar archivos');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
             }
         }
 
@@ -3344,6 +3839,80 @@
             document.getElementById('connection-logs').innerHTML = timelineHTML;
         }
 
+        function showDeviceDetails() {
+            const modal = document.getElementById('device-modal');
+            const content = document.getElementById('device-details-content');
+            
+            content.innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px;">
+                    <!-- Browser Info -->
+                    <div style="background: #f9fafb; padding: 15px; border-radius: 8px;">
+                        <h3 style="margin-top: 0; color: #3b82f6;">🌐 Navegador</h3>
+                        <p><strong>User Agent:</strong><br>${currentSurvey.browser_user_agent || 'N/A'}</p>
+                        <p><strong>Nombre:</strong> ${currentSurvey.browser_name || 'N/A'}</p>
+                        <p><strong>Versión:</strong> ${currentSurvey.browser_version || 'N/A'}</p>
+                        <p><strong>Plataforma:</strong> ${currentSurvey.browser_platform || 'N/A'}</p>
+                        <p><strong>Idioma:</strong> ${currentSurvey.browser_language || 'N/A'}</p>
+                        <p><strong>Zona Horaria:</strong> ${currentSurvey.browser_timezone || 'N/A'}</p>
+                    </div>
+                    
+                    <!-- Screen Info -->
+                    <div style="background: #f9fafb; padding: 15px; border-radius: 8px;">
+                        <h3 style="margin-top: 0; color: #8b5cf6;">📱 Pantalla</h3>
+                        <p><strong>Resolución:</strong> ${currentSurvey.screen_width}x${currentSurvey.screen_height}</p>
+                        <p><strong>Área disponible:</strong> ${currentSurvey.screen_avail_width}x${currentSurvey.screen_avail_height}</p>
+                        <p><strong>Profundidad de color:</strong> ${currentSurvey.screen_color_depth} bits</p>
+                        <p><strong>Pixel Ratio:</strong> ${currentSurvey.device_pixel_ratio || 'N/A'}</p>
+                        <p><strong>Touch:</strong> ${currentSurvey.has_touch_support ? 'Sí' : 'No'} (${currentSurvey.max_touch_points || 0} puntos)</p>
+                    </div>
+                    
+                    <!-- Hardware -->
+                    <div style="background: #f9fafb; padding: 15px; border-radius: 8px;">
+                        <h3 style="margin-top: 0; color: #10b981;">⚙️ Hardware</h3>
+                        <p><strong>CPU Cores:</strong> ${currentSurvey.cpu_cores || 'N/A'}</p>
+                        <p><strong>Memoria:</strong> ${currentSurvey.device_memory || 'N/A'} GB</p>
+                        <p><strong>WebGL Vendor:</strong> ${currentSurvey.webgl_vendor || 'N/A'}</p>
+                        <p><strong>WebGL Renderer:</strong> ${currentSurvey.webgl_renderer || 'N/A'}</p>
+                        <p><strong>Canvas Hash:</strong> ${currentSurvey.canvas_fingerprint || 'N/A'}</p>
+                    </div>
+                    
+                    <!-- Network -->
+                    <div style="background: #f9fafb; padding: 15px; border-radius: 8px;">
+                        <h3 style="margin-top: 0; color: #f59e0b;">📡 Conexión</h3>
+                        <p><strong>Tipo:</strong> ${currentSurvey.connection_type || 'N/A'}</p>
+                        <p><strong>Tipo efectivo:</strong> ${currentSurvey.connection_effective_type || 'N/A'}</p>
+                        <p><strong>Downlink:</strong> ${currentSurvey.connection_downlink || 'N/A'} Mbps</p>
+                        <p><strong>RTT:</strong> ${currentSurvey.connection_rtt || 'N/A'} ms</p>
+                    </div>
+                    
+                    <!-- Privacy & Storage -->
+                    <div style="background: #f9fafb; padding: 15px; border-radius: 8px;">
+                        <h3 style="margin-top: 0; color: #ef4444;">🔒 Privacidad</h3>
+                        <p><strong>Do Not Track:</strong> ${currentSurvey.do_not_track || 'N/A'}</p>
+                        <p><strong>Cookies:</strong> ${currentSurvey.cookies_enabled ? 'Habilitadas' : 'Deshabilitadas'}</p>
+                        <p><strong>LocalStorage:</strong> ${currentSurvey.local_storage_enabled ? 'Sí' : 'No'}</p>
+                        <p><strong>SessionStorage:</strong> ${currentSurvey.session_storage_enabled ? 'Sí' : 'No'}</p>
+                        <p><strong>IndexedDB:</strong> ${currentSurvey.indexed_db_enabled ? 'Sí' : 'No'}</p>
+                    </div>
+                    
+                    <!-- Battery -->
+                    ${currentSurvey.battery_level !== null ? `
+                    <div style="background: #f9fafb; padding: 15px; border-radius: 8px;">
+                        <h3 style="margin-top: 0; color: #84cc16;">🔋 Batería</h3>
+                        <p><strong>Nivel:</strong> ${currentSurvey.battery_level}%</p>
+                        <p><strong>Cargando:</strong> ${currentSurvey.battery_charging ? 'Sí' : 'No'}</p>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            modal.style.display = 'flex';
+        }
+
+        function closeDeviceModal() {
+            document.getElementById('device-modal').style.display = 'none';
+        }
+
         // Dark Mode Functions
         const themeToggle = {
             init() {
@@ -3390,6 +3959,572 @@
         function toggleDarkMode() {
             themeToggle.toggle();
         }
+
+        // ==========================================
+        // ENHANCED PDF EXPORT WITH IMAGES
+        // ==========================================
+        async function exportToPDF() {
+            if (!currentSurvey) {
+                alert('Por favor espera a que se carguen los datos');
+                return;
+            }
+            
+            // Show loading
+            const btn = document.querySelector('button[onclick="exportToPDF()"]');
+            const originalText = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '⏳ Generando PDF...';
+            }
+            
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('p', 'mm', 'a4');
+                
+                let yPos = 20;
+                const pageHeight = 280;
+                const margin = 20;
+                const lineHeight = 7;
+                
+                // Get all images from survey
+                let surveyImages = [];
+                try {
+                    const response = await fetch(`${API_URL}/survey/${sessionId}/files`);
+                    const data = await response.json();
+                    if (data.files && data.files.length > 0) {
+                        surveyImages = data.files.filter(f => f.file_type && f.file_type.startsWith('image/'));
+                    }
+                } catch (e) {
+                    console.log('No images to include');
+                }
+                
+                // Helper function to add new page if needed
+                const checkPageBreak = () => {
+                    if (yPos > pageHeight - 20) {
+                        doc.addPage();
+                        yPos = 20;
+                    }
+                };
+                
+                // Helper to add text with wrapping
+                const addText = (text, fontSize = 10, isBold = false) => {
+                    doc.setFontSize(fontSize);
+                    doc.setFont(undefined, isBold ? 'bold' : 'normal');
+                    const lines = doc.splitTextToSize(text, 170);
+                    lines.forEach(line => {
+                        checkPageBreak();
+                        doc.text(line, margin, yPos);
+                        yPos += lineHeight;
+                    });
+                };
+                
+                const addSection = (title) => {
+                    yPos += 5;
+                    checkPageBreak();
+                    doc.setFillColor(0, 131, 134);
+                    doc.rect(margin, yPos - 5, 170, 8, 'F');
+                    doc.setTextColor(255, 255, 255);
+                    doc.setFontSize(12);
+                    doc.setFont(undefined, 'bold');
+                    doc.text(title, margin + 2, yPos);
+                    doc.setTextColor(0, 0, 0);
+                    yPos += 10;
+                };
+                
+                const addField = (label, value) => {
+                    checkPageBreak();
+                    doc.setFont(undefined, 'bold');
+                    doc.setFontSize(10);
+                    doc.text(label + ':', margin, yPos);
+                    doc.setFont(undefined, 'normal');
+                    const lines = doc.splitTextToSize(value || 'No proporcionado', 120);
+                    doc.text(lines, margin + 50, yPos);
+                    yPos += lineHeight * lines.length;
+                };
+                
+                // HEADER
+                doc.setFillColor(0, 131, 134);
+                doc.rect(0, 0, 210, 40, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(20);
+                doc.setFont(undefined, 'bold');
+                doc.text('ENCUESTA SOCIOECONÓMICA', margin, 15);
+                doc.setFontSize(12);
+                doc.text('6Cias - Reporte Completo', margin, 25);
+                doc.setFontSize(10);
+                doc.text(`Generado: ${new Date().toLocaleString('es-MX')}`, margin, 32);
+                doc.setTextColor(0, 0, 0);
+                yPos = 50;
+                
+                // INFORMACIÓN GENERAL
+                addSection('INFORMACIÓN GENERAL');
+                addField('Session ID', currentSurvey.session_id);
+                addField('Nombre', currentSurvey.candidate_name);
+                addField('Email', currentSurvey.email);
+                addField('Teléfono', currentSurvey.phone_whatsapp);
+                addField('Fecha de Creación', currentSurvey.created_at ? new Date(currentSurvey.created_at).toLocaleDateString('es-MX') : 'N/A');
+                addField('Última Actualización', currentSurvey.updated_at ? new Date(currentSurvey.updated_at).toLocaleDateString('es-MX') : 'N/A');
+                addField('Estado', currentSurvey.survey_completed ? 'Completa ✓' : 'Incompleta ⊘');
+                
+                // UBICACIÓN E IP
+                addSection('UBICACIÓN E IP');
+                addField('IP Address', currentSurvey.user_ip);
+                addField('Ciudad', currentSurvey.ip_city);
+                addField('Región', currentSurvey.ip_region);
+                addField('País', currentSurvey.ip_country);
+                addField('Código Postal', currentSurvey.ip_postal_code);
+                addField('Coordenadas', currentSurvey.ip_latitude && currentSurvey.ip_longitude ? 
+                    `${currentSurvey.ip_latitude}, ${currentSurvey.ip_longitude}` : 'N/A');
+                addField('ISP', currentSurvey.ip_isp);
+                addField('Organización', currentSurvey.ip_organization);
+                addField('Timezone', currentSurvey.ip_timezone);
+                addField('Es Proxy/VPN', currentSurvey.ip_is_proxy ? 'Sí ⚠️' : 'No');
+                addField('Conexión Móvil', currentSurvey.ip_is_mobile ? 'Sí' : 'No');
+                
+                // NAVEGADOR Y DISPOSITIVO
+                addSection('NAVEGADOR Y DISPOSITIVO');
+                addField('Navegador', `${currentSurvey.browser_name || 'N/A'} ${currentSurvey.browser_version || ''}`);
+                addField('Sistema Operativo', currentSurvey.browser_os);
+                addField('Plataforma', currentSurvey.browser_platform);
+                addField('Idioma', currentSurvey.browser_language);
+                addField('Resolución', currentSurvey.screen_width ? `${currentSurvey.screen_width}x${currentSurvey.screen_height}` : 'N/A');
+                addField('Profundidad Color', currentSurvey.screen_color_depth ? `${currentSurvey.screen_color_depth} bits` : 'N/A');
+                addField('CPU Cores', currentSurvey.cpu_cores?.toString());
+                addField('RAM', currentSurvey.device_memory ? `${currentSurvey.device_memory} GB` : 'N/A');
+                addField('GPU', currentSurvey.webgl_vendor);
+                addField('Conexión', currentSurvey.connection_effective_type?.toUpperCase());
+                addField('Velocidad', currentSurvey.connection_downlink ? `${currentSurvey.connection_downlink} Mbps` : 'N/A');
+                
+                // DATOS PERSONALES
+                addSection('DATOS PERSONALES');
+                addField('Fecha de Nacimiento', currentSurvey.date_of_birth);
+                addField('CURP', currentSurvey.curp);
+                addField('NSS/IMSS', currentSurvey.nss_imss);
+                addField('RFC', currentSurvey.rfc_tax_id);
+                addField('Dirección', currentSurvey.full_address);
+                
+                // VIVIENDA
+                addSection('VIVIENDA');
+                addField('Tipo de Vivienda', currentSurvey.housing_type);
+                addField('Vive Con', currentSurvey.lives_with);
+                addField('Dependientes', currentSurvey.dependents_count?.toString());
+                addField('Servicios', `Agua: ${currentSurvey.has_water ? 'Sí' : 'No'} | Electricidad: ${currentSurvey.has_electricity ? 'Sí' : 'No'} | Internet: ${currentSurvey.has_internet ? 'Sí' : 'No'} | Gas: ${currentSurvey.has_gas ? 'Sí' : 'No'}`);
+                
+                // EDUCACIÓN Y EMPLEO
+                addSection('EDUCACIÓN Y EMPLEO');
+                addField('Nivel de Estudios', currentSurvey.education_level);
+                addField('Puesto Solicitado', currentSurvey.position_applying);
+                addField('Organización', currentSurvey.organization);
+                addField('Área/División', currentSurvey.area_division);
+                addField('Empleo Actual', currentSurvey.current_employment);
+                addField('Empleo Anterior', currentSurvey.previous_employment);
+                
+                // INGRESOS
+                addSection('INGRESOS');
+                addField('Sueldo/Bonos', currentSurvey.salary_bonus);
+                addField('Apoyo Familiar', currentSurvey.family_support);
+                addField('Negocio Informal', currentSurvey.informal_business_income);
+                
+                // GASTOS
+                addSection('GASTOS MENSUALES');
+                addField('Despensa', currentSurvey.groceries);
+                addField('Renta', currentSurvey.rent);
+                addField('Servicios', currentSurvey.utilities);
+                addField('Transporte', currentSurvey.transportation);
+                addField('Educación', currentSurvey.school_expenses);
+                addField('Entretenimiento', currentSurvey.entertainment);
+                
+                // BIENES Y DEUDAS
+                addSection('BIENES Y PATRIMONIO');
+                addField('Bienes Raíces', currentSurvey.real_estate);
+                addField('Vehículos', currentSurvey.vehicles);
+                addField('Negocios', currentSurvey.businesses);
+                addField('Ahorros', currentSurvey.formal_savings);
+                addField('Deudas', currentSurvey.debts);
+                addField('Buró de Crédito', currentSurvey.credit_bureau);
+                
+                // REFERENCIAS
+                addSection('REFERENCIAS');
+                addField('Referencias Familiares', currentSurvey.primary_family_contacts);
+                addField('Referencias Laborales', currentSurvey.work_references);
+                addField('Contacto de Emergencia', currentSurvey.emergency_contact_name);
+                
+                // ADD IMAGES SECTION
+                if (surveyImages.length > 0) {
+                    addSection(`📸 ARCHIVOS ADJUNTOS (${surveyImages.length})`);
+                    
+                    for (let i = 0; i < surveyImages.length; i++) {
+                        const img = surveyImages[i];
+                        const fileUrl = `${API_URL}/survey/file/${sessionId}/${img.id}`;
+                        
+                        try {
+                            // Check if we need new page
+                            if (yPos > pageHeight - 80) {
+                                doc.addPage();
+                                yPos = 20;
+                            }
+                            
+                            // Add image title
+                            doc.setFont(undefined, 'bold');
+                            doc.setFontSize(9);
+                            doc.text(`${i + 1}. ${img.file_name}`, margin, yPos);
+                            yPos += 5;
+                            
+                            // Add image
+                            doc.addImage(fileUrl, 'JPEG', margin, yPos, 80, 60);
+                            yPos += 65;
+                            
+                        } catch (e) {
+                            console.log('Could not add image:', img.file_name);
+                            doc.setFont(undefined, 'normal');
+                            doc.setFontSize(9);
+                            doc.text(`[Imagen no disponible: ${img.file_name}]`, margin, yPos);
+                            yPos += 7;
+                        }
+                    }
+                }
+                
+                // Footer on all pages
+                doc.setFontSize(8);
+                doc.setTextColor(128, 128, 128);
+                const pageCount = doc.internal.getNumberOfPages();
+                for (let i = 1; i <= pageCount; i++) {
+                    doc.setPage(i);
+                    doc.text(`Página ${i} de ${pageCount}`, 105, 290, { align: 'center' });
+                    doc.text('Generado por 6Cias - ' + new Date().toLocaleDateString('es-MX'), margin, 290);
+                }
+                
+                // Save
+                doc.save(`Encuesta_${currentSurvey.candidate_name || currentSurvey.session_id}_${new Date().toISOString().split('T')[0]}.pdf`);
+                
+                // Reset button
+                if (btn) {
+                    btn.innerHTML = '✅ PDF Generado!';
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    }, 2000);
+                }
+                
+                } catch (error) {
+                    console.error('Error generating PDF:', error);
+                    alert('Error al generar PDF: ' + error.message);
+                    if (btn) {
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    }
+                }
+            }
+
+        // ==========================================
+        // WORD EXPORT FUNCTION
+        // ==========================================
+        async function exportToWord() { 
+            if (!currentSurvey) {
+                alert('Por favor espera a que se carguen los datos');
+                return;
+            }
+            
+            // Get button reference
+            const btn = document.querySelector('button[onclick="exportToWord()"]');
+            
+            // Check if docx library loaded
+            if (typeof docx === 'undefined') {
+                console.error('docx library not loaded - checking window.docx');
+                
+                // Try alternate path
+                if (typeof window.docx === 'undefined') {
+                    alert('Error: La librería de Word no está disponible.\n\nPor favor:\n1. Desactiva el "Tracking Prevention" en tu navegador\n2. Recarga la página\n3. Intenta de nuevo');
+                    return;
+                }
+            }
+            
+            // Show loading
+            const originalText = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '⏳ Generando Word...';
+            }
+            
+            try {
+                const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, ImageRun } = docx;
+                
+                // Get all images from survey
+                let surveyImages = [];
+                try {
+                    const response = await fetch(`${API_URL}/survey/${sessionId}/files`);
+                    const data = await response.json();
+                    if (data.files && data.files.length > 0) {
+                        surveyImages = data.files.filter(f => f.file_type && f.file_type.startsWith('image/'));
+                    }
+                } catch (e) {
+                    console.log('No images to include');
+                }
+
+                const createHeading = (text) => {
+                    return new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: text,
+                                bold: true,
+                                size: 28,
+                                color: "FFFFFF"  // Force black text
+                            })
+                        ],
+                        heading: HeadingLevel.HEADING_1,
+                        spacing: { before: 400, after: 200 },
+                        shading: {
+                            fill: "008386"  // Keep green background
+                        }
+                    });
+                };
+                
+                const createField = (label, value) => {
+                    return new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: label + ": ",
+                                bold: true,
+                                size: 22
+                            }),
+                            new TextRun({
+                                text: value || 'No proporcionado',
+                                size: 22
+                            })
+                        ],
+                        spacing: { after: 100 }
+                    });
+                };
+                
+                const sections = [];
+                
+                // HEADER
+                sections.push(
+                    new Paragraph({
+                        text: "ENCUESTA SOCIOECONÓMICA - 6CIAS",
+                        heading: HeadingLevel.TITLE,
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 200 }
+                    }),
+                    new Paragraph({
+                        text: "Reporte Completo de Datos",
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 200 }
+                    }),
+                    new Paragraph({
+                        text: `Generado: ${new Date().toLocaleString('es-MX')}`,
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 600 }
+                    })
+                );
+                
+                // INFORMACIÓN GENERAL
+                sections.push(
+                    createHeading("INFORMACIÓN GENERAL"),
+                    createField("Session ID", currentSurvey.session_id),
+                    createField("Nombre", currentSurvey.candidate_name),
+                    createField("Email", currentSurvey.email),
+                    createField("Teléfono", currentSurvey.phone_whatsapp),
+                    createField("Fecha de Creación", currentSurvey.created_at ? new Date(currentSurvey.created_at).toLocaleDateString('es-MX') : 'N/A'),
+                    createField("Última Actualización", currentSurvey.updated_at ? new Date(currentSurvey.updated_at).toLocaleDateString('es-MX') : 'N/A'),
+                    createField("Estado", currentSurvey.survey_completed ? 'Completa ✓' : 'Incompleta ⊘')
+                );
+                
+                // UBICACIÓN E IP
+                sections.push(
+                    createHeading("UBICACIÓN E IP"),
+                    createField("IP Address", currentSurvey.user_ip),
+                    createField("Ciudad", currentSurvey.ip_city),
+                    createField("Región", currentSurvey.ip_region),
+                    createField("País", currentSurvey.ip_country),
+                    createField("Código Postal", currentSurvey.ip_postal_code),
+                    createField("Coordenadas", currentSurvey.ip_latitude && currentSurvey.ip_longitude ? 
+                        `${currentSurvey.ip_latitude}, ${currentSurvey.ip_longitude}` : 'N/A'),
+                    createField("ISP", currentSurvey.ip_isp),
+                    createField("Organización", currentSurvey.ip_organization),
+                    createField("Timezone", currentSurvey.ip_timezone),
+                    createField("Es Proxy/VPN", currentSurvey.ip_is_proxy ? 'Sí ⚠️' : 'No'),
+                    createField("Conexión Móvil", currentSurvey.ip_is_mobile ? 'Sí' : 'No')
+                );
+                
+                // NAVEGADOR Y DISPOSITIVO
+                sections.push(
+                    createHeading("NAVEGADOR Y DISPOSITIVO"),
+                    createField("Navegador", `${currentSurvey.browser_name || 'N/A'} ${currentSurvey.browser_version || ''}`),
+                    createField("Sistema Operativo", currentSurvey.browser_os),
+                    createField("Plataforma", currentSurvey.browser_platform),
+                    createField("Idioma", currentSurvey.browser_language),
+                    createField("Timezone Navegador", currentSurvey.browser_timezone),
+                    createField("Resolución de Pantalla", currentSurvey.screen_width ? `${currentSurvey.screen_width}x${currentSurvey.screen_height}` : 'N/A'),
+                    createField("Profundidad de Color", currentSurvey.screen_color_depth ? `${currentSurvey.screen_color_depth} bits` : 'N/A'),
+                    createField("Device Pixel Ratio", currentSurvey.device_pixel_ratio),
+                    createField("CPU Cores", currentSurvey.cpu_cores?.toString()),
+                    createField("RAM", currentSurvey.device_memory ? `${currentSurvey.device_memory} GB` : 'N/A'),
+                    createField("Soporte Touch", currentSurvey.has_touch_support ? 'Sí' : 'No'),
+                    createField("WebGL Vendor", currentSurvey.webgl_vendor),
+                    createField("WebGL Renderer", currentSurvey.webgl_renderer),
+                    createField("Canvas Fingerprint", currentSurvey.canvas_fingerprint),
+                    createField("Tipo de Conexión", currentSurvey.connection_type),
+                    createField("Conexión Efectiva", currentSurvey.connection_effective_type?.toUpperCase()),
+                    createField("Velocidad de Descarga", currentSurvey.connection_downlink ? `${currentSurvey.connection_downlink} Mbps` : 'N/A'),
+                    createField("Latencia (RTT)", currentSurvey.connection_rtt ? `${currentSurvey.connection_rtt} ms` : 'N/A')
+                );
+                
+                // Continue with all other sections (same as before)...
+                // DATOS PERSONALES
+                sections.push(
+                    createHeading("DATOS PERSONALES"),
+                    createField("Fecha de Nacimiento", currentSurvey.date_of_birth),
+                    createField("CURP", currentSurvey.curp),
+                    createField("NSS/IMSS", currentSurvey.nss_imss),
+                    createField("RFC", currentSurvey.rfc_tax_id),
+                    createField("Dirección Completa", currentSurvey.full_address),
+                    createField("Proveedor de Servicios", currentSurvey.utility_provider),
+                    createField("Número de Contrato", currentSurvey.utility_contract_number)
+                );
+                
+                // VIVIENDA
+                sections.push(
+                    createHeading("VIVIENDA"),
+                    createField("Tipo de Vivienda", currentSurvey.housing_type),
+                    createField("Vive Con", currentSurvey.lives_with),
+                    createField("Número de Dependientes", currentSurvey.dependents_count?.toString()),
+                    createField("Tiene Agua", currentSurvey.has_water ? 'Sí' : 'No'),
+                    createField("Tiene Electricidad", currentSurvey.has_electricity ? 'Sí' : 'No'),
+                    createField("Tiene Internet", currentSurvey.has_internet ? 'Sí' : 'No'),
+                    createField("Tiene Gas", currentSurvey.has_gas ? 'Sí' : 'No'),
+                    createField("Recámaras", currentSurvey.bedrooms),
+                    createField("Baños", currentSurvey.bathrooms),
+                    createField("Pisos", currentSurvey.floors)
+                );
+                
+                // EDUCACIÓN Y EMPLEO
+                sections.push(
+                    createHeading("EDUCACIÓN Y EMPLEO"),
+                    createField("Nivel de Estudios", currentSurvey.education_level),
+                    createField("Tiene Comprobante", currentSurvey.has_education_proof ? 'Sí' : 'No'),
+                    createField("Puesto Solicitado", currentSurvey.position_applying),
+                    createField("Organización", currentSurvey.organization),
+                    createField("Área/División", currentSurvey.area_division),
+                    createField("Empleo Actual", currentSurvey.current_employment),
+                    createField("Empleo Anterior", currentSurvey.previous_employment)
+                );
+                
+                // INGRESOS
+                sections.push(
+                    createHeading("INGRESOS"),
+                    createField("Sueldo/Bonos", currentSurvey.salary_bonus),
+                    createField("Apoyo Familiar", currentSurvey.family_support),
+                    createField("Ingreso de Negocio Informal", currentSurvey.informal_business_income)
+                );
+                
+                // GASTOS
+                sections.push(
+                    createHeading("GASTOS MENSUALES"),
+                    createField("Despensa", currentSurvey.groceries),
+                    createField("Renta", currentSurvey.rent),
+                    createField("Servicios", currentSurvey.utilities),
+                    createField("Transporte", currentSurvey.transportation),
+                    createField("Gastos Escolares", currentSurvey.school_expenses),
+                    createField("Entretenimiento", currentSurvey.entertainment)
+                );
+                
+                // BIENES Y DEUDAS
+                sections.push(
+                    createHeading("BIENES Y PATRIMONIO"),
+                    createField("Bienes Raíces", currentSurvey.real_estate),
+                    createField("Vehículos", currentSurvey.vehicles),
+                    createField("Negocios", currentSurvey.businesses),
+                    createField("Ahorros Formales", currentSurvey.formal_savings),
+                    createHeading("DEUDAS"),
+                    createField("Deudas Activas", currentSurvey.debts),
+                    createField("Estado en Buró de Crédito", currentSurvey.credit_bureau)
+                );
+                
+                // REFERENCIAS
+                sections.push(
+                    createHeading("REFERENCIAS"),
+                    createField("Referencias Familiares", currentSurvey.primary_family_contacts),
+                    createField("Referencias Laborales", currentSurvey.work_references),
+                    createField("Contacto de Emergencia", `${currentSurvey.emergency_contact_name || 'N/A'} - ${currentSurvey.emergency_contact_phone || 'N/A'}`)
+                );
+                
+                // ADD IMAGES TO WORD
+                if (surveyImages.length > 0) {
+                    sections.push(createHeading(`📸 ARCHIVOS ADJUNTOS (${surveyImages.length})`));
+                    
+                    for (const img of surveyImages) {
+                        const fileUrl = `${API_URL}/survey/file/${sessionId}/${img.id}`;
+                        
+                        try {
+                            // Fetch image as blob
+                            const imgResponse = await fetch(fileUrl);
+                            const imgBlob = await imgResponse.blob();
+                            const imgBuffer = await imgBlob.arrayBuffer();
+                            
+                            sections.push(
+                                new Paragraph({
+                                    text: img.file_name,
+                                    bold: true,
+                                    spacing: { before: 200, after: 100 }
+                                }),
+                                new Paragraph({
+                                    children: [
+                                        new ImageRun({
+                                            data: imgBuffer,
+                                            transformation: {
+                                                width: 400,
+                                                height: 300
+                                            }
+                                        })
+                                    ],
+                                    spacing: { after: 200 }
+                                })
+                            );
+                        } catch (e) {
+                            console.log('Could not add image to Word:', img.file_name);
+                            sections.push(
+                                new Paragraph({
+                                    text: `[Imagen no disponible: ${img.file_name}]`,
+                                    italics: true,
+                                    spacing: { after: 100 }
+                                })
+                            );
+                        }
+                    }
+                }
+                
+                // Create document
+                const doc = new Document({
+                    sections: [{
+                        properties: {},
+                        children: sections
+                    }]
+                });
+                
+                // Generate and save
+                const blob = await Packer.toBlob(doc);
+                saveAs(blob, `Encuesta_${currentSurvey.candidate_name || currentSurvey.session_id}_${new Date().toISOString().split('T')[0]}.docx`);
+                
+                // Reset button
+                if (btn) {
+                    btn.innerHTML = '✅ Word Generado!';
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    }, 2000);
+                }
+                
+            } catch (error) {
+                console.error('Error generating Word document:', error);
+                alert('Error al generar documento Word: ' + error.message);
+                if (btn) {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            }
+        }
+
 
     </script>
 </body>

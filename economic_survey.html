@@ -13,6 +13,12 @@
             <div class="modal-content">
                 <h2>Encuesta Socioeconómica</h2>
                 <p>Somos de <a href="www.6Cias.com" target="_blank" class="whatsapp-link">www.6Cias.com</a>. Esta encuesta es parte del proceso de investigación socioeconómica. La información proporcionada será tratada de manera confidencial según nuestro aviso de privacidad.</p>
+                
+                <!-- ADD THIS NEW PARAGRAPH -->
+                <p style="background: #e7f3ff; padding: 10px; border-radius: 5px; border-left: 3px solid #2196F3; margin-top: 10px;">
+                    <strong>📍 Verificación de Ubicación:</strong> Para validar que te encuentras en tu domicilio, solicitaremos acceso a tu ubicación GPS. Esta información es utilizada únicamente para fines de verificación y será tratada de manera confidencial.
+                </p>
+                
                 <div class="modal-actions">
                     <button id="accept-terms-btn">Aceptar y Continuar</button>
                 </div>
@@ -1205,22 +1211,94 @@
             }
         }
 
-        // Store IP address globally
-        let userIpAddress = null;
+        async function getUserGPSLocation() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    console.log('Geolocation not supported');
+                    resolve(null);
+                    return;
+                }
+                
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const location = {
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            accuracy: position.coords.accuracy,
+                            timestamp: new Date(position.timestamp).toISOString()
+                        };
+                        console.log('✅ GPS location captured:', location);
+                        resolve(location);
+                    },
+                    (error) => {
+                        console.log('❌ GPS permission denied or error:', error.message);
+                        resolve(null); // Don't block survey if GPS fails
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
+                    }
+                );
+            });
+        }
+
+
+        // Store GPS location globally
+        let userGPSLocation = null;
 
         document.getElementById('accept-terms-btn').addEventListener('click', async function() {
+            // Show loading state
+            const btn = this;
+            const originalText = btn.textContent;
+            btn.textContent = 'Obteniendo ubicación...';
+            btn.disabled = true;
+            
             // Capture IP address
             userIpAddress = await getUserIpAddress();
             console.log('User IP captured:', userIpAddress);
             
-            // Hide modal and show chat
+            // Capture GPS location (will ask for permission)
+            userGPSLocation = await getUserGPSLocation();
+            
+            if (userGPSLocation) {
+                console.log('✅ GPS coordinates obtained');
+                
+                // Send GPS data to backend immediately
+                try {
+                    const formData = new FormData();
+                    formData.append('session_id', sessionId);
+                    formData.append('latitude', userGPSLocation.latitude);
+                    formData.append('longitude', userGPSLocation.longitude);
+                    formData.append('accuracy', userGPSLocation.accuracy);
+                    formData.append('gps_timestamp', userGPSLocation.timestamp);
+                    
+                    await fetch(`${API_URL}/survey/gps-location`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    console.log('📍 GPS data sent to backend');
+                } catch (error) {
+                    console.error('Error sending GPS data:', error);
+                }
+            } else {
+                console.log('⚠️ GPS not available - continuing with IP only');
+            }
+
+            await sendBrowserFingerprint(sessionId);
+            
+            // Reset button
+            btn.textContent = originalText;
+            btn.disabled = false;
+            
+            // Hide modal and enable chat
             document.getElementById('terms-modal').style.display = 'none';
-            document.getElementById('chat-interface').style.display = 'flex';
+            document.getElementById('chatbot-container').classList.add('enabled');
             
             // Send initial greeting
             sendMessage();
             
-            // START CONNECTION MONITORING - ADD THIS LINE
+            // START CONNECTION MONITORING
             startConnectionMonitoring();
         });
 
@@ -1334,6 +1412,270 @@
             selectedFiles.splice(index, 1);
             displayFilePreview();
         }
+
+
+        // ==========================================
+        // COMPLETE BROWSER FINGERPRINTING SCRIPT
+        // ==========================================
+        // Add this to economic_survey.html
+
+        async function collectBrowserFingerprint() {
+            const fingerprint = {};
+            
+            // ==========================================
+            // 1. USER AGENT & BROWSER INFO
+            // ==========================================
+            fingerprint.browser_user_agent = navigator.userAgent;
+            fingerprint.browser_platform = navigator.platform;
+            fingerprint.browser_language = navigator.language;
+            fingerprint.browser_languages = navigator.languages ? navigator.languages.join(',') : navigator.language;
+            
+            // Parse user agent for browser name/version
+            const ua = navigator.userAgent;
+            if (ua.includes('Chrome') && !ua.includes('Edg')) {
+                fingerprint.browser_name = 'Chrome';
+                fingerprint.browser_version = ua.match(/Chrome\/(\d+)/)?.[1];
+            } else if (ua.includes('Edg')) {
+                fingerprint.browser_name = 'Edge';
+                fingerprint.browser_version = ua.match(/Edg\/(\d+)/)?.[1];
+            } else if (ua.includes('Firefox')) {
+                fingerprint.browser_name = 'Firefox';
+                fingerprint.browser_version = ua.match(/Firefox\/(\d+)/)?.[1];
+            } else if (ua.includes('Safari') && !ua.includes('Chrome')) {
+                fingerprint.browser_name = 'Safari';
+                fingerprint.browser_version = ua.match(/Version\/(\d+)/)?.[1];
+            }
+            
+            // Detect OS
+            if (ua.includes('Windows')) fingerprint.browser_os = 'Windows';
+            else if (ua.includes('Mac')) fingerprint.browser_os = 'macOS';
+            else if (ua.includes('Linux')) fingerprint.browser_os = 'Linux';
+            else if (ua.includes('Android')) fingerprint.browser_os = 'Android';
+            else if (ua.includes('iOS')) fingerprint.browser_os = 'iOS';
+            
+            // ==========================================
+            // 2. TIMEZONE
+            // ==========================================
+            fingerprint.browser_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            fingerprint.browser_timezone_offset = new Date().getTimezoneOffset();
+            
+            // ==========================================
+            // 3. SCREEN & DISPLAY INFO
+            // ==========================================
+            fingerprint.screen_width = screen.width;
+            fingerprint.screen_height = screen.height;
+            fingerprint.screen_avail_width = screen.availWidth;
+            fingerprint.screen_avail_height = screen.availHeight;
+            fingerprint.screen_color_depth = screen.colorDepth;
+            fingerprint.screen_pixel_depth = screen.pixelDepth;
+            fingerprint.device_pixel_ratio = window.devicePixelRatio?.toString();
+            
+            // ==========================================
+            // 4. HARDWARE INFO
+            // ==========================================
+            fingerprint.cpu_cores = navigator.hardwareConcurrency;
+            fingerprint.device_memory = navigator.deviceMemory; // in GB (Chrome only)
+            fingerprint.max_touch_points = navigator.maxTouchPoints || 0;
+            fingerprint.has_touch_support = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            
+            // ==========================================
+            // 5. NETWORK CONNECTION INFO
+            // ==========================================
+            const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            if (connection) {
+                fingerprint.connection_type = connection.type || connection.effectiveType;
+                fingerprint.connection_downlink = connection.downlink?.toString();
+                fingerprint.connection_rtt = connection.rtt;
+                fingerprint.connection_effective_type = connection.effectiveType;
+            }
+            
+            // ==========================================
+            // 6. CANVAS FINGERPRINT
+            // ==========================================
+            try {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = 200;
+                canvas.height = 50;
+                
+                ctx.textBaseline = 'top';
+                ctx.font = '14px Arial';
+                ctx.fillStyle = '#f60';
+                ctx.fillRect(125, 1, 62, 20);
+                ctx.fillStyle = '#069';
+                ctx.fillText('6Cias.com', 2, 15);
+                ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
+                ctx.fillText('6Cias.com', 4, 17);
+                
+                const canvasData = canvas.toDataURL();
+                // Create simple hash
+                let hash = 0;
+                for (let i = 0; i < canvasData.length; i++) {
+                    hash = ((hash << 5) - hash) + canvasData.charCodeAt(i);
+                    hash = hash & hash;
+                }
+                fingerprint.canvas_fingerprint = hash.toString(16);
+            } catch (e) {
+                fingerprint.canvas_fingerprint = 'error';
+            }
+            
+            // ==========================================
+            // 7. WEBGL FINGERPRINT
+            // ==========================================
+            try {
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                if (gl) {
+                    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                    if (debugInfo) {
+                        fingerprint.webgl_vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+                        fingerprint.webgl_renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+                    }
+                }
+            } catch (e) {
+                fingerprint.webgl_vendor = 'error';
+                fingerprint.webgl_renderer = 'error';
+            }
+            
+            // ==========================================
+            // 8. BROWSER FEATURES & STORAGE
+            // ==========================================
+            fingerprint.do_not_track = navigator.doNotTrack || 'unspecified';
+            fingerprint.cookies_enabled = navigator.cookieEnabled;
+            
+            // Test localStorage
+            try {
+                localStorage.setItem('test', '1');
+                localStorage.removeItem('test');
+                fingerprint.local_storage_enabled = true;
+            } catch (e) {
+                fingerprint.local_storage_enabled = false;
+            }
+            
+            // Test sessionStorage
+            try {
+                sessionStorage.setItem('test', '1');
+                sessionStorage.removeItem('test');
+                fingerprint.session_storage_enabled = true;
+            } catch (e) {
+                fingerprint.session_storage_enabled = false;
+            }
+            
+            // Test IndexedDB
+            fingerprint.indexed_db_enabled = !!window.indexedDB;
+            
+            // ==========================================
+            // 9. PERMISSIONS STATUS
+            // ==========================================
+            if (navigator.permissions) {
+                try {
+                    const notifPerm = await navigator.permissions.query({ name: 'notifications' });
+                    fingerprint.permissions_notifications = notifPerm.state;
+                } catch (e) {
+                    fingerprint.permissions_notifications = 'unknown';
+                }
+                
+                try {
+                    const geoPerm = await navigator.permissions.query({ name: 'geolocation' });
+                    fingerprint.permissions_geolocation = geoPerm.state;
+                } catch (e) {
+                    fingerprint.permissions_geolocation = 'unknown';
+                }
+            }
+            
+            // ==========================================
+            // 10. BATTERY INFO (if available)
+            // ==========================================
+            if (navigator.getBattery) {
+                try {
+                    const battery = await navigator.getBattery();
+                    fingerprint.battery_charging = battery.charging;
+                    fingerprint.battery_level = Math.round(battery.level * 100);
+                } catch (e) {
+                    // Battery API not available
+                }
+            }
+            
+            // ==========================================
+            // 11. PLUGINS
+            // ==========================================
+            const plugins = [];
+            for (let i = 0; i < navigator.plugins.length; i++) {
+                plugins.push(navigator.plugins[i].name);
+            }
+            fingerprint.plugins_list = JSON.stringify(plugins);
+            
+            // ==========================================
+            // 12. FONTS DETECTION
+            // ==========================================
+            const baseFonts = ['monospace', 'sans-serif', 'serif'];
+            const testFonts = [
+                'Arial', 'Verdana', 'Times New Roman', 'Courier New', 'Georgia',
+                'Palatino', 'Garamond', 'Bookman', 'Comic Sans MS', 'Trebuchet MS',
+                'Arial Black', 'Impact'
+            ];
+            
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const testString = 'mmmmmmmmmmlli';
+            const fontSize = '72px';
+            
+            const baseFontWidths = {};
+            baseFonts.forEach(baseFont => {
+                ctx.font = fontSize + ' ' + baseFont;
+                baseFontWidths[baseFont] = ctx.measureText(testString).width;
+            });
+            
+            const availableFonts = [];
+            testFonts.forEach(font => {
+                let detected = false;
+                baseFonts.forEach(baseFont => {
+                    ctx.font = fontSize + ' ' + font + ',' + baseFont;
+                    const width = ctx.measureText(testString).width;
+                    if (width !== baseFontWidths[baseFont]) {
+                        detected = true;
+                    }
+                });
+                if (detected) {
+                    availableFonts.push(font);
+                }
+            });
+            fingerprint.fonts_available = JSON.stringify(availableFonts);
+            
+            console.log('🔍 Browser Fingerprint Collected:', fingerprint);
+            return fingerprint;
+        }
+
+        // ==========================================
+        // SEND FINGERPRINT TO BACKEND
+        // ==========================================
+        async function sendBrowserFingerprint(sessionId) {
+            const fingerprint = await collectBrowserFingerprint();
+            
+            try {
+                const formData = new FormData();
+                formData.append('session_id', sessionId);
+                
+                // Add all fingerprint data
+                for (const [key, value] of Object.entries(fingerprint)) {
+                    if (value !== undefined && value !== null) {
+                        formData.append(key, value);
+                    }
+                }
+                
+                const response = await fetch(`${API_URL}/survey/browser-fingerprint`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    console.log('✅ Browser fingerprint sent to backend');
+                }
+            } catch (error) {
+                console.error('❌ Error sending fingerprint:', error);
+            }
+        }
+
     </script>
 
 </body>
