@@ -49,17 +49,10 @@ app.add_middleware(
 # Run migrations on startup
 @app.on_event("startup")
 async def startup_event():
-    print("🔄 Running database migrations...")
-    import subprocess
-    import sys
-    result = subprocess.run([sys.executable, "-m", "alembic", "upgrade", "head"], 
-                          capture_output=True, text=True)
-    if result.returncode == 0:
-        print("✅ Database migrations complete!")
-        print(result.stdout)
-    else:
-        print("❌ Migration failed:", result.stderr)
-
+    print("🔄 Recreating database tables...")
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    print("✅ Database tables recreated!")
 client = genai.Client(api_key=settings.gemini_api_key)
 
 async def get_ip_geolocation(ip_address: str):
