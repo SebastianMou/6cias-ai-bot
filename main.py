@@ -47,12 +47,18 @@ app.add_middleware(
 )
 
 # Run migrations on startup
+# @app.on_event("startup")
+# async def startup_event():
+#     print("🔄 Recreating database tables ONE LAST TIME...")
+#     Base.metadata.drop_all(bind=engine)
+#     Base.metadata.create_all(bind=engine)
+#     print("✅ Database tables recreated!")
+
 @app.on_event("startup")
 async def startup_event():
-    print("🔄 Recreating database tables ONE LAST TIME...")
-    Base.metadata.drop_all(bind=engine)
+    print("🔄 Ensuring database tables exist...")
     Base.metadata.create_all(bind=engine)
-    print("✅ Database tables recreated!")
+    print("✅ Database ready!")
 
 async def get_ip_geolocation(ip_address: str):
     """Get comprehensive geolocation data for an IP address"""

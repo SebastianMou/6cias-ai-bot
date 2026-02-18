@@ -1285,8 +1285,10 @@
                 console.log('⚠️ GPS not available - continuing with IP only');
             }
 
-            await sendBrowserFingerprint(sessionId);
-            
+            // Send browser fingerprint
+            // await sendBrowserFingerprint(sessionId);
+            console.log("Browser fingerprint disabled");
+                        
             // Reset button
             btn.textContent = originalText;
             btn.disabled = false;
