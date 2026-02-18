@@ -26,6 +26,8 @@ from pathlib import Path
 import re
 import unicodedata
 
+client = genai.Client(api_key=settings.gemini_api_key)
+
 SURVEY_FILES_DIR = Path("survey_files")
 SURVEY_FILES_DIR.mkdir(exist_ok=True)
 
