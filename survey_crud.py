@@ -15,17 +15,13 @@ def get_survey_by_session(db: Session, session_id: str):
     return db.query(SurveyResponse).filter(SurveyResponse.session_id == session_id).first()
 
 def update_survey_field(db: Session, session_id: str, **kwargs):
-    """Update specific fields in a survey response"""
-    survey = db.query(SurveyResponse).filter(SurveyResponse.session_id == session_id).first()
-    
+    """Update survey response fields"""
+    survey = get_survey_by_session(db, session_id)
     if not survey:
-        # Create new survey if doesn't exist
-        survey = SurveyResponse(session_id=session_id)
-        db.add(survey)
+        survey = create_survey_response(db, session_id)
     
-    # Update all provided fields
     for key, value in kwargs.items():
-        if hasattr(survey, key) and value is not None:
+        if hasattr(survey, key):
             setattr(survey, key, value)
     
     db.commit()
