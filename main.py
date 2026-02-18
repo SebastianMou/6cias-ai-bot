@@ -48,12 +48,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# @app.on_event("startup")
+# async def startup_event():
+#     print("🔄 FINAL recreation - adding fingerprint columns...")
+#     Base.metadata.drop_all(bind=engine)
+#     Base.metadata.create_all(bind=engine)
+#     print("✅ Database recreated with all fingerprint columns!")
+
 @app.on_event("startup")
 async def startup_event():
-    print("🔄 FINAL recreation - adding fingerprint columns...")
-    Base.metadata.drop_all(bind=engine)
+    print("🔄 Ensuring database tables exist...")
     Base.metadata.create_all(bind=engine)
-    print("✅ Database recreated with all fingerprint columns!")
+    print("✅ Database ready!")
 
 async def get_ip_geolocation(ip_address: str):
     """Get comprehensive geolocation data for an IP address"""
