@@ -18,8 +18,12 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = None
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
+from database import Base
+target_metadata = Base.metadata
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
@@ -38,7 +42,11 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    import os
+    url = os.getenv("DATABASE_URL") or config.get_main_option("sqlalchemy.url")
+    if url and url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql://", 1)
+
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -57,8 +65,17 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
+    import os
+    configuration = config.get_section(config.config_ini_section, {})
+    database_url = os.getenv("DATABASE_URL")
+    if database_url:
+        if database_url.startswith("postgres://"):
+            database_url = database_url.replace("postgres://", "postgresql://", 1)
+        configuration["sqlalchemy.url"] = database_url
+    
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        configuration,
+
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )

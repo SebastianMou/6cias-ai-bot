@@ -40,13 +40,25 @@ app = FastAPI(title="6Cias Chatbot API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for testing
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-Base.metadata.create_all(bind=engine)
+# Run migrations on startup
+@app.on_event("startup")
+async def startup_event():
+    print("🔄 Running database migrations...")
+    import subprocess
+    import sys
+    result = subprocess.run([sys.executable, "-m", "alembic", "upgrade", "head"], 
+                          capture_output=True, text=True)
+    if result.returncode == 0:
+        print("✅ Database migrations complete!")
+        print(result.stdout)
+    else:
+        print("❌ Migration failed:", result.stderr)
 
 client = genai.Client(api_key=settings.gemini_api_key)
 
