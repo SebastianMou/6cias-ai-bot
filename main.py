@@ -2308,54 +2308,56 @@ async def save_browser_fingerprint(
     db: Session = Depends(get_db)
 ):
     """Save browser fingerprint data"""
-    
-    survey_crud.update_survey_field(
-        db, 
-        session_id,
-        browser_user_agent=browser_user_agent,
-        browser_name=browser_name,
-        browser_version=browser_version,
-        browser_os=browser_os,
-        browser_platform=browser_platform,
-        browser_language=browser_language,
-        browser_languages=browser_languages,
-        browser_timezone=browser_timezone,
-        browser_timezone_offset=browser_timezone_offset,
-        screen_width=screen_width,
-        screen_height=screen_height,
-        screen_avail_width=screen_avail_width,
-        screen_avail_height=screen_avail_height,
-        screen_color_depth=screen_color_depth,
-        screen_pixel_depth=screen_pixel_depth,
-        device_pixel_ratio=device_pixel_ratio,
-        cpu_cores=cpu_cores,
-        device_memory=device_memory,
-        max_touch_points=max_touch_points,
-        has_touch_support=has_touch_support,
-        connection_type=connection_type,
-        connection_downlink=connection_downlink,
-        connection_rtt=connection_rtt,
-        connection_effective_type=connection_effective_type,
-        canvas_fingerprint=canvas_fingerprint,
-        webgl_vendor=webgl_vendor,
-        webgl_renderer=webgl_renderer,
-        do_not_track=do_not_track,
-        cookies_enabled=cookies_enabled,
-        local_storage_enabled=local_storage_enabled,
-        session_storage_enabled=session_storage_enabled,
-        indexed_db_enabled=indexed_db_enabled,
-        permissions_notifications=permissions_notifications,
-        permissions_geolocation=permissions_geolocation,
-        battery_charging=battery_charging,
-        battery_level=battery_level,
-        plugins_list=plugins_list,
-        fonts_available=fonts_available
-    )
-    
-    print(f"🔍 [FINGERPRINT] {session_id} | Browser: {browser_name} {browser_version} | OS: {browser_os} | Screen: {screen_width}x{screen_height}")
-    
-    return {"status": "success", "message": "Browser fingerprint saved"}
-
+    try:
+        survey_crud.update_survey_field(
+            db, 
+            session_id,
+            browser_user_agent=browser_user_agent,
+            browser_name=browser_name,
+            browser_version=browser_version,
+            browser_os=browser_os,
+            browser_platform=browser_platform,
+            browser_language=browser_language,
+            browser_languages=browser_languages,
+            browser_timezone=browser_timezone,
+            browser_timezone_offset=browser_timezone_offset,
+            screen_width=screen_width,
+            screen_height=screen_height,
+            screen_avail_width=screen_avail_width,
+            screen_avail_height=screen_avail_height,
+            screen_color_depth=screen_color_depth,
+            screen_pixel_depth=screen_pixel_depth,
+            device_pixel_ratio=device_pixel_ratio,
+            cpu_cores=cpu_cores,
+            device_memory=device_memory,
+            max_touch_points=max_touch_points,
+            has_touch_support=has_touch_support,
+            connection_type=connection_type,
+            connection_downlink=connection_downlink,
+            connection_rtt=connection_rtt,
+            connection_effective_type=connection_effective_type,
+            canvas_fingerprint=canvas_fingerprint,
+            webgl_vendor=webgl_vendor,
+            webgl_renderer=webgl_renderer,
+            do_not_track=do_not_track,
+            cookies_enabled=cookies_enabled,
+            local_storage_enabled=local_storage_enabled,
+            session_storage_enabled=session_storage_enabled,
+            indexed_db_enabled=indexed_db_enabled,
+            permissions_notifications=permissions_notifications,
+            permissions_geolocation=permissions_geolocation,
+            battery_charging=battery_charging,
+            battery_level=battery_level,
+            plugins_list=plugins_list,
+            fonts_available=fonts_available
+        )
+        
+        print(f"🔍 [FINGERPRINT] {session_id} | Browser: {browser_name} {browser_version} | OS: {browser_os} | Screen: {screen_width}x{screen_height}")
+        
+        return {"status": "success", "message": "Browser fingerprint saved"}
+    except Exception as e:
+        print(f"❌ Error saving fingerprint: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn
