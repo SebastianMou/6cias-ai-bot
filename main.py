@@ -49,9 +49,10 @@ app.add_middleware(
 # Run migrations on startup
 @app.on_event("startup")
 async def startup_event():
-    print("🔄 Ensuring database tables exist...")
-    Base.metadata.create_all(bind=engine)  # Only creates missing tables
-    print("✅ Database ready!")
+    print("🔄 Recreating database tables ONE LAST TIME...")
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    print("✅ Database tables recreated!")
 
 async def get_ip_geolocation(ip_address: str):
     """Get comprehensive geolocation data for an IP address"""
