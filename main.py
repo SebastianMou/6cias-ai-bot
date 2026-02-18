@@ -2350,13 +2350,13 @@ async def save_browser_fingerprint(
             fonts_available=fonts_available
         )
         
-        print(f"🔍 [FINGERPRINT] {session_id} | Browser: {browser_name} {browser_version} | OS: {browser_os} | Screen: {screen_width}x{screen_height}")
+        print(f"🔍 Browser fingerprint saved for {session_id}")
+        return {"status": "success"}
         
-        return {"status": "success", "message": "Browser fingerprint saved"}
     except Exception as e:
-        print(f"❌ Error saving fingerprint: {e}")
+        print(f"❌ Fingerprint error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
+    
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
