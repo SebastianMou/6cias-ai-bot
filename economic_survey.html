@@ -1650,13 +1650,14 @@
         // ==========================================
         // SEND FINGERPRINT TO BACKEND
         // ==========================================
-        async function sendBrowserFingerprint(sessionId, fingerprintData) {
+        async function sendBrowserFingerprint(sessionId) {
             try {
+                const fingerprint = await collectBrowserFingerprint();
+
                 const formData = new URLSearchParams();
                 formData.append('session_id', sessionId);
-                
-                // Append all fingerprint fields
-                for (const [key, value] of Object.entries(fingerprintData)) {
+
+                for (const [key, value] of Object.entries(fingerprint)) {
                     if (value !== null && value !== undefined) {
                         formData.append(key, String(value));
                     }
