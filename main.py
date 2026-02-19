@@ -55,11 +55,79 @@ app.add_middleware(
 #     Base.metadata.create_all(bind=engine)
 #     print("✅ Database recreated with all fingerprint columns!")
 
+# TO THIS:
 @app.on_event("startup")
 async def startup_event():
     print("🔄 Ensuring database tables exist...")
     Base.metadata.create_all(bind=engine)
-    print("✅ Database ready!")
+    
+    # ADD MISSING COLUMNS FOR PRODUCTION (safe migration)
+    from sqlalchemy import text
+    fingerprint_columns = [
+        ("browser_user_agent", "VARCHAR(500)"),
+        ("browser_name", "VARCHAR(100)"),
+        ("browser_version", "VARCHAR(50)"),
+        ("browser_os", "VARCHAR(100)"),
+        ("browser_platform", "VARCHAR(100)"),
+        ("browser_language", "VARCHAR(50)"),
+        ("browser_languages", "VARCHAR(200)"),
+        ("browser_timezone", "VARCHAR(100)"),
+        ("browser_timezone_offset", "INTEGER"),
+        ("screen_width", "INTEGER"),
+        ("screen_height", "INTEGER"),
+        ("screen_avail_width", "INTEGER"),
+        ("screen_avail_height", "INTEGER"),
+        ("screen_color_depth", "INTEGER"),
+        ("screen_pixel_depth", "INTEGER"),
+        ("device_pixel_ratio", "VARCHAR(20)"),
+        ("cpu_cores", "INTEGER"),
+        ("device_memory", "INTEGER"),
+        ("max_touch_points", "INTEGER"),
+        ("has_touch_support", "BOOLEAN"),
+        ("connection_type", "VARCHAR(50)"),
+        ("connection_downlink", "VARCHAR(50)"),
+        ("connection_rtt", "INTEGER"),
+        ("connection_effective_type", "VARCHAR(20)"),
+        ("canvas_fingerprint", "VARCHAR(100)"),
+        ("webgl_vendor", "VARCHAR(100)"),
+        ("webgl_renderer", "VARCHAR(200)"),
+        ("do_not_track", "VARCHAR(10)"),
+        ("cookies_enabled", "BOOLEAN"),
+        ("local_storage_enabled", "BOOLEAN"),
+        ("session_storage_enabled", "BOOLEAN"),
+        ("indexed_db_enabled", "BOOLEAN"),
+        ("permissions_notifications", "VARCHAR(20)"),
+        ("permissions_geolocation", "VARCHAR(20)"),
+        ("battery_charging", "BOOLEAN"),
+        ("battery_level", "INTEGER"),
+        ("plugins_list", "TEXT"),
+        ("fonts_available", "TEXT"),
+        ("ip_city", "VARCHAR(100)"),
+        ("ip_region", "VARCHAR(100)"),
+        ("ip_country", "VARCHAR(100)"),
+        ("ip_postal_code", "VARCHAR(20)"),
+        ("ip_latitude", "VARCHAR(50)"),
+        ("ip_longitude", "VARCHAR(50)"),
+        ("ip_timezone", "VARCHAR(100)"),
+        ("ip_isp", "VARCHAR(255)"),
+        ("ip_organization", "VARCHAR(255)"),
+        ("ip_asn", "VARCHAR(100)"),
+        ("ip_is_proxy", "BOOLEAN DEFAULT FALSE"),
+        ("ip_is_mobile", "BOOLEAN DEFAULT FALSE"),
+    ]
+    
+    with engine.connect() as conn:
+        for col_name, col_type in fingerprint_columns:
+            try:
+                conn.execute(text(
+                    f"ALTER TABLE survey_responses ADD COLUMN IF NOT EXISTS {col_name} {col_type}"
+                ))
+                conn.commit()
+            except Exception as e:
+                print(f"⚠️ Column {col_name} already exists or error: {e}")
+                conn.rollback()
+    
+    print("✅ Database ready with all fingerprint columns!")
 
 async def get_ip_geolocation(ip_address: str):
     """Get comprehensive geolocation data for an IP address"""
