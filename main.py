@@ -2381,55 +2381,84 @@ async def save_browser_fingerprint(
     fonts_available: str = Form(None),
     db: Session = Depends(get_db)
 ):
-    """Save browser fingerprint data"""
+    """Save browser fingerprint data using raw SQL to avoid ORM column issues"""
     try:
-        survey_crud.update_survey_field(
-            db, 
-            session_id,
-            browser_user_agent=browser_user_agent,
-            browser_name=browser_name,
-            browser_version=browser_version,
-            browser_os=browser_os,
-            browser_platform=browser_platform,
-            browser_language=browser_language,
-            browser_languages=browser_languages,
-            browser_timezone=browser_timezone,
-            browser_timezone_offset=browser_timezone_offset,
-            screen_width=screen_width,
-            screen_height=screen_height,
-            screen_avail_width=screen_avail_width,
-            screen_avail_height=screen_avail_height,
-            screen_color_depth=screen_color_depth,
-            screen_pixel_depth=screen_pixel_depth,
-            device_pixel_ratio=device_pixel_ratio,
-            cpu_cores=cpu_cores,
-            device_memory=device_memory,
-            max_touch_points=max_touch_points,
-            has_touch_support=has_touch_support,
-            connection_type=connection_type,
-            connection_downlink=connection_downlink,
-            connection_rtt=connection_rtt,
-            connection_effective_type=connection_effective_type,
-            canvas_fingerprint=canvas_fingerprint,
-            webgl_vendor=webgl_vendor,
-            webgl_renderer=webgl_renderer,
-            do_not_track=do_not_track,
-            cookies_enabled=cookies_enabled,
-            local_storage_enabled=local_storage_enabled,
-            session_storage_enabled=session_storage_enabled,
-            indexed_db_enabled=indexed_db_enabled,
-            permissions_notifications=permissions_notifications,
-            permissions_geolocation=permissions_geolocation,
-            battery_charging=battery_charging,
-            battery_level=battery_level,
-            plugins_list=plugins_list,
-            fonts_available=fonts_available
-        )
+        from sqlalchemy import text
         
-        print(f"🔍 Browser fingerprint saved for {session_id}")
-        return {"status": "success"}
+        # Ensure the session/row exists first
+        existing = db.execute(
+            text("SELECT id FROM survey_responses WHERE session_id = :sid"),
+            {"sid": session_id}
+        ).fetchone()
+        
+        if not existing:
+            db.execute(
+                text("INSERT INTO survey_responses (session_id, created_at, updated_at, survey_completed) VALUES (:sid, NOW(), NOW(), FALSE)"),
+                {"sid": session_id}
+            )
+            db.commit()
+        
+        # Build dynamic SET clause only for non-None values
+        fields = {
+            "browser_user_agent": browser_user_agent,
+            "browser_name": browser_name,
+            "browser_version": browser_version,
+            "browser_os": browser_os,
+            "browser_platform": browser_platform,
+            "browser_language": browser_language,
+            "browser_languages": browser_languages,
+            "browser_timezone": browser_timezone,
+            "browser_timezone_offset": browser_timezone_offset,
+            "screen_width": screen_width,
+            "screen_height": screen_height,
+            "screen_avail_width": screen_avail_width,
+            "screen_avail_height": screen_avail_height,
+            "screen_color_depth": screen_color_depth,
+            "screen_pixel_depth": screen_pixel_depth,
+            "device_pixel_ratio": device_pixel_ratio,
+            "cpu_cores": cpu_cores,
+            "device_memory": device_memory,
+            "max_touch_points": max_touch_points,
+            "has_touch_support": has_touch_support,
+            "connection_type": connection_type,
+            "connection_downlink": connection_downlink,
+            "connection_rtt": connection_rtt,
+            "connection_effective_type": connection_effective_type,
+            "canvas_fingerprint": canvas_fingerprint,
+            "webgl_vendor": webgl_vendor,
+            "webgl_renderer": webgl_renderer,
+            "do_not_track": do_not_track,
+            "cookies_enabled": cookies_enabled,
+            "local_storage_enabled": local_storage_enabled,
+            "session_storage_enabled": session_storage_enabled,
+            "indexed_db_enabled": indexed_db_enabled,
+            "permissions_notifications": permissions_notifications,
+            "permissions_geolocation": permissions_geolocation,
+            "battery_charging": battery_charging,
+            "battery_level": battery_level,
+            "plugins_list": plugins_list,
+            "fonts_available": fonts_available,
+        }
+        
+        # Only update fields that were actually sent
+        non_null_fields = {k: v for k, v in fields.items() if v is not None}
+        
+        if non_null_fields:
+            set_clause = ", ".join([f"{k} = :{k}" for k in non_null_fields])
+            non_null_fields["sid"] = session_id
+            
+            db.execute(
+                text(f"UPDATE survey_responses SET {set_clause}, updated_at = NOW() WHERE session_id = :sid"),
+                non_null_fields
+            )
+            db.commit()
+        
+        print(f"🔍 Browser fingerprint saved for {session_id} ({len(non_null_fields)-1} fields)")
+        return {"status": "success", "fields_saved": len(non_null_fields) - 1}
         
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         print(f"❌ Fingerprint error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
     
