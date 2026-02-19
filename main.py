@@ -2567,7 +2567,23 @@ async def save_browser_fingerprint(
         traceback.print_exc()
         print(f"❌ Fingerprint error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-        
+
+# ADD THIS new endpoint anywhere in main.py:
+@app.post("/debug/fingerprint-raw")
+async def debug_fingerprint_raw(request: Request):
+    """Debug: show exactly what we receive and what error occurs"""
+    try:
+        form = await request.form()
+        data = dict(form)
+        return {
+            "received_fields": list(data.keys()),
+            "field_count": len(data),
+            "sample_values": {k: str(v)[:50] for k, v in list(data.items())[:10]}
+        }
+    except Exception as e:
+        import traceback
+        return {"error": str(e), "traceback": traceback.format_exc()}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
