@@ -54,6 +54,7 @@ app.add_middleware(
 #     Base.metadata.drop_all(bind=engine)
 #     Base.metadata.create_all(bind=engine)
 #     print("✅ Database recreated with all fingerprint columns!")
+
 @app.on_event("startup")
 async def startup_event():
     print("🔄 Ensuring database tables exist...")
@@ -88,7 +89,7 @@ async def startup_event():
         ("canvas_fingerprint", "VARCHAR(100)"),
         ("webgl_vendor", "VARCHAR(100)"),
         ("webgl_renderer", "VARCHAR(200)"),
-        ("do_not_track", "VARCHAR(10)"),
+        ("do_not_track", "VARCHAR(50)"),
         ("cookies_enabled", "BOOLEAN"),
         ("local_storage_enabled", "BOOLEAN"),
         ("session_storage_enabled", "BOOLEAN"),
@@ -189,6 +190,29 @@ async def startup_event():
     print(f"✅ Migration done. Added/verified {len(added)} columns.")
     if skipped:
         print(f"⚠️ Skipped columns: {skipped}")
+
+    with engine.begin() as conn:
+        widen_columns = [
+            ("do_not_track", "VARCHAR(50)"),
+            ("connection_effective_type", "VARCHAR(20)"),
+            ("browser_version", "VARCHAR(50)"),
+            ("device_pixel_ratio", "VARCHAR(20)"),
+            ("canvas_fingerprint", "VARCHAR(100)"),
+            ("browser_user_agent", "VARCHAR(500)"),
+            ("webgl_renderer", "VARCHAR(500)"),
+            ("webgl_vendor", "VARCHAR(200)"),
+            ("plugins_list", "TEXT"),
+            ("fonts_available", "TEXT"),
+        ]
+        for col_name, col_type in widen_columns:
+            try:
+                conn.execute(text(
+                    f"ALTER TABLE survey_responses ALTER COLUMN {col_name} TYPE {col_type} USING {col_name}::{col_type}"
+                ))
+                print(f"✅ Widened {col_name} to {col_type}")
+            except Exception as e:
+                print(f"⚠️ Could not widen {col_name}: {e}")
+
     print("✅ Database ready!")
 
 # ADD THIS (new endpoint - add it after the startup event):
@@ -2484,10 +2508,13 @@ async def save_browser_fingerprint(
             except:
                 return None
 
-        def to_str(val):
+        def to_str(val, max_len=None):
             if val is None or val == "" or val == "null":
                 return None
-            return str(val)
+            result = str(val)
+            if max_len and len(result) > max_len:
+                result = result[:max_len]
+            return result
 
         # Ensure the session/row exists first
         existing = db.execute(
@@ -2532,7 +2559,7 @@ async def save_browser_fingerprint(
             "canvas_fingerprint":     to_str(data.get("canvas_fingerprint")),
             "webgl_vendor":           to_str(data.get("webgl_vendor")),
             "webgl_renderer":         to_str(data.get("webgl_renderer")),
-            "do_not_track":           to_str(data.get("do_not_track")),
+            "do_not_track":           to_str(data.get("do_not_track"), max_len=50),
             "cookies_enabled":        to_bool(data.get("cookies_enabled")),
             "local_storage_enabled":  to_bool(data.get("local_storage_enabled")),
             "session_storage_enabled":to_bool(data.get("session_storage_enabled")),
