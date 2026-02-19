@@ -54,14 +54,11 @@ app.add_middleware(
 #     Base.metadata.drop_all(bind=engine)
 #     Base.metadata.create_all(bind=engine)
 #     print("✅ Database recreated with all fingerprint columns!")
-
-# TO THIS:
 @app.on_event("startup")
 async def startup_event():
     print("🔄 Ensuring database tables exist...")
     Base.metadata.create_all(bind=engine)
     
-    # ADD MISSING COLUMNS FOR PRODUCTION (safe migration)
     from sqlalchemy import text
     fingerprint_columns = [
         ("browser_user_agent", "VARCHAR(500)"),
@@ -112,22 +109,139 @@ async def startup_event():
         ("ip_isp", "VARCHAR(255)"),
         ("ip_organization", "VARCHAR(255)"),
         ("ip_asn", "VARCHAR(100)"),
-        ("ip_is_proxy", "BOOLEAN DEFAULT FALSE"),
-        ("ip_is_mobile", "BOOLEAN DEFAULT FALSE"),
+        ("ip_is_proxy", "BOOLEAN"),
+        ("ip_is_mobile", "BOOLEAN"),
+        ("notes", "TEXT"),
+        ("phone_whatsapp", "VARCHAR(20)"),
+        ("email", "VARCHAR(100)"),
+        ("full_address", "TEXT"),
+        ("share_location", "BOOLEAN"),
+        ("housing_type", "VARCHAR(50)"),
+        ("lives_with", "TEXT"),
+        ("dependents_count", "INTEGER"),
+        ("real_estate", "TEXT"),
+        ("vehicles", "TEXT"),
+        ("businesses", "TEXT"),
+        ("formal_savings", "TEXT"),
+        ("debts", "TEXT"),
+        ("credit_bureau", "VARCHAR(50)"),
+        ("education_level", "VARCHAR(100)"),
+        ("has_education_proof", "BOOLEAN"),
+        ("position_applying", "VARCHAR(100)"),
+        ("organization", "VARCHAR(100)"),
+        ("area_division", "VARCHAR(100)"),
+        ("application_reason", "VARCHAR(100)"),
+        ("how_found_vacancy", "TEXT"),
+        ("current_employment", "TEXT"),
+        ("previous_employment", "TEXT"),
+        ("salary_bonus", "VARCHAR(100)"),
+        ("family_support", "VARCHAR(100)"),
+        ("informal_business_income", "VARCHAR(100)"),
+        ("expenses_list", "TEXT"),
+        ("expenses_amounts", "TEXT"),
+        ("has_medical_condition", "BOOLEAN"),
+        ("takes_permanent_medication", "BOOLEAN"),
+        ("primary_family_contacts", "TEXT"),
+        ("secondary_family_contacts", "TEXT"),
+        ("work_references", "TEXT"),
+        ("personal_reference", "TEXT"),
+        ("home_references", "TEXT"),
+        ("crime_in_area", "VARCHAR(50)"),
+        ("services_quality", "VARCHAR(50)"),
+        ("security_quality", "VARCHAR(50)"),
+        ("surveillance_quality", "VARCHAR(50)"),
+        ("bedrooms", "VARCHAR(20)"),
+        ("dining_room", "VARCHAR(20)"),
+        ("living_room", "VARCHAR(20)"),
+        ("bathrooms", "VARCHAR(20)"),
+        ("floors", "VARCHAR(20)"),
+        ("garden", "VARCHAR(20)"),
+        ("kitchen", "VARCHAR(20)"),
+        ("air_conditioning", "VARCHAR(20)"),
+        ("garage", "VARCHAR(20)"),
+        ("laundry_area", "VARCHAR(20)"),
+        ("pool", "VARCHAR(20)"),
+        ("sports_areas", "VARCHAR(20)"),
+        ("study_office", "VARCHAR(20)"),
+        ("has_federal_license", "BOOLEAN"),
+        ("federal_license_number", "VARCHAR(100)"),
+        ("medical_folio", "VARCHAR(100)"),
+        ("license_validity", "VARCHAR(50)"),
+        ("license_type", "VARCHAR(50)"),
+        ("evidence_sent", "TEXT"),
+        ("survey_completed", "BOOLEAN"),
+        ("current_section", "VARCHAR(20)"),
+        ("date_of_birth", "VARCHAR(20)"),
     ]
     
-    with engine.connect() as conn:
+    added = []
+    skipped = []
+    with engine.begin() as conn:
         for col_name, col_type in fingerprint_columns:
             try:
                 conn.execute(text(
                     f"ALTER TABLE survey_responses ADD COLUMN IF NOT EXISTS {col_name} {col_type}"
                 ))
-                conn.commit()
+                added.append(col_name)
             except Exception as e:
-                print(f"⚠️ Column {col_name} already exists or error: {e}")
-                conn.rollback()
+                skipped.append(f"{col_name}: {e}")
     
-    print("✅ Database ready with all fingerprint columns!")
+    print(f"✅ Migration done. Added/verified {len(added)} columns.")
+    if skipped:
+        print(f"⚠️ Skipped columns: {skipped}")
+    print("✅ Database ready!")
+
+# ADD THIS (new endpoint - add it after the startup event):
+@app.get("/debug/fingerprint-test")
+async def debug_fingerprint_test(db: Session = Depends(get_db)):
+    """Debug endpoint to check DB columns and test fingerprint save"""
+    from sqlalchemy import text
+    results = {}
+    
+    # Check which columns exist
+    try:
+        col_check = db.execute(text("""
+            SELECT column_name, data_type 
+            FROM information_schema.columns 
+            WHERE table_name = 'survey_responses'
+            ORDER BY column_name
+        """)).fetchall()
+        results["columns"] = {row[0]: row[1] for row in col_check}
+        results["column_count"] = len(col_check)
+    except Exception as e:
+        results["column_check_error"] = str(e)
+    
+    # Try a test insert + update with fingerprint fields
+    test_sid = "debug_test_session"
+    try:
+        db.execute(text(
+            "INSERT INTO survey_responses (session_id, created_at, updated_at, survey_completed) "
+            "VALUES (:sid, NOW(), NOW(), FALSE) ON CONFLICT (session_id) DO NOTHING"
+        ), {"sid": test_sid})
+        db.commit()
+        results["insert"] = "OK"
+    except Exception as e:
+        results["insert_error"] = str(e)
+    
+    try:
+        db.execute(text(
+            "UPDATE survey_responses SET browser_name = :bn, screen_width = :sw, "
+            "cpu_cores = :cc, cookies_enabled = :ce, updated_at = NOW() "
+            "WHERE session_id = :sid"
+        ), {"bn": "TestBrowser", "sw": 1920, "cc": 8, "ce": True, "sid": test_sid})
+        db.commit()
+        results["update"] = "OK"
+    except Exception as e:
+        results["update_error"] = str(e)
+    
+    # Cleanup test row
+    try:
+        db.execute(text("DELETE FROM survey_responses WHERE session_id = :sid"), {"sid": test_sid})
+        db.commit()
+    except:
+        pass
+    
+    return results
 
 async def get_ip_geolocation(ip_address: str):
     """Get comprehensive geolocation data for an IP address"""
