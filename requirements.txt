@@ -45,3 +45,4 @@ urllib3==2.6.3
 uvicorn==0.41.0
 websockets==16.0
 WTForms==3.1.2
+psycopg2-binary
