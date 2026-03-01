@@ -85,7 +85,6 @@ class SurveyResponseCreate(BaseModel):
     
     # J) Health
     has_medical_condition: Optional[bool] = None
-    takes_permanent_medication: Optional[bool] = None
     
     # K) Section 8.0 - Family contacts
     primary_family_contacts: Optional[str] = None

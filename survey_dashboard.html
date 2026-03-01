@@ -658,6 +658,84 @@
             color: #f87171;
         }
 
+        /* Bulk selection styles */
+        .bulk-action-bar {
+            display: none;
+            background: #dc3545;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            align-items: center;
+            gap: 15px;
+            font-weight: 600;
+        }
+
+        .bulk-action-bar.visible {
+            display: flex;
+        }
+
+        .bulk-delete-btn {
+            background: white;
+            color: #dc3545;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .bulk-delete-btn:hover {
+            background: #f8d7da;
+        }
+
+        .bulk-cancel-btn {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+            padding: 8px 18px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .bulk-cancel-btn:hover {
+            background: rgba(255,255,255,0.15);
+        }
+
+        .survey-card.selected {
+            outline: 3px solid #008386;
+            outline-offset: 2px;
+            background: rgba(0,131,134,0.05);
+        }
+
+        .survey-card .card-checkbox {
+            display: none;
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #008386;
+            z-index: 10;
+        }
+
+        .survey-card {
+            position: relative;
+        }
+
+        body.select-mode .survey-card .card-checkbox {
+            display: block;
+        }
+
+        body.select-mode .survey-card {
+            cursor: default;
+        }
     </style>
 </head>
 
@@ -718,13 +796,11 @@
             </select>
             
             <div style="margin-left: auto; display: flex; align-items: center; gap: 15px;">
-                <!-- <span id="survey-chat-status-text" style="font-weight: 500;">Chat: Cargando...</span>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="survey-chat-toggle" onchange="toggleSurveyChat()">
-                    <span class="toggle-slider"></span>
-                </label> -->
                 <button class="edit-prompt-btn" onclick="openPromptEditor()">
                     ✏️ Editar Prompt
+                </button>
+                <button class="edit-prompt-btn" onclick="toggleSelectMode()" id="select-mode-btn" style="background: #6c757d;">
+                    ☑️ Seleccionar
                 </button>
             </div>
         </div>
@@ -744,6 +820,14 @@
                     <button class="btn btn-primary" onclick="savePrompt()">Guardar Cambios</button>
                 </div>
             </div>
+        </div>
+
+        <!-- Bulk Action Bar -->
+        <div class="bulk-action-bar" id="bulk-action-bar">
+            <span id="selected-count">0 seleccionadas</span>
+            <button class="bulk-delete-btn" onclick="deleteSelected()">🗑️ Eliminar Seleccionadas</button>
+            <button class="bulk-delete-btn" onclick="selectAll()" style="background: white; color: #333;">☑️ Seleccionar Todas</button>
+            <button class="bulk-cancel-btn" onclick="toggleSelectMode()">✕ Cancelar</button>
         </div>
 
         <!-- Surveys Grid -->
@@ -792,7 +876,11 @@
                 // Add click listeners
                 document.querySelectorAll('.survey-card').forEach(card => {
                     card.addEventListener('click', () => {
-                        window.location.href = `/survey-detail?session=${card.dataset.session}`;
+                        if (document.body.classList.contains('select-mode')) {
+                            toggleCardSelection(card);
+                        } else {
+                            window.location.href = `/survey-detail?session=${card.dataset.session}`;
+                        }
                     });
                 });
 
@@ -849,6 +937,7 @@
 
             return `
                 <div class="survey-card" data-session="${survey.session_id}">
+                    <input type="checkbox" class="card-checkbox" onclick="event.stopPropagation(); toggleCardSelection(this.closest('.survey-card'))" >
                     <div class="candidate-header">
                         <div>
                             <div class="candidate-name">${survey.candidate_name || 'Sin nombre'}</div>
@@ -1128,6 +1217,79 @@
         // Toggle function for button
         function toggleDarkMode() {
             themeToggle.toggle();
+        }
+
+        let selectModeActive = false;
+
+        function toggleSelectMode() {
+            selectModeActive = !selectModeActive;
+            document.body.classList.toggle('select-mode', selectModeActive);
+            document.getElementById('bulk-action-bar').classList.toggle('visible', selectModeActive);
+            const btn = document.getElementById('select-mode-btn');
+            btn.style.background = selectModeActive ? '#008386' : '#6c757d';
+
+            if (!selectModeActive) {
+                // Deselect all
+                document.querySelectorAll('.survey-card').forEach(card => {
+                    card.classList.remove('selected');
+                    card.querySelector('.card-checkbox').checked = false;
+                });
+                updateSelectedCount();
+            }
+        }
+
+        function toggleCardSelection(card) {
+            card.classList.toggle('selected');
+            card.querySelector('.card-checkbox').checked = card.classList.contains('selected');
+            updateSelectedCount();
+        }
+
+        function selectAll() {
+            const cards = document.querySelectorAll('.survey-card');
+            const allSelected = [...cards].every(c => c.classList.contains('selected'));
+            cards.forEach(card => {
+                card.classList.toggle('selected', !allSelected);
+                card.querySelector('.card-checkbox').checked = !allSelected;
+            });
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            const count = document.querySelectorAll('.survey-card.selected').length;
+            document.getElementById('selected-count').textContent = `${count} seleccionada${count !== 1 ? 's' : ''}`;
+        }
+
+        async function deleteSelected() {
+            const selected = document.querySelectorAll('.survey-card.selected');
+            if (selected.length === 0) {
+                alert('No hay encuestas seleccionadas');
+                return;
+            }
+
+            if (!confirm(`¿Estás seguro de eliminar ${selected.length} encuesta${selected.length !== 1 ? 's' : ''}? Esta acción no se puede deshacer.`)) {
+                return;
+            }
+
+            const sessionIds = [...selected].map(card => card.dataset.session);
+            let deleted = 0;
+            let failed = 0;
+
+            for (const sessionId of sessionIds) {
+                try {
+                    const response = await fetch(`${API_URL}/survey/${sessionId}`, { method: 'DELETE' });
+                    if (response.ok) deleted++;
+                    else failed++;
+                } catch {
+                    failed++;
+                }
+            }
+
+            if (failed > 0) {
+                alert(`✅ ${deleted} eliminada${deleted !== 1 ? 's' : ''}. ❌ ${failed} error${failed !== 1 ? 'es' : ''}.`);
+            }
+
+            toggleSelectMode();
+            loadSurveys();
         }
     </script>
 </body>

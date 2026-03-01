@@ -615,6 +615,87 @@
             background: #c82333;
         }
 
+        .data-item {
+            position: relative;
+        }
+
+        .data-item:hover .data-value:not(.editing) {
+            background: rgba(0, 131, 134, 0.05);
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .data-value.editing {
+            padding: 0;
+        }
+
+        .inline-edit-input {
+            width: 100%;
+            padding: 6px 8px;
+            border: 2px solid #008386;
+            border-radius: 4px;
+            font-size: 15px;
+            font-family: inherit;
+            background: white;
+            color: #333;
+            outline: none;
+            resize: vertical;
+        }
+
+        .inline-edit-input:focus {
+            box-shadow: 0 0 0 3px rgba(0, 131, 134, 0.2);
+        }
+
+        .inline-edit-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .inline-save-btn, .inline-cancel-btn {
+            padding: 4px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .inline-save-btn {
+            background: #008386;
+            color: white;
+        }
+
+        .inline-save-btn:hover {
+            background: #006b6d;
+        }
+
+        .inline-cancel-btn {
+            background: #6c757d;
+            color: white;
+        }
+
+        .inline-cancel-btn:hover {
+            background: #5a6268;
+        }
+
+        .data-item:hover::after {
+            content: '✏️';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            font-size: 11px;
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        [data-theme="dark"] .inline-edit-input {
+            background: var(--input-bg);
+            color: var(--text-primary);
+            border-color: var(--accent);
+        }
+
         .audit-notification {
             position: fixed;
             top: 20px;
@@ -1746,7 +1827,6 @@
                 </button>
             </div>
             <div class="sidebar-section" style="border-bottom: none;">
-                <button class="sidebar-btn edit" onclick="if(currentSurvey) openEditModal(); else alert('Cargando datos...');">✏️ Editar Datos</button>
                 <button class="sidebar-btn" onclick="auditSurvey()" style="background: #2563eb;">🔍 Auditar Conversación</button>
                 <button class="sidebar-btn delete" onclick="deleteSurvey()">🗑️ Eliminar Encuesta</button>
             </div>
@@ -1797,7 +1877,6 @@
                     <button class="tab" onclick="switchTab('patrimonial')">💰 Patrimonial</button>
                     <button class="tab" onclick="switchTab('empleo')">💼 Empleo</button>
                     <button class="tab" onclick="switchTab('finanzas')">📊 Finanzas</button>
-                    <button class="tab" onclick="switchTab('salud')">🏥 Salud</button>
                     <button class="tab" onclick="switchTab('contactos')">👥 Contactos</button>
                     <button class="tab" onclick="switchTab('vivienda')">🏘️ Vivienda</button>
                     <button class="tab" onclick="switchTab('licencias')">🚗 Licencias</button>
@@ -1809,23 +1888,23 @@
                 <!-- Tab: Info Básica -->
                 <div id="tab-info-basica" class="tab-content active">
                     <div class="data-section">
-                        <h3>A) Información Básica</h3>
+                        <h3>Información Básica</h3>
                         <div class="data-grid">
-                            <div class="data-item">
+                            <div class="data-item" data-field="candidate_name">
                                 <div class="data-label">Nombre Completo</div>
-                                <div class="data-value" id="data-name">-</div>
+                                <div class="data-value" id="data-name" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item">
+                            <div class="data-item" data-field="date_of_birth">
                                 <div class="data-label">Fecha de Nacimiento</div>
-                                <div class="data-value" id="data-dob">-</div>
+                                <div class="data-value" id="data-dob" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item">
+                            <div class="data-item" data-field="phone_whatsapp">
                                 <div class="data-label">Teléfono WhatsApp</div>
-                                <div class="data-value" id="data-phone">-</div>
+                                <div class="data-value" id="data-phone" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item">
+                            <div class="data-item" data-field="email">
                                 <div class="data-label">Correo Electrónico</div>
-                                <div class="data-value" id="data-email">-</div>
+                                <div class="data-value" id="data-email" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
                             <div class="data-item">
                                 <div class="data-label">Session ID</div>
@@ -1839,33 +1918,33 @@
                 <!-- Tab: Domicilio -->
                 <div id="tab-domicilio" class="tab-content">
                     <div class="data-section">
-                        <h3>B) Domicilio y Ubicación</h3>
+                        <h3>Domicilio y Ubicación</h3>
                         <div class="data-grid">
-                            <div class="data-item" style="grid-column: 1 / -1;">
+                            <div class="data-item" style="grid-column: 1 / -1;" data-field="full_address" data-multiline="true">
                                 <div class="data-label">Domicilio Completo</div>
-                                <div class="data-value" id="data-address">-</div>
+                                <div class="data-value" id="data-address" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item">
+                            <div class="data-item" data-field="share_location">
                                 <div class="data-label">¿Compartió ubicación?</div>
-                                <div class="data-value" id="data-share-location">-</div>
+                                <div class="data-value" id="data-share-location" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
                         </div>
                     </div>
 
                     <div class="data-section">
-                        <h3>C) Información de Vivienda</h3>
+                        <h3>Información de Vivienda</h3>
                         <div class="data-grid">
-                            <div class="data-item">
+                            <div class="data-item" data-field="housing_type">
                                 <div class="data-label">Tipo de Vivienda</div>
-                                <div class="data-value" id="data-housing-type">-</div>
+                                <div class="data-value" id="data-housing-type" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item">
+                            <div class="data-item" data-field="lives_with" data-multiline="true">
                                 <div class="data-label">¿Con quién vive?</div>
-                                <div class="data-value" id="data-lives-with">-</div>
+                                <div class="data-value" id="data-lives-with" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item">
+                            <div class="data-item" data-field="dependents_count">
                                 <div class="data-label">Número de Dependientes</div>
-                                <div class="data-value" id="data-dependents">-</div>
+                                <div class="data-value" id="data-dependents" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
                         </div>
                     </div>
@@ -1874,37 +1953,37 @@
                 <!-- Tab: Patrimonial -->
                 <div id="tab-patrimonial" class="tab-content">
                     <div class="data-section">
-                        <h3>D) Bienes Patrimoniales</h3>
+                        <h3>Bienes Patrimoniales</h3>
                         <div class="data-grid">
-                            <div class="data-item" style="grid-column: 1 / -1;">
+                            <div class="data-item" style="grid-column: 1 / -1;" data-field="real_estate" data-multiline="true">
                                 <div class="data-label">Bienes Inmuebles</div>
-                                <div class="data-value" id="data-real-estate">-</div>
+                                <div class="data-value" id="data-real-estate" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item" style="grid-column: 1 / -1;">
+                            <div class="data-item" style="grid-column: 1 / -1;" data-field="vehicles" data-multiline="true">
                                 <div class="data-label">Vehículos</div>
-                                <div class="data-value" id="data-vehicles">-</div>
+                                <div class="data-value" id="data-vehicles" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item" style="grid-column: 1 / -1;">
+                            <div class="data-item" style="grid-column: 1 / -1;" data-field="businesses" data-multiline="true">
                                 <div class="data-label">Negocios</div>
-                                <div class="data-value" id="data-businesses">-</div>
+                                <div class="data-value" id="data-businesses" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item" style="grid-column: 1 / -1;">
+                            <div class="data-item" style="grid-column: 1 / -1;" data-field="formal_savings" data-multiline="true">
                                 <div class="data-label">Ahorros Formales</div>
-                                <div class="data-value" id="data-savings">-</div>
+                                <div class="data-value" id="data-savings" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
                         </div>
                     </div>
 
                     <div class="data-section">
-                        <h3>E) Situación de Deuda</h3>
+                        <h3>Situación de Deuda</h3>
                         <div class="data-grid">
-                            <div class="data-item" style="grid-column: 1 / -1;">
+                            <div class="data-item" style="grid-column: 1 / -1;" data-field="debts" data-multiline="true">
                                 <div class="data-label">Adeudos</div>
-                                <div class="data-value" id="data-debts">-</div>
+                                <div class="data-value" id="data-debts" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item">
+                            <div class="data-item" data-field="credit_bureau">
                                 <div class="data-label">Buró de Crédito</div>
-                                <div class="data-value" id="data-credit-bureau">-</div>
+                                <div class="data-value" id="data-credit-bureau" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
                         </div>
                     </div>
@@ -1912,50 +1991,25 @@
 
                 <!-- Tab: Empleo -->
                 <div id="tab-empleo" class="tab-content">
-                    <div class="data-section">
-                        <h3>F) Escolaridad</h3>
-                        <div class="data-grid">
-                            <div class="data-item">
-                                <div class="data-label">Nivel de Estudios</div>
-                                <div class="data-value" id="data-education">-</div>
-                            </div>
-                            <div class="data-item">
-                                <div class="data-label">¿Tiene comprobante?</div>
-                                <div class="data-value" id="data-education-proof">-</div>
-                            </div>
-                        </div>
-                    </div>
 
                     <div class="data-section">
-                        <h3>G) Empleo y Trayectoria</h3>
+                        <h3>Vacante y Referencias Laborales</h3>
                         <div class="data-grid">
-                            <div class="data-item">
-                                <div class="data-label">Puesto que Busca</div>
-                                <div class="data-value" id="data-position">-</div>
+                            <div class="data-item" data-field="company_certifying">
+                                <div class="data-label">Empresa que Solicita Certificación</div>
+                                <div class="data-value" id="data-company-certifying" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item">
-                                <div class="data-label">Organización/Empresa</div>
-                                <div class="data-value" id="data-organization">-</div>
+                            <div class="data-item" data-field="position_certifying">
+                                <div class="data-label">Puesto a Certificar</div>
+                                <div class="data-value" id="data-position-certifying" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item">
-                                <div class="data-label">Área/División</div>
-                                <div class="data-value" id="data-area">-</div>
+                            <div class="data-item" style="grid-column: 1 / -1;" data-field="how_found_vacancy" data-multiline="true">
+                                <div class="data-label">¿Cómo se enteró de la vacante?</div>
+                                <div class="data-value" id="data-how-found" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item">
-                                <div class="data-label">Motivo de Aplicación</div>
-                                <div class="data-value" id="data-reason">-</div>
-                            </div>
-                            <div class="data-item" style="grid-column: 1 / -1;">
-                                <div class="data-label">¿Cómo se enteró?</div>
-                                <div class="data-value" id="data-how-found">-</div>
-                            </div>
-                            <div class="data-item" style="grid-column: 1 / -1;">
-                                <div class="data-label">Empleo Actual</div>
-                                <div class="data-value" id="data-current-job">-</div>
-                            </div>
-                            <div class="data-item" style="grid-column: 1 / -1;">
-                                <div class="data-label">Empleos Anteriores</div>
-                                <div class="data-value" id="data-previous-jobs">-</div>
+                            <div class="data-item" style="grid-column: 1 / -1;" data-field="work_references" data-multiline="true">
+                                <div class="data-label">Referencias Laborales</div>
+                                <div class="data-value" id="data-work-refs" style="white-space: pre-wrap;" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
                         </div>
                     </div>
@@ -1964,163 +2018,263 @@
                 <!-- Tab: Finanzas -->
                 <div id="tab-finanzas" class="tab-content">
                     <div class="data-section">
-                        <h3>H) Ingresos</h3>
+                        <h3>Ingresos</h3>
                         <div class="data-grid">
-                            <div class="data-item">
-                                <div class="data-label">Sueldo y Bono</div>
-                                <div class="data-value" id="data-salary">-</div>
+                            <div class="data-item" data-field="salary_bonus">
+                                <div class="data-label">Sueldo y Bonos</div>
+                                <div class="data-value" id="data-salary" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item">
-                                <div class="data-label">Apoyo Familiar/Pareja</div>
-                                <div class="data-value" id="data-family-support">-</div>
-                            </div>
-                            <div class="data-item">
-                                <div class="data-label">Ingresos Informales</div>
-                                <div class="data-value" id="data-informal-income">-</div>
+                            <div class="data-item" data-field="informal_business_income">
+                                <div class="data-label">Negocios / Rentas / Ingresos Informales</div>
+                                <div class="data-value" id="data-informal-income" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
                         </div>
                     </div>
 
                     <div class="data-section">
-                        <h3>I) Egresos</h3>
+                        <h3>Egresos Mensuales</h3>
                         <div class="data-grid">
-                            <div class="data-item" style="grid-column: 1 / -1;">
-                                <div class="data-label">Gastos que Tiene</div>
-                                <div class="data-value" id="data-expenses-list">-</div>
+                            <div class="data-item" data-field="total_monthly_expenses">
+                                <div class="data-label">Total Estimado Mensual</div>
+                                <div class="data-value" id="data-total-expenses" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item" style="grid-column: 1 / -1;">
-                                <div class="data-label">Montos de Gastos</div>
-                                <div class="data-value" id="data-expenses-amounts">-</div>
+                            <div class="data-item" data-field="groceries">
+                                <div class="data-label">Despensa / Comida</div>
+                                <div class="data-value" id="data-groceries" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" data-field="food_out">
+                                <div class="data-label">Comida Fuera / Restaurantes</div>
+                                <div class="data-value" id="data-food-out" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" data-field="food_delivery">
+                                <div class="data-label">Delivery / Apps de Comida</div>
+                                <div class="data-value" id="data-food-delivery" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" data-field="rent">
+                                <div class="data-label">Renta / Vivienda</div>
+                                <div class="data-value" id="data-rent" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" data-field="services_total">
+                                <div class="data-label">Servicios (agua, luz, gas, internet)</div>
+                                <div class="data-value" id="data-services-total" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" data-field="transportation">
+                                <div class="data-label">Transporte / Gasolina / Uber</div>
+                                <div class="data-value" id="data-transportation" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" data-field="school_expenses">
+                                <div class="data-label">Educación / Colegiaturas</div>
+                                <div class="data-value" id="data-school-expenses" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" data-field="entertainment">
+                                <div class="data-label">Entretenimiento / Salidas</div>
+                                <div class="data-value" id="data-entertainment" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" data-field="vacations">
+                                <div class="data-label">Última Vacaciones</div>
+                                <div class="data-value" id="data-vacations" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" data-field="clothing">
+                                <div class="data-label">Ropa</div>
+                                <div class="data-value" id="data-clothing" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" data-field="technology_purchases">
+                                <div class="data-label">Tecnología / Hogar</div>
+                                <div class="data-value" id="data-technology" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" data-field="insurance">
+                                <div class="data-label">Seguros / Impuestos</div>
+                                <div class="data-value" id="data-insurance" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" data-field="other_expenses">
+                                <div class="data-label">Otros Gastos</div>
+                                <div class="data-value" id="data-other-expenses" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
                         </div>
                     </div>
+
                 </div>
 
-                <!-- Tab: Salud -->
-                <div id="tab-salud" class="tab-content">
-                    <div class="data-section">
-                        <h3>J) Salud y Hábitos</h3>
-                        <div class="data-grid">
-                            <div class="data-item">
-                                <div class="data-label">¿Condición médica que afecte trabajo?</div>
-                                <div class="data-value" id="data-medical">-</div>
-                            </div>
-                            <div class="data-item">
-                                <div class="data-label">¿Medicamentos permanentes?</div>
-                                <div class="data-value" id="data-medication">-</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tab: Contactos -->
                 <div id="tab-contactos" class="tab-content">
                     <div class="data-section">
-                        <h3>K) Contactos Familiares</h3>
+                        <h3>Familia</h3>
                         <div class="data-grid">
-                            <div class="data-item" style="grid-column: 1 / -1;">
-                                <div class="data-label">Referencias Familia Primaria</div>
-                                <div class="data-value" id="data-primary-family" style="white-space: pre-wrap;">-</div>
+                            <div class="data-item" data-field="father_name">
+                                <div class="data-label">Nombre del Padre</div>
+                                <div class="data-value" id="data-father-name" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item" style="grid-column: 1 / -1;">
-                                <div class="data-label">Referencias Familia Secundaria</div>
-                                <div class="data-value" id="data-secondary-family" style="white-space: pre-wrap;">-
-                                </div>
+                            <div class="data-item" data-field="father_occupation">
+                                <div class="data-label">Ocupación del Padre</div>
+                                <div class="data-value" id="data-father-occupation" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item" style="grid-column: 1 / -1;">
-                                <div class="data-label">Referencias Laborales</div>
-                                <div class="data-value" id="data-work-refs" style="white-space: pre-wrap;">-</div>
+                            <div class="data-item" data-field="mother_name">
+                                <div class="data-label">Nombre de la Madre</div>
+                                <div class="data-value" id="data-mother-name" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item" style="grid-column: 1 / -1;">
-                                <div class="data-label">Referencia Personal</div>
-                                <div class="data-value" id="data-personal-ref">-</div>
+                            <div class="data-item" data-field="mother_occupation">
+                                <div class="data-label">Ocupación de la Madre</div>
+                                <div class="data-value" id="data-mother-occupation" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" style="grid-column: 1 / -1;" data-field="siblings_info" data-multiline="true">
+                                <div class="data-label">Hermanos (nombre, teléfono, ocupación)</div>
+                                <div class="data-value" id="data-siblings" style="white-space: pre-wrap;" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" style="grid-column: 1 / -1;" data-field="family_addresses" data-multiline="true">
+                                <div class="data-label">Direcciones de Familiares</div>
+                                <div class="data-value" id="data-family-addresses" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" style="grid-column: 1 / -1;" data-field="frequent_contacts" data-multiline="true">
+                                <div class="data-label">¿A quiénes contacta seguido?</div>
+                                <div class="data-value" id="data-frequent-contacts" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" data-field="emergency_contact_name">
+                                <div class="data-label">Nombre Contacto de Emergencia</div>
+                                <div class="data-value" id="data-emergency-contact" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" data-field="emergency_contact_phone">
+                                <div class="data-label">Teléfono Contacto de Emergencia</div>
+                                <div class="data-value" id="data-emergency-contact-phone" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" data-field="emergency_contact_relationship">
+                                <div class="data-label">Parentesco Contacto de Emergencia</div>
+                                <div class="data-value" id="data-emergency-contact-relationship" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="data-section">
+                        <h3>Pareja e Hijos</h3>
+                        <div class="data-grid">
+                            <div class="data-item" data-field="partner_name">
+                                <div class="data-label">Nombre de la Pareja</div>
+                                <div class="data-value" id="data-partner-name" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" data-field="partner_phone">
+                                <div class="data-label">Teléfono de la Pareja</div>
+                                <div class="data-value" id="data-partner-phone" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" data-field="partner_occupation">
+                                <div class="data-label">Ocupación de la Pareja</div>
+                                <div class="data-value" id="data-partner-occupation" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" data-field="partner_relationship_quality">
+                                <div class="data-label">Calidad de la Relación</div>
+                                <div class="data-value" id="data-partner-relationship" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" style="grid-column: 1 / -1;" data-field="children_names" data-multiline="true">
+                                <div class="data-label">Hijos</div>
+                                <div class="data-value" id="data-children" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
                         </div>
                     </div>
                 </div>
+
 
                 <!-- Tab: Vivienda -->
                 <div id="tab-vivienda" class="tab-content">
+
                     <div class="data-section">
-                        <h3>L) Acceso y Características</h3>
+                        <h3>Descripción del Entorno y Vivienda</h3>
                         <div class="data-grid">
-                            <div class="data-item" style="grid-column: 1 / -1;">
-                                <div class="data-label">Referencias para Ubicar</div>
-                                <div class="data-value" id="data-home-refs">-</div>
+                            <div class="data-item" style="grid-column: 1 / -1;" data-field="neighborhood_description" data-multiline="true">
+                                <div class="data-label">Descripción de la Colonia / Entorno</div>
+                                <div class="data-value" id="data-neighborhood-desc" style="white-space: pre-wrap;" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item">
-                                <div class="data-label">Delincuencia en la Zona</div>
-                                <div class="data-value" id="data-crime">-</div>
+                            <div class="data-item" style="grid-column: 1 / -1;" data-field="home_description" data-multiline="true">
+                                <div class="data-label">Descripción de la Vivienda</div>
+                                <div class="data-value" id="data-home-desc" style="white-space: pre-wrap;" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item">
-                                <div class="data-label">Servicios en la Zona</div>
-                                <div class="data-value" id="data-services">-</div>
+                            <div class="data-item" data-field="home_floors">
+                                <div class="data-label">Pisos / Niveles</div>
+                                <div class="data-value" id="data-home-floors" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item">
-                                <div class="data-label">Seguridad en la Zona</div>
-                                <div class="data-value" id="data-security">-</div>
-                            </div>
-                            <div class="data-item">
-                                <div class="data-label">Vigilancia en la Zona</div>
-                                <div class="data-value" id="data-surveillance">-</div>
+                            <div class="data-item" data-field="home_buildings">
+                                <div class="data-label">Número de Edificios</div>
+                                <div class="data-value" id="data-home-buildings" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
                         </div>
                     </div>
 
                     <div class="data-section">
-                        <h3>M) Estado del Inmueble</h3>
+                        <h3>Acceso y Características</h3>
                         <div class="data-grid">
-                            <div class="data-item">
+                            <div class="data-item" style="grid-column: 1 / -1;" data-field="home_references" data-multiline="true">
+                                <div class="data-label">Referencias para Ubicar</div>
+                                <div class="data-value" id="data-home-refs" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" data-field="crime_in_area">
+                                <div class="data-label">Delincuencia en la Zona</div>
+                                <div class="data-value" id="data-crime" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" data-field="security_quality">
+                                <div class="data-label">Servicios en la Zona</div>
+                                <div class="data-value" id="data-services" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" data-field="security_quality">
+                                <div class="data-label">Seguridad en la Zona</div>
+                                <div class="data-value" id="data-security" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" data-field="surveillance_quality">
+                                <div class="data-label">Vigilancia en la Zona</div>
+                                <div class="data-value" id="data-surveillance" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="data-section">
+                        <h3>Estado del Inmueble</h3>
+                        <div class="data-grid">
+                            <div class="data-item" data-field="bedrooms">
                                 <div class="data-label">Recámaras</div>
-                                <div class="data-value" id="data-bedrooms">-</div>
+                                <div class="data-value" id="data-bedrooms" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item">
+                            <div class="data-item" data-field="dining_room">
                                 <div class="data-label">Comedor</div>
-                                <div class="data-value" id="data-dining">-</div>
+                                <div class="data-value" id="data-dining" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item">
+                            <div class="data-item" data-field="living_room">
                                 <div class="data-label">Sala</div>
-                                <div class="data-value" id="data-living">-</div>
+                                <div class="data-value" id="data-living" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item">
+                            <div class="data-item" data-field="bathrooms">
                                 <div class="data-label">Baños</div>
-                                <div class="data-value" id="data-bathrooms">-</div>
+                                <div class="data-value" id="data-bathrooms" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item">
+                            <div class="data-item" data-field="home_floors">
                                 <div class="data-label">Pisos</div>
-                                <div class="data-value" id="data-floors">-</div>
+                                <div class="data-value" id="data-floors" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item">
+                            <div class="data-item" data-field="garden">
                                 <div class="data-label">Jardín/Áreas Verdes</div>
-                                <div class="data-value" id="data-garden">-</div>
+                                <div class="data-value" id="data-garden" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item">
+                            <div class="data-item" data-field="kitchen">
                                 <div class="data-label">Cocina</div>
-                                <div class="data-value" id="data-kitchen">-</div>
+                                <div class="data-value" id="data-kitchen" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item">
+                            <div class="data-item" data-field="air_conditioning">
                                 <div class="data-label">Clima (A/C)</div>
-                                <div class="data-value" id="data-ac">-</div>
+                                <div class="data-value" id="data-ac" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item">
+                            <div class="data-item" data-field="garage">
                                 <div class="data-label">Cochera</div>
-                                <div class="data-value" id="data-garage">-</div>
+                                <div class="data-value" id="data-garage" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item">
+                            <div class="data-item" data-field="laundry_area">
                                 <div class="data-label">Área de Lavado</div>
-                                <div class="data-value" id="data-laundry-area">-</div>
+                                <div class="data-value" id="data-laundry-area" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item">
+                            <div class="data-item" data-field="pool">
                                 <div class="data-label">Alberca</div>
-                                <div class="data-value" id="data-pool">-</div>
+                                <div class="data-value" id="data-pool" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item">
+                            <div class="data-item" data-field="sports_areas">
                                 <div class="data-label">Áreas Deportivas</div>
-                                <div class="data-value" id="data-sports">-</div>
+                                <div class="data-value" id="data-sports" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item">
+                            <div class="data-item" data-field="study_office">
                                 <div class="data-label">Estudio/Oficina</div>
-                                <div class="data-value" id="data-office">-</div>
+                                <div class="data-value" id="data-office" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
                         </div>
                     </div>
@@ -2129,37 +2283,37 @@
                 <!-- Tab: Licencias -->
                 <div id="tab-licencias" class="tab-content">
                     <div class="data-section">
-                        <h3>N) Licencias (Solo Operadores)</h3>
+                        <h3>Licencias (Solo Operadores)</h3>
                         <div class="data-grid">
-                            <div class="data-item">
+                            <div class="data-item" data-field="license_type">
                                 <div class="data-label">¿Tiene Licencia Federal?</div>
-                                <div class="data-value" id="data-federal-license">-</div>
+                                <div class="data-value" id="data-federal-license" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item">
+                            <div class="data-item" data-field="federal_license_number">
                                 <div class="data-label">Número de Licencia</div>
-                                <div class="data-value" id="data-license-number">-</div>
+                                <div class="data-value" id="data-license-number" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item">
+                            <div class="data-item" data-field="medical_folio">
                                 <div class="data-label">Folio Médico</div>
-                                <div class="data-value" id="data-medical-folio">-</div>
+                                <div class="data-value" id="data-medical-folio" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item">
+                            <div class="data-item" data-field="license_validity">
                                 <div class="data-label">Vigencia</div>
-                                <div class="data-value" id="data-license-validity">-</div>
+                                <div class="data-value" id="data-license-validity" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
-                            <div class="data-item">
+                            <div class="data-item" data-field="license_type">
                                 <div class="data-label">Tipo/Categoría</div>
-                                <div class="data-value" id="data-license-type">-</div>
+                                <div class="data-value" id="data-license-type" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
                         </div>
                     </div>
 
                     <div class="data-section">
-                        <h3>O) Evidencias</h3>
+                        <h3>Evidencias</h3>
                         <div class="data-grid">
-                            <div class="data-item" style="grid-column: 1 / -1;">
+                            <div class="data-item" style="grid-column: 1 / -1;" data-field="evidence_sent" data-multiline="true">
                                 <div class="data-label">Evidencias Enviadas</div>
-                                <div class="data-value" id="data-evidence" style="white-space: pre-wrap;">-</div>
+                                <div class="data-value" id="data-evidence" style="white-space: pre-wrap;" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
                         </div>
                     </div>
@@ -2227,7 +2381,7 @@
 
                     <!-- A) BASIC INFO -->
                     <div class="form-section">
-                        <h3>A) Información Básica</h3>
+                        <h3>Información Básica</h3>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                             <div class="form-group">
                                 <label>Nombre Completo:</label>
@@ -2250,7 +2404,7 @@
 
                     <!-- B) ADDRESS -->
                     <div class="form-section">
-                        <h3>B) Domicilio y Ubicación</h3>
+                        <h3>Domicilio y Ubicación</h3>
                         <div class="form-group">
                             <label>Domicilio Completo:</label>
                             <textarea id="edit-address" rows="2"></textarea>
@@ -2327,154 +2481,135 @@
                         </div>
                     </div>
 
-                    <!-- F) EDUCATION -->
                     <div class="form-section">
-                        <h3>F) Escolaridad</h3>
+                        <h3>E) Ingresos</h3>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                             <div class="form-group">
-                                <label>Nivel de Estudios:</label>
-                                <select id="edit-education">
-                                    <option value="">Seleccionar...</option>
-                                    <option value="Primaria">Primaria</option>
-                                    <option value="Secundaria">Secundaria</option>
-                                    <option value="Preparatoria">Preparatoria</option>
-                                    <option value="Técnico">Técnico</option>
-                                    <option value="Licenciatura">Licenciatura</option>
-                                    <option value="Posgrado">Posgrado</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>¿Tiene comprobante?</label>
-                                <select id="edit-education-proof">
-                                    <option value="">No especificado</option>
-                                    <option value="true">Sí</option>
-                                    <option value="false">No</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- G) EMPLOYMENT -->
-                    <div class="form-section">
-                        <h3>G) Empleo y Trayectoria</h3>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                            <div class="form-group">
-                                <label>Puesto que Busca:</label>
-                                <input type="text" id="edit-position">
-                            </div>
-                            <div class="form-group">
-                                <label>Organización/Empresa:</label>
-                                <input type="text" id="edit-organization">
-                            </div>
-                            <div class="form-group">
-                                <label>Área/División:</label>
-                                <input type="text" id="edit-area">
-                            </div>
-                            <div class="form-group">
-                                <label>Motivo de Aplicación:</label>
-                                <select id="edit-reason">
-                                    <option value="">Seleccionar...</option>
-                                    <option value="Nuevo ingreso">Nuevo ingreso</option>
-                                    <option value="Reingreso">Reingreso</option>
-                                    <option value="Promoción">Promoción</option>
-                                    <option value="Otro">Otro</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>¿Cómo se enteró de la vacante?</label>
-                            <textarea id="edit-how-found" rows="2"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>Empleo Actual:</label>
-                            <textarea id="edit-current-job" rows="2"
-                                placeholder="Empresa, puesto, antigüedad, horario, sueldo"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>Empleos Anteriores (últimos 2):</label>
-                            <textarea id="edit-previous-jobs" rows="3"
-                                placeholder="Empresa, puesto, tiempo, motivo de salida"></textarea>
-                        </div>
-                    </div>
-
-                    <!-- H) INCOME 7.3 -->
-                    <div class="form-section">
-                        <h3>H) Ingresos</h3>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
-                            <div class="form-group">
-                                <label>Sueldo y Bono Mensual:</label>
+                                <label>Sueldo y Bonos:</label>
                                 <input type="text" id="edit-salary" placeholder="Rango aproximado">
                             </div>
                             <div class="form-group">
-                                <label>Apoyo Familiar/Pareja:</label>
-                                <input type="text" id="edit-family-support" placeholder="Cantidad aproximada">
-                            </div>
-                            <div class="form-group">
-                                <label>Ingresos Informales:</label>
+                                <label>Negocios / Rentas / Ingresos Informales:</label>
                                 <input type="text" id="edit-informal-income" placeholder="Cantidad aproximada">
                             </div>
                         </div>
                     </div>
 
-                    <!-- I) EXPENSES 7.4 -->
                     <div class="form-section">
-                        <h3>I) Egresos</h3>
-                        <div class="form-group">
-                            <label>Lista de Gastos que Tiene:</label>
-                            <textarea id="edit-expenses-list" rows="2"
-                                placeholder="Ej: Despensa, Renta, Luz, etc."></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>Montos de Gastos (cantidades mensuales):</label>
-                            <textarea id="edit-expenses-amounts" rows="3"
-                                placeholder="Cantidad aproximada de cada gasto"></textarea>
+                        <h3>E) Egresos Mensuales</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                            <div class="form-group">
+                                <label>Total Estimado Mensual:</label>
+                                <input type="text" id="edit-total-expenses" placeholder="Ej: $15,000">
+                            </div>
+                            <div class="form-group">
+                                <label>Despensa / Comida en Casa:</label>
+                                <input type="text" id="edit-groceries">
+                            </div>
+                            <div class="form-group">
+                                <label>Comida Fuera / Restaurantes:</label>
+                                <input type="text" id="edit-food-out">
+                            </div>
+                            <div class="form-group">
+                                <label>Delivery / Apps de Comida:</label>
+                                <input type="text" id="edit-food-delivery">
+                            </div>
+                            <div class="form-group">
+                                <label>Renta / Vivienda:</label>
+                                <input type="text" id="edit-rent">
+                            </div>
+                            <div class="form-group">
+                                <label>Servicios (agua, luz, gas, internet):</label>
+                                <input type="text" id="edit-services-total">
+                            </div>
+                            <div class="form-group">
+                                <label>Transporte / Gasolina / Uber:</label>
+                                <input type="text" id="edit-transportation">
+                            </div>
+                            <div class="form-group">
+                                <label>Educación / Colegiaturas:</label>
+                                <input type="text" id="edit-school-expenses">
+                            </div>
+                            <div class="form-group">
+                                <label>Entretenimiento / Salidas:</label>
+                                <input type="text" id="edit-entertainment">
+                            </div>
+                            <div class="form-group">
+                                <label>Vacaciones:</label>
+                                <input type="text" id="edit-vacations">
+                            </div>
+                            <div class="form-group">
+                                <label>Ropa:</label>
+                                <input type="text" id="edit-clothing">
+                            </div>
+                            <div class="form-group">
+                                <label>Tecnología / Hogar:</label>
+                                <input type="text" id="edit-technology">
+                            </div>
+                            <div class="form-group">
+                                <label>Seguros / Impuestos:</label>
+                                <input type="text" id="edit-insurance">
+                            </div>
+                            <div class="form-group">
+                                <label>Otros Gastos:</label>
+                                <input type="text" id="edit-other-expenses">
+                            </div>
                         </div>
                     </div>
 
-                    <!-- J) HEALTH -->
                     <div class="form-section">
-                        <h3>J) Salud y Hábitos</h3>
+                        <h3>H) Familia</h3>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                             <div class="form-group">
-                                <label>¿Condición médica que afecte trabajo?</label>
-                                <select id="edit-medical">
-                                    <option value="">No especificado</option>
-                                    <option value="true">Sí</option>
-                                    <option value="false">No</option>
-                                </select>
+                                <label>Nombre del Padre:</label>
+                                <input type="text" id="edit-father-name">
                             </div>
                             <div class="form-group">
-                                <label>¿Medicamentos permanentes?</label>
-                                <select id="edit-medication">
-                                    <option value="">No especificado</option>
-                                    <option value="true">Sí</option>
-                                    <option value="false">No</option>
-                                </select>
+                                <label>Ocupación del Padre:</label>
+                                <input type="text" id="edit-father-occupation">
+                            </div>
+                            <div class="form-group">
+                                <label>Nombre de la Madre:</label>
+                                <input type="text" id="edit-mother-name">
+                            </div>
+                            <div class="form-group">
+                                <label>Ocupación de la Madre:</label>
+                                <input type="text" id="edit-mother-occupation">
                             </div>
                         </div>
-                    </div>
-
-                    <!-- K) FAMILY CONTACTS 8.0 -->
-                    <div class="form-section">
-                        <h3>K) Contactos Familiares</h3>
                         <div class="form-group">
-                            <label>Referencias Familia Primaria (padres, hermanos, primos, tíos):</label>
-                            <textarea id="edit-primary-family" rows="3"
-                                placeholder="Formato: apellidos, nombres | parentesco | ocupación | número | ubicación"></textarea>
+                            <label>Hermanos (nombre, WhatsApp, ocupación):</label>
+                            <textarea id="edit-siblings" rows="3"></textarea>
                         </div>
                         <div class="form-group">
-                            <label>Referencias Familia Secundaria (pareja, hijos):</label>
-                            <textarea id="edit-secondary-family" rows="2"
-                                placeholder="Formato: apellidos, nombres | parentesco | ocupación | número | ubicación"></textarea>
+                            <label>Direcciones de Familiares:</label>
+                            <textarea id="edit-family-addresses" rows="2"></textarea>
                         </div>
                         <div class="form-group">
-                            <label>Referencias Laborales (2):</label>
-                            <textarea id="edit-work-refs" rows="2"
-                                placeholder="Nombre, empresa, puesto, teléfono"></textarea>
+                            <label>¿A quiénes contacta seguido?</label>
+                            <input type="text" id="edit-frequent-contacts">
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                            <div class="form-group">
+                                <label>Nombre de la Pareja:</label>
+                                <input type="text" id="edit-partner-name">
+                            </div>
+                            <div class="form-group">
+                                <label>Teléfono de la Pareja:</label>
+                                <input type="text" id="edit-partner-phone">
+                            </div>
+                            <div class="form-group">
+                                <label>Ocupación de la Pareja:</label>
+                                <input type="text" id="edit-partner-occupation">
+                            </div>
                         </div>
                         <div class="form-group">
-                            <label>Referencia Personal (1):</label>
-                            <input type="text" id="edit-personal-ref" placeholder="Nombre, relación, teléfono">
+                            <label>Calidad de la Relación:</label>
+                            <input type="text" id="edit-partner-relationship">
+                        </div>
+                        <div class="form-group">
+                            <label>Hijos (nombres completos):</label>
+                            <textarea id="edit-children-names" rows="2"></textarea>
                         </div>
                     </div>
 
@@ -2490,16 +2625,6 @@
                             <div class="form-group">
                                 <label>Delincuencia en la Zona:</label>
                                 <select id="edit-crime">
-                                    <option value="">Seleccionar...</option>
-                                    <option value="Nada">Nada</option>
-                                    <option value="Poco">Poco</option>
-                                    <option value="Mucho">Mucho</option>
-                                    <option value="Demasiado">Demasiado</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Servicios en la Zona:</label>
-                                <select id="edit-services">
                                     <option value="">Seleccionar...</option>
                                     <option value="Nada">Nada</option>
                                     <option value="Poco">Poco</option>
@@ -2551,8 +2676,12 @@
                                 <input type="text" id="edit-bathrooms" placeholder="No tengo/1/2/3/4">
                             </div>
                             <div class="form-group">
-                                <label>Pisos:</label>
-                                <input type="text" id="edit-floors" placeholder="1/2/3/4">
+                                <label>Pisos / Niveles:</label>
+                                <input type="text" id="edit-home-floors" placeholder="1/2/3/4">
+                            </div>
+                            <div class="form-group">
+                                <label>Número de Edificios:</label>
+                                <input type="text" id="edit-home-buildings" placeholder="1/2/3">
                             </div>
                             <div class="form-group">
                                 <label>Jardín/Áreas Verdes:</label>
@@ -3031,7 +3160,7 @@
                         hardwareElem.textContent = `CPU: ${currentSurvey.cpu_cores || '?'} cores, RAM: ${currentSurvey.device_memory || '?'} GB`;
                     } else {
                         hardwareElem.textContent = 'No disponible';
-                    }
+                    }       
                 }
 
                 // Populate browser/device info
@@ -3146,37 +3275,56 @@
             setValue('data-businesses', survey.businesses);
             setValue('data-savings', survey.formal_savings);
             setValue('data-debts', survey.debts);
+            // ADD ALL OF THESE:
+            setValue('data-company-certifying', survey.company_certifying);
+            setValue('data-position-certifying', survey.position_certifying);
+            setValue('data-total-expenses', survey.total_monthly_expenses);
+            setValue('data-groceries', survey.groceries);
+            setValue('data-food-out', survey.food_out);
+            setValue('data-food-delivery', survey.food_delivery);
+            setValue('data-rent', survey.rent);
+            setValue('data-services-total', survey.services_total);
+            setValue('data-transportation', survey.transportation);
+            setValue('data-school-expenses', survey.school_expenses);
+            setValue('data-entertainment', survey.entertainment);
+            setValue('data-vacations', survey.vacations);
+            setValue('data-clothing', survey.clothing);
+            setValue('data-technology', survey.technology_purchases);
+            setValue('data-insurance', survey.insurance);
+            setValue('data-other-expenses', survey.other_expenses);
+            setValue('data-father-name', survey.father_name);
+            setValue('data-father-occupation', survey.father_occupation);
+            setValue('data-mother-name', survey.mother_name);
+            setValue('data-mother-occupation', survey.mother_occupation);
+            setValue('data-siblings', survey.siblings_info);
+            setValue('data-family-addresses', survey.family_addresses);
+            setValue('data-frequent-contacts', survey.frequent_contacts);
+            setValue('data-emergency-contact', survey.emergency_contact_name);
+            setValue('data-emergency-contact-phone', survey.emergency_contact_phone);
+            setValue('data-emergency-contact-relationship', survey.emergency_contact_relationship);
+            setValue('data-partner-name', survey.partner_name);
+            setValue('data-partner-phone', survey.partner_phone);
+            setValue('data-partner-occupation', survey.partner_occupation);
+            setValue('data-partner-relationship', survey.partner_relationship_quality);
+            setValue('data-children', survey.children_names);
+            setValue('data-neighborhood-desc', survey.neighborhood_description);
+            setValue('data-home-desc', survey.home_description);
+            setValue('data-home-floors', survey.home_floors);
+            setValue('data-home-buildings', survey.home_buildings);
             setValue('data-credit-bureau', survey.credit_bureau);
-            setValue('data-education', survey.education_level);
-            setValue('data-education-proof', survey.has_education_proof, true);
-            setValue('data-position', survey.position_applying);
-            setValue('data-organization', survey.organization);
-            setValue('data-area', survey.area_division);
-            setValue('data-reason', survey.application_reason);
             setValue('data-how-found', survey.how_found_vacancy);
-            setValue('data-current-job', survey.current_employment);
-            setValue('data-previous-jobs', survey.previous_employment);
             setValue('data-salary', survey.salary_bonus);
-            setValue('data-family-support', survey.family_support);
             setValue('data-informal-income', survey.informal_business_income);
-            setValue('data-expenses-list', survey.expenses_list);
             setValue('data-expenses-amounts', survey.expenses_amounts);
-            setValue('data-medical', survey.has_medical_condition, true);
-            setValue('data-medication', survey.takes_permanent_medication, true);
-            setValue('data-primary-family', survey.primary_family_contacts);
-            setValue('data-secondary-family', survey.secondary_family_contacts);
             setValue('data-work-refs', survey.work_references);
-            setValue('data-personal-ref', survey.personal_reference);
             setValue('data-home-refs', survey.home_references);
             setValue('data-crime', survey.crime_in_area);
-            setValue('data-services', survey.services_quality);
             setValue('data-security', survey.security_quality);
             setValue('data-surveillance', survey.surveillance_quality);
             setValue('data-bedrooms', survey.bedrooms);
             setValue('data-dining', survey.dining_room);
             setValue('data-living', survey.living_room);
             setValue('data-bathrooms', survey.bathrooms);
-            setValue('data-floors', survey.floors);
             setValue('data-garden', survey.garden);
             setValue('data-kitchen', survey.kitchen);
             setValue('data-ac', survey.air_conditioning);
@@ -3424,24 +3572,19 @@
 
         function calculateProgress(survey) {
             let completed = 0;
-            const totalSections = 15;
-
+            const totalSections = 12;
             if (survey.candidate_name && survey.date_of_birth && survey.phone_whatsapp && survey.email) completed++;
             if (survey.full_address) completed++;
-            if (survey.housing_type && survey.lives_with) completed++;
+            if (survey.company_certifying && survey.position_certifying) completed++;
+            if (survey.how_found_vacancy) completed++;
+            if (survey.salary_bonus || survey.informal_business_income) completed++;
+            if (survey.total_monthly_expenses) completed++;
             if (survey.real_estate || survey.vehicles || survey.businesses || survey.formal_savings) completed++;
             if (survey.debts || survey.credit_bureau) completed++;
-            if (survey.education_level) completed++;
-            if (survey.position_applying && survey.organization && survey.current_employment) completed++;
-            if (survey.salary_bonus) completed++;
-            if (survey.expenses_list && survey.expenses_amounts) completed++;
-            if (survey.has_medical_condition !== null) completed++;
-            if (survey.primary_family_contacts && survey.work_references && survey.personal_reference) completed++;
-            if (survey.home_references && survey.crime_in_area) completed++;
-            if (survey.bedrooms) completed++;
-            if (survey.has_federal_license !== null) completed++;
-            if (survey.evidence_sent) completed++;
-
+            if (survey.father_name || survey.mother_name || survey.siblings_info) completed++;
+            if (survey.neighborhood_description || survey.home_description) completed++;
+            if (survey.has_legal_issues !== null) completed++;
+            if (survey.evidence_sent || survey.facebook_profile_url) completed++;
             return Math.round((completed / totalSections) * 100);
         }
 
@@ -3470,36 +3613,50 @@
                 document.getElementById('edit-savings').value = currentSurvey.formal_savings || '';
                 document.getElementById('edit-debts').value = currentSurvey.debts || '';
                 document.getElementById('edit-credit-bureau').value = currentSurvey.credit_bureau || '';
-                document.getElementById('edit-education').value = currentSurvey.education_level || '';
-                document.getElementById('edit-education-proof').value = currentSurvey.has_education_proof === null ? '' : currentSurvey.has_education_proof.toString();
-                document.getElementById('edit-position').value = currentSurvey.position_applying || '';
-                document.getElementById('edit-organization').value = currentSurvey.organization || '';
-                document.getElementById('edit-area').value = currentSurvey.area_division || '';
-                document.getElementById('edit-reason').value = currentSurvey.application_reason || '';
                 document.getElementById('edit-how-found').value = currentSurvey.how_found_vacancy || '';
-                document.getElementById('edit-current-job').value = currentSurvey.current_employment || '';
-                document.getElementById('edit-previous-jobs').value = currentSurvey.previous_employment || '';
+                document.getElementById('edit-company-certifying').value = currentSurvey.company_certifying || '';
+                document.getElementById('edit-position-certifying').value = currentSurvey.position_certifying || '';
+                document.getElementById('edit-total-expenses').value = currentSurvey.total_monthly_expenses || '';
+                document.getElementById('edit-groceries').value = currentSurvey.groceries || '';
+                document.getElementById('edit-food-out').value = currentSurvey.food_out || '';
+                document.getElementById('edit-food-delivery').value = currentSurvey.food_delivery || '';
+                document.getElementById('edit-rent').value = currentSurvey.rent || '';
+                document.getElementById('edit-services-total').value = currentSurvey.services_total || '';
+                document.getElementById('edit-transportation').value = currentSurvey.transportation || '';
+                document.getElementById('edit-school-expenses').value = currentSurvey.school_expenses || '';
+                document.getElementById('edit-entertainment').value = currentSurvey.entertainment || '';
+                document.getElementById('edit-vacations').value = currentSurvey.vacations || '';
+                document.getElementById('edit-clothing').value = currentSurvey.clothing || '';
+                document.getElementById('edit-technology').value = currentSurvey.technology_purchases || '';
+                document.getElementById('edit-insurance').value = currentSurvey.insurance || '';
+                document.getElementById('edit-other-expenses').value = currentSurvey.other_expenses || '';
+                document.getElementById('edit-father-name').value = currentSurvey.father_name || '';
+                document.getElementById('edit-father-occupation').value = currentSurvey.father_occupation || '';
+                document.getElementById('edit-mother-name').value = currentSurvey.mother_name || '';
+                document.getElementById('edit-mother-occupation').value = currentSurvey.mother_occupation || '';
+                document.getElementById('edit-siblings').value = currentSurvey.siblings_info || '';
+                document.getElementById('edit-family-addresses').value = currentSurvey.family_addresses || '';
+                document.getElementById('edit-frequent-contacts').value = currentSurvey.frequent_contacts || '';
+                document.getElementById('edit-partner-name').value = currentSurvey.partner_name || '';
+                document.getElementById('edit-partner-phone').value = currentSurvey.partner_phone || '';
+                document.getElementById('edit-partner-occupation').value = currentSurvey.partner_occupation || '';
+                document.getElementById('edit-partner-relationship').value = currentSurvey.partner_relationship_quality || '';
+                document.getElementById('edit-children-names').value = currentSurvey.children_names || '';
+                document.getElementById('edit-neighborhood-desc').value = currentSurvey.neighborhood_description || '';
+                document.getElementById('edit-home-desc').value = currentSurvey.home_description || '';
+                document.getElementById('edit-home-floors').value = currentSurvey.home_floors || '';
+                document.getElementById('edit-home-buildings').value = currentSurvey.home_buildings || '';
                 document.getElementById('edit-salary').value = currentSurvey.salary_bonus || '';
-                document.getElementById('edit-family-support').value = currentSurvey.family_support || '';
                 document.getElementById('edit-informal-income').value = currentSurvey.informal_business_income || '';
-                document.getElementById('edit-expenses-list').value = currentSurvey.expenses_list || '';
-                document.getElementById('edit-expenses-amounts').value = currentSurvey.expenses_amounts || '';
-                document.getElementById('edit-medical').value = currentSurvey.has_medical_condition === null ? '' : currentSurvey.has_medical_condition.toString();
-                document.getElementById('edit-medication').value = currentSurvey.takes_permanent_medication === null ? '' : currentSurvey.takes_permanent_medication.toString();
-                document.getElementById('edit-primary-family').value = currentSurvey.primary_family_contacts || '';
-                document.getElementById('edit-secondary-family').value = currentSurvey.secondary_family_contacts || '';
                 document.getElementById('edit-work-refs').value = currentSurvey.work_references || '';
-                document.getElementById('edit-personal-ref').value = currentSurvey.personal_reference || '';
                 document.getElementById('edit-home-refs').value = currentSurvey.home_references || '';
                 document.getElementById('edit-crime').value = currentSurvey.crime_in_area || '';
-                document.getElementById('edit-services').value = currentSurvey.services_quality || '';
                 document.getElementById('edit-security').value = currentSurvey.security_quality || '';
                 document.getElementById('edit-surveillance').value = currentSurvey.surveillance_quality || '';
                 document.getElementById('edit-bedrooms').value = currentSurvey.bedrooms || '';
                 document.getElementById('edit-dining').value = currentSurvey.dining_room || '';
                 document.getElementById('edit-living').value = currentSurvey.living_room || '';
                 document.getElementById('edit-bathrooms').value = currentSurvey.bathrooms || '';
-                document.getElementById('edit-floors').value = currentSurvey.floors || '';
                 document.getElementById('edit-garden').value = currentSurvey.garden || '';
                 document.getElementById('edit-kitchen').value = currentSurvey.kitchen || '';
                 document.getElementById('edit-ac').value = currentSurvey.air_conditioning || '';
@@ -3521,124 +3678,7 @@
                 console.error('Error opening edit modal:', error);
                 alert('Error al abrir el formulario de edición');
             }
-        }
-
-        function closeEditModal() {
-            document.getElementById('edit-modal').style.display = 'none';
-        }
-
-        async function saveEditedSurvey() {
-            try {
-                const data = {
-                    // A) Basic info
-                    candidate_name: document.getElementById('edit-name').value,
-                    date_of_birth: document.getElementById('edit-dob').value,
-                    phone_whatsapp: document.getElementById('edit-phone').value,
-                    email: document.getElementById('edit-email').value,
-
-                    // B) Address
-                    full_address: document.getElementById('edit-address').value,
-                    share_location: document.getElementById('edit-share-location').value === '' ? null : document.getElementById('edit-share-location').value === 'true',
-
-                    // C) Housing
-                    housing_type: document.getElementById('edit-housing-type').value,
-                    lives_with: document.getElementById('edit-lives-with').value,
-                    dependents_count: parseInt(document.getElementById('edit-dependents').value) || null,
-
-                    // D) Assets
-                    real_estate: document.getElementById('edit-real-estate').value,
-                    vehicles: document.getElementById('edit-vehicles').value,
-                    businesses: document.getElementById('edit-businesses').value,
-                    formal_savings: document.getElementById('edit-savings').value,
-
-                    // E) Debt
-                    debts: document.getElementById('edit-debts').value,
-                    credit_bureau: document.getElementById('edit-credit-bureau').value,
-
-                    // F) Education
-                    education_level: document.getElementById('edit-education').value,
-                    has_education_proof: document.getElementById('edit-education-proof').value === '' ? null : document.getElementById('edit-education-proof').value === 'true',
-
-                    // G) Employment
-                    position_applying: document.getElementById('edit-position').value,
-                    organization: document.getElementById('edit-organization').value,
-                    area_division: document.getElementById('edit-area').value,
-                    application_reason: document.getElementById('edit-reason').value,
-                    how_found_vacancy: document.getElementById('edit-how-found').value,
-                    current_employment: document.getElementById('edit-current-job').value,
-                    previous_employment: document.getElementById('edit-previous-jobs').value,
-
-                    // H) Income
-                    salary_bonus: document.getElementById('edit-salary').value,
-                    family_support: document.getElementById('edit-family-support').value,
-                    informal_business_income: document.getElementById('edit-informal-income').value,
-
-                    // I) Expenses
-                    expenses_list: document.getElementById('edit-expenses-list').value,
-                    expenses_amounts: document.getElementById('edit-expenses-amounts').value,
-
-                    // J) Health
-                    has_medical_condition: document.getElementById('edit-medical').value === '' ? null : document.getElementById('edit-medical').value === 'true',
-                    takes_permanent_medication: document.getElementById('edit-medication').value === '' ? null : document.getElementById('edit-medication').value === 'true',
-
-                    // K) Family contacts
-                    primary_family_contacts: document.getElementById('edit-primary-family').value,
-                    secondary_family_contacts: document.getElementById('edit-secondary-family').value,
-                    work_references: document.getElementById('edit-work-refs').value,
-                    personal_reference: document.getElementById('edit-personal-ref').value,
-
-                    // L) Home access
-                    home_references: document.getElementById('edit-home-refs').value,
-                    crime_in_area: document.getElementById('edit-crime').value,
-                    services_quality: document.getElementById('edit-services').value,
-                    security_quality: document.getElementById('edit-security').value,
-                    surveillance_quality: document.getElementById('edit-surveillance').value,
-
-                    // M) Property status
-                    bedrooms: document.getElementById('edit-bedrooms').value,
-                    dining_room: document.getElementById('edit-dining').value,
-                    living_room: document.getElementById('edit-living').value,
-                    bathrooms: document.getElementById('edit-bathrooms').value,
-                    floors: document.getElementById('edit-floors').value,
-                    garden: document.getElementById('edit-garden').value,
-                    kitchen: document.getElementById('edit-kitchen').value,
-                    air_conditioning: document.getElementById('edit-ac').value,
-                    garage: document.getElementById('edit-garage').value,
-                    laundry_area: document.getElementById('edit-laundry-area').value,
-                    pool: document.getElementById('edit-pool').value,
-                    sports_areas: document.getElementById('edit-sports').value,
-                    study_office: document.getElementById('edit-office').value,
-
-                    // N) Operators
-                    has_federal_license: document.getElementById('edit-federal-license').value === '' ? null : document.getElementById('edit-federal-license').value === 'true',
-                    federal_license_number: document.getElementById('edit-license-number').value,
-                    medical_folio: document.getElementById('edit-medical-folio').value,
-                    license_validity: document.getElementById('edit-license-validity').value,
-                    license_type: document.getElementById('edit-license-type').value,
-
-                    // O) Evidence
-                    evidence_sent: document.getElementById('edit-evidence').value
-                };
-
-                const response = await fetch(`${API_URL}/survey/${sessionId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-
-                if (response.ok) {
-                    alert('✅ Encuesta actualizada exitosamente');
-                    closeEditModal();
-                    loadSurveyDetails(); // Reload the page data
-                } else {
-                    alert('❌ Error al actualizar la encuesta');
-                }
-            } catch (error) {
-                console.error('Error saving survey:', error);
-                alert('❌ Error al guardar los cambios');
-            }
-        }
-        
+        }        
 
         function closeEditModal() {
             document.getElementById('edit-modal').style.display = 'none';
@@ -3656,15 +3696,8 @@
                     lives_with: document.getElementById('edit-lives-with').value,
                     real_estate: document.getElementById('edit-real-estate').value,
                     vehicles: document.getElementById('edit-vehicles').value,
-                    position_applying: document.getElementById('edit-position').value,
-                    organization: document.getElementById('edit-organization').value,
-                    current_employment: document.getElementById('edit-current-job').value,
                     salary_bonus: document.getElementById('edit-salary').value,
-                    family_support: document.getElementById('edit-family-support').value,
                     informal_business_income: document.getElementById('edit-informal-income').value,
-                    expenses_list: document.getElementById('edit-expenses-list').value,
-                    expenses_amounts: document.getElementById('edit-expenses-amounts').value,
-                    primary_family_contacts: document.getElementById('edit-primary-family').value,
                     work_references: document.getElementById('edit-work-refs').value,
                     bedrooms: document.getElementById('edit-bedrooms').value,
                     bathrooms: document.getElementById('edit-bathrooms').value,
@@ -4108,31 +4141,40 @@
                 addField('Tipo de Vivienda', currentSurvey.housing_type);
                 addField('Vive Con', currentSurvey.lives_with);
                 addField('Dependientes', currentSurvey.dependents_count?.toString());
-                addField('Servicios', `Agua: ${currentSurvey.has_water ? 'Sí' : 'No'} | Electricidad: ${currentSurvey.has_electricity ? 'Sí' : 'No'} | Internet: ${currentSurvey.has_internet ? 'Sí' : 'No'} | Gas: ${currentSurvey.has_gas ? 'Sí' : 'No'}`);
-                
-                // EDUCACIÓN Y EMPLEO
-                addSection('EDUCACIÓN Y EMPLEO');
-                addField('Nivel de Estudios', currentSurvey.education_level);
-                addField('Puesto Solicitado', currentSurvey.position_applying);
-                addField('Organización', currentSurvey.organization);
-                addField('Área/División', currentSurvey.area_division);
-                addField('Empleo Actual', currentSurvey.current_employment);
-                addField('Empleo Anterior', currentSurvey.previous_employment);
+                addField('Descripción del Entorno', currentSurvey.neighborhood_description);
+                addField('Descripción de la Vivienda', currentSurvey.home_description);
+                addField('Pisos', currentSurvey.home_floors);
+                addField('Edificios', currentSurvey.home_buildings);    
+
+                // VACANTE Y REFERENCIAS LABORALES
+                addSection('VACANTE Y REFERENCIAS LABORALES');
+                addField('Empresa que Solicita', currentSurvey.company_certifying);
+                addField('Puesto a Certificar', currentSurvey.position_certifying);
+                addField('¿Cómo se enteró?', currentSurvey.how_found_vacancy);
+                addField('Referencias Laborales', currentSurvey.work_references);
+
                 
                 // INGRESOS
                 addSection('INGRESOS');
                 addField('Sueldo/Bonos', currentSurvey.salary_bonus);
-                addField('Apoyo Familiar', currentSurvey.family_support);
-                addField('Negocio Informal', currentSurvey.informal_business_income);
+                addField('Negocios / Rentas / Informales', currentSurvey.informal_business_income);
                 
                 // GASTOS
                 addSection('GASTOS MENSUALES');
-                addField('Despensa', currentSurvey.groceries);
-                addField('Renta', currentSurvey.rent);
-                addField('Servicios', currentSurvey.utilities);
-                addField('Transporte', currentSurvey.transportation);
-                addField('Educación', currentSurvey.school_expenses);
+                addField('Total Estimado', currentSurvey.total_monthly_expenses);
+                addField('Despensa / Comida', currentSurvey.groceries);
+                addField('Comida Fuera / Restaurantes', currentSurvey.food_out);
+                addField('Delivery / Apps', currentSurvey.food_delivery);
+                addField('Renta / Vivienda', currentSurvey.rent);
+                addField('Servicios (agua, luz, gas, internet)', currentSurvey.services_total);
+                addField('Transporte / Gasolina / Uber', currentSurvey.transportation);
+                addField('Educación / Colegiaturas', currentSurvey.school_expenses);
                 addField('Entretenimiento', currentSurvey.entertainment);
+                addField('Vacaciones', currentSurvey.vacations);
+                addField('Ropa', currentSurvey.clothing);
+                addField('Tecnología / Hogar', currentSurvey.technology_purchases);
+                addField('Seguros / Impuestos', currentSurvey.insurance);
+                addField('Otros Gastos', currentSurvey.other_expenses);
                 
                 // BIENES Y DEUDAS
                 addSection('BIENES Y PATRIMONIO');
@@ -4144,10 +4186,16 @@
                 addField('Buró de Crédito', currentSurvey.credit_bureau);
                 
                 // REFERENCIAS
-                addSection('REFERENCIAS');
-                addField('Referencias Familiares', currentSurvey.primary_family_contacts);
-                addField('Referencias Laborales', currentSurvey.work_references);
-                addField('Contacto de Emergencia', currentSurvey.emergency_contact_name);
+                addSection('FAMILIA');
+                addField('Padre', `${currentSurvey.father_name || 'N/A'} - ${currentSurvey.father_occupation || ''}`);
+                addField('Madre', `${currentSurvey.mother_name || 'N/A'} - ${currentSurvey.mother_occupation || ''}`);
+                addField('Hermanos', currentSurvey.siblings_info);
+                addField('Direcciones Familiares', currentSurvey.family_addresses);
+                addField('Contacta seguido a', currentSurvey.frequent_contacts);
+                addField('Contacto de Emergencia', currentSurvey.emergency_contact_name ? `${currentSurvey.emergency_contact_name} - ${currentSurvey.emergency_contact_phone || ''}` : null);
+                addField('Pareja', `${currentSurvey.partner_name || 'N/A'} - ${currentSurvey.partner_phone || ''} - ${currentSurvey.partner_occupation || ''}`);
+                addField('Calidad de Relación', currentSurvey.partner_relationship_quality);
+                addField('Hijos', currentSurvey.children_names);
                 
                 // ADD IMAGES SECTION
                 if (surveyImages.length > 0) {
@@ -4389,44 +4437,51 @@
                     createField("Tipo de Vivienda", currentSurvey.housing_type),
                     createField("Vive Con", currentSurvey.lives_with),
                     createField("Número de Dependientes", currentSurvey.dependents_count?.toString()),
-                    createField("Tiene Agua", currentSurvey.has_water ? 'Sí' : 'No'),
-                    createField("Tiene Electricidad", currentSurvey.has_electricity ? 'Sí' : 'No'),
-                    createField("Tiene Internet", currentSurvey.has_internet ? 'Sí' : 'No'),
-                    createField("Tiene Gas", currentSurvey.has_gas ? 'Sí' : 'No'),
+                    createField("Descripción del Entorno", currentSurvey.neighborhood_description),
+                    createField("Descripción de la Vivienda", currentSurvey.home_description),
+                    createField("Pisos / Niveles", currentSurvey.home_floors),
+                    createField("Edificios", currentSurvey.home_buildings),
                     createField("Recámaras", currentSurvey.bedrooms),
                     createField("Baños", currentSurvey.bathrooms),
-                    createField("Pisos", currentSurvey.floors)
+                    createField("Cochera", currentSurvey.garage),
+                    createField("Jardín", currentSurvey.garden),
+                    createField("Cocina", currentSurvey.kitchen),
+                    createField("Clima A/C", currentSurvey.air_conditioning)
                 );
                 
                 // EDUCACIÓN Y EMPLEO
                 sections.push(
-                    createHeading("EDUCACIÓN Y EMPLEO"),
-                    createField("Nivel de Estudios", currentSurvey.education_level),
-                    createField("Tiene Comprobante", currentSurvey.has_education_proof ? 'Sí' : 'No'),
-                    createField("Puesto Solicitado", currentSurvey.position_applying),
-                    createField("Organización", currentSurvey.organization),
-                    createField("Área/División", currentSurvey.area_division),
-                    createField("Empleo Actual", currentSurvey.current_employment),
-                    createField("Empleo Anterior", currentSurvey.previous_employment)
+                    createHeading("VACANTE Y REFERENCIAS LABORALES"),
+                    createField("Empresa que Solicita", currentSurvey.company_certifying),
+                    createField("Puesto a Certificar", currentSurvey.position_certifying),
+                    createField("¿Cómo se enteró?", currentSurvey.how_found_vacancy),
+                    createField("Referencias Laborales", currentSurvey.work_references)
                 );
                 
                 // INGRESOS
                 sections.push(
                     createHeading("INGRESOS"),
                     createField("Sueldo/Bonos", currentSurvey.salary_bonus),
-                    createField("Apoyo Familiar", currentSurvey.family_support),
-                    createField("Ingreso de Negocio Informal", currentSurvey.informal_business_income)
+                    createField("Negocios / Rentas / Informales", currentSurvey.informal_business_income)
                 );
-                
+
                 // GASTOS
                 sections.push(
                     createHeading("GASTOS MENSUALES"),
-                    createField("Despensa", currentSurvey.groceries),
-                    createField("Renta", currentSurvey.rent),
-                    createField("Servicios", currentSurvey.utilities),
-                    createField("Transporte", currentSurvey.transportation),
-                    createField("Gastos Escolares", currentSurvey.school_expenses),
-                    createField("Entretenimiento", currentSurvey.entertainment)
+                    createField("Total Estimado", currentSurvey.total_monthly_expenses),
+                    createField("Despensa / Comida", currentSurvey.groceries),
+                    createField("Comida Fuera / Restaurantes", currentSurvey.food_out),
+                    createField("Delivery / Apps", currentSurvey.food_delivery),
+                    createField("Renta / Vivienda", currentSurvey.rent),
+                    createField("Servicios (agua, luz, gas, internet)", currentSurvey.services_total),
+                    createField("Transporte / Gasolina / Uber", currentSurvey.transportation),
+                    createField("Educación / Colegiaturas", currentSurvey.school_expenses),
+                    createField("Entretenimiento", currentSurvey.entertainment),
+                    createField("Vacaciones", currentSurvey.vacations),
+                    createField("Ropa", currentSurvey.clothing),
+                    createField("Tecnología / Hogar", currentSurvey.technology_purchases),
+                    createField("Seguros / Impuestos", currentSurvey.insurance),
+                    createField("Otros Gastos", currentSurvey.other_expenses)
                 );
                 
                 // BIENES Y DEUDAS
@@ -4443,12 +4498,18 @@
                 
                 // REFERENCIAS
                 sections.push(
-                    createHeading("REFERENCIAS"),
-                    createField("Referencias Familiares", currentSurvey.primary_family_contacts),
-                    createField("Referencias Laborales", currentSurvey.work_references),
-                    createField("Contacto de Emergencia", `${currentSurvey.emergency_contact_name || 'N/A'} - ${currentSurvey.emergency_contact_phone || 'N/A'}`)
+                    createHeading("FAMILIA"),
+                    createField("Padre", `${currentSurvey.father_name || 'N/A'} - ${currentSurvey.father_occupation || ''}`),
+                    createField("Madre", `${currentSurvey.mother_name || 'N/A'} - ${currentSurvey.mother_occupation || ''}`),
+                    createField("Hermanos", currentSurvey.siblings_info),
+                    createField("Direcciones Familiares", currentSurvey.family_addresses),
+                    createField("Contacta seguido a", currentSurvey.frequent_contacts),
+                    createField("Contacto de Emergencia", `${currentSurvey.emergency_contact_name || 'N/A'} - ${currentSurvey.emergency_contact_phone || 'N/A'}`),
+                    createField("Pareja", `${currentSurvey.partner_name || 'N/A'} - ${currentSurvey.partner_phone || ''} - ${currentSurvey.partner_occupation || ''}`),
+                    createField("Calidad de Relación", currentSurvey.partner_relationship_quality),
+                    createField("Hijos", currentSurvey.children_names)
                 );
-                
+
                 // ADD IMAGES TO WORD
                 if (surveyImages.length > 0) {
                     sections.push(createHeading(`📸 ARCHIVOS ADJUNTOS (${surveyImages.length})`));
@@ -4525,6 +4586,116 @@
             }
         }
 
+                let activeEditItem = null;
+
+        function startInlineEdit(dataItem) {
+            // Don't open if already editing this item
+            if (dataItem === activeEditItem) return;
+
+            // Cancel any existing edit first
+            if (activeEditItem) cancelInlineEdit(activeEditItem);
+
+            const valueDiv = dataItem.querySelector('.data-value');
+            const currentText = valueDiv.textContent.trim();
+            const isMultiline = dataItem.dataset.multiline === 'true';
+            const originalText = currentText === 'No proporcionado' || currentText === '-' ? '' : currentText;
+
+            activeEditItem = dataItem;
+            valueDiv.classList.add('editing');
+
+            // Build input
+            let input;
+            if (isMultiline) {
+                input = document.createElement('textarea');
+                input.rows = 3;
+            } else {
+                input = document.createElement('input');
+                input.type = 'text';
+            }
+            input.className = 'inline-edit-input';
+            input.value = originalText;
+
+            // Save/cancel buttons
+            const actions = document.createElement('div');
+            actions.className = 'inline-edit-actions';
+            actions.innerHTML = `
+                <button class="inline-save-btn" onclick="saveInlineEdit(this.closest('.data-item'))">✓ Guardar</button>
+                <button class="inline-cancel-btn" onclick="cancelInlineEdit(this.closest('.data-item'))">✕ Cancelar</button>
+            `;
+
+            valueDiv.textContent = '';
+            valueDiv.appendChild(input);
+            valueDiv.appendChild(actions);
+            input.focus();
+
+            // Save on Enter (for single-line inputs only)
+            if (!isMultiline) {
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') saveInlineEdit(dataItem);
+                    if (e.key === 'Escape') cancelInlineEdit(dataItem);
+                });
+            } else {
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') cancelInlineEdit(dataItem);
+                });
+            }
+        }
+
+        function cancelInlineEdit(dataItem) {
+            if (!dataItem) return;
+            const field = dataItem.dataset.field;
+            const valueDiv = dataItem.querySelector('.data-value');
+            valueDiv.classList.remove('editing');
+
+            // Restore original value from currentSurvey
+            const originalValue = getFieldDisplayValue(field);
+            valueDiv.textContent = originalValue || 'No proporcionado';
+            activeEditItem = null;
+        }
+
+        async function saveInlineEdit(dataItem) {
+            const field = dataItem.dataset.field;
+            const valueDiv = dataItem.querySelector('.data-value');
+            const input = valueDiv.querySelector('input, textarea');
+            const newValue = input ? input.value.trim() : '';
+
+            try {
+                const payload = {};
+                payload[field] = newValue || null;
+
+                const response = await fetch(`${API_URL}/survey/${sessionId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error('Save failed');
+
+                // Update currentSurvey local state
+                currentSurvey[field] = newValue || null;
+
+                // Update display
+                valueDiv.classList.remove('editing');
+                valueDiv.textContent = newValue || 'No proporcionado';
+                activeEditItem = null;
+
+                // Flash green to confirm
+                valueDiv.style.transition = 'background 0.3s';
+                valueDiv.style.background = 'rgba(0,131,134,0.15)';
+                setTimeout(() => { valueDiv.style.background = ''; }, 1000);
+
+            } catch (error) {
+                console.error('Error saving field:', error);
+                alert('❌ Error al guardar. Intenta de nuevo.');
+            }
+        }
+
+        function getFieldDisplayValue(field) {
+            if (!currentSurvey) return '';
+            const val = currentSurvey[field];
+            if (val === null || val === undefined || val === '') return '';
+            return String(val);
+        }
 
     </script>
 </body>

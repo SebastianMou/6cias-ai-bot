@@ -116,7 +116,6 @@ async def startup_event():
         ("phone_whatsapp", "VARCHAR(20)"),
         ("email", "VARCHAR(100)"),
         ("full_address", "TEXT"),
-        ("share_location", "BOOLEAN"),
         ("housing_type", "VARCHAR(50)"),
         ("lives_with", "TEXT"),
         ("dependents_count", "INTEGER"),
@@ -127,28 +126,37 @@ async def startup_event():
         ("debts", "TEXT"),
         ("credit_bureau", "VARCHAR(50)"),
         ("education_level", "VARCHAR(100)"),
-        ("has_education_proof", "BOOLEAN"),
+        ("total_monthly_expenses", "VARCHAR(100)"),
+        ("food_delivery", "VARCHAR(50)"),
+        ("services_total", "VARCHAR(50)"),
+        ("technology_purchases", "VARCHAR(50)"),
+        ("home_goods", "VARCHAR(50)"),
+        ("other_expenses", "VARCHAR(100)"),
+        ("father_name", "VARCHAR(100)"),
+        ("father_occupation", "VARCHAR(100)"),
+        ("mother_name", "VARCHAR(100)"),
+        ("mother_occupation", "VARCHAR(100)"),
+        ("siblings_info", "TEXT"),
+        ("family_addresses", "TEXT"),
+        ("frequent_contacts", "TEXT"),
+        ("neighborhood_description", "TEXT"),
+        ("home_description", "TEXT"),
+        ("home_floors", "VARCHAR(20)"),
+        ("home_buildings", "VARCHAR(20)"),
+        ("position_certifying", "VARCHAR(100)"),
+        ("company_certifying", "VARCHAR(100)"),
         ("position_applying", "VARCHAR(100)"),
         ("organization", "VARCHAR(100)"),
-        ("area_division", "VARCHAR(100)"),
-        ("application_reason", "VARCHAR(100)"),
         ("how_found_vacancy", "TEXT"),
-        ("current_employment", "TEXT"),
-        ("previous_employment", "TEXT"),
         ("salary_bonus", "VARCHAR(100)"),
-        ("family_support", "VARCHAR(100)"),
         ("informal_business_income", "VARCHAR(100)"),
         ("expenses_list", "TEXT"),
         ("expenses_amounts", "TEXT"),
-        ("has_medical_condition", "BOOLEAN"),
-        ("takes_permanent_medication", "BOOLEAN"),
         ("primary_family_contacts", "TEXT"),
         ("secondary_family_contacts", "TEXT"),
         ("work_references", "TEXT"),
-        ("personal_reference", "TEXT"),
         ("home_references", "TEXT"),
         ("crime_in_area", "VARCHAR(50)"),
-        ("services_quality", "VARCHAR(50)"),
         ("security_quality", "VARCHAR(50)"),
         ("surveillance_quality", "VARCHAR(50)"),
         ("bedrooms", "VARCHAR(20)"),
@@ -240,7 +248,7 @@ async def debug_fingerprint_test(db: Session = Depends(get_db)):
     try:
         db.execute(text(
             "INSERT INTO survey_responses (session_id, created_at, updated_at, survey_completed) "
-            "VALUES (:sid, NOW(), NOW(), FALSE) ON CONFLICT (session_id) DO NOTHING"
+            "VALUES (:sid, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, FALSE) ON CONFLICT (session_id) DO NOTHING"
         ), {"sid": test_sid})
         db.commit()
         results["insert"] = "OK"
@@ -250,7 +258,7 @@ async def debug_fingerprint_test(db: Session = Depends(get_db)):
     try:
         db.execute(text(
             "UPDATE survey_responses SET browser_name = :bn, screen_width = :sw, "
-            "cpu_cores = :cc, cookies_enabled = :ce, updated_at = NOW() "
+            "cpu_cores = :cc, cookies_enabled = :ce, updated_at = CURRENT_TIMESTAMP "
             "WHERE session_id = :sid"
         ), {"bn": "TestBrowser", "sw": 1920, "cc": 8, "ce": True, "sid": test_sid})
         db.commit()
@@ -1026,24 +1034,28 @@ async def get_all_surveys(db: Session = Depends(get_db)):
                 "formal_savings": survey.formal_savings,
                 "debts": survey.debts,
                 "credit_bureau": survey.credit_bureau,
-                "education_level": survey.education_level,
-                "position_applying": survey.position_applying,
-                "organization": survey.organization,
-                "current_employment": survey.current_employment,
                 "salary_bonus": survey.salary_bonus,
                 "expenses_list": survey.expenses_list,
                 "expenses_amounts": survey.expenses_amounts,
-                "has_medical_condition": survey.has_medical_condition,
                 "primary_family_contacts": survey.primary_family_contacts,
                 "work_references": survey.work_references,
-                "personal_reference": survey.personal_reference,
                 "home_references": survey.home_references,
                 "crime_in_area": survey.crime_in_area,
                 "bedrooms": survey.bedrooms,
-                "has_federal_license": survey.has_federal_license,
+                "license_type": survey.license_type,
+                "federal_license_number": survey.federal_license_number,
+                "license_validity": survey.license_validity,
                 "evidence_sent": survey.evidence_sent,
-                
-                # ADD CONNECTION DATA HERE
+                "company_certifying": survey.company_certifying,
+                "position_certifying": survey.position_certifying,
+                "how_found_vacancy": survey.how_found_vacancy,
+                "total_monthly_expenses": survey.total_monthly_expenses,
+                "father_name": survey.father_name,
+                "mother_name": survey.mother_name,
+                "siblings_info": survey.siblings_info,
+                "work_references": survey.work_references,
+                "neighborhood_description": survey.neighborhood_description,
+                "home_description": survey.home_description,
                 "connection_stats": connection_stats
             })
         
@@ -1114,10 +1126,6 @@ async def get_survey_by_id(session_id: str, db: Session = Depends(get_db)):
         "housing_type": survey.housing_type,
         "lives_with": survey.lives_with,
         "dependents_count": survey.dependents_count,
-        "has_water": survey.has_water,
-        "has_electricity": survey.has_electricity,
-        "has_internet": survey.has_internet,
-        "has_gas": survey.has_gas,
         
         # D) Assets 7.1
         "real_estate": survey.real_estate,
@@ -1128,29 +1136,27 @@ async def get_survey_by_id(session_id: str, db: Session = Depends(get_db)):
         # E) Debt 7.2
         "debts": survey.debts,
         "credit_bureau": survey.credit_bureau,
-        
-        # F) Education
-        "education_level": survey.education_level,
-        "has_education_proof": survey.has_education_proof,
-        
+
+        "company_certifying": survey.company_certifying,
+        "position_certifying": survey.position_certifying,
+        "total_monthly_expenses": survey.total_monthly_expenses,
+        "father_name": survey.father_name,
+        "mother_name": survey.mother_name,
+        "siblings_info": survey.siblings_info,
+        "family_addresses": survey.family_addresses,
+        "frequent_contacts": survey.frequent_contacts,
+        "neighborhood_description": survey.neighborhood_description,
+        "home_description": survey.home_description,
+        "home_floors": survey.home_floors,
+        "home_buildings": survey.home_buildings,
+
         # G) Employment
-        "position_applying": survey.position_applying,
-        "organization": survey.organization,
-        "area_division": survey.area_division,
-        "application_reason": survey.application_reason,
         "how_found_vacancy": survey.how_found_vacancy,
-        "current_employment": survey.current_employment,
-        "previous_employment": survey.previous_employment,
         
         # H) Income 7.3
         "salary_bonus": survey.salary_bonus,
-        "family_support": survey.family_support,
         "informal_business_income": survey.informal_business_income,
         
-        # I) Expenses 7.4
-        "expenses_list": survey.expenses_list,
-        "expenses_amounts": survey.expenses_amounts,
-
         # Browser Fingerprinting
         "browser_user_agent": survey.browser_user_agent,
         "browser_name": survey.browser_name,
@@ -1190,49 +1196,40 @@ async def get_survey_by_id(session_id: str, db: Session = Depends(get_db)):
         "battery_level": survey.battery_level,
         "plugins_list": survey.plugins_list,
         "fonts_available": survey.fonts_available,
-
         "groceries": survey.groceries,
-        "alimony": survey.alimony,
         "food_out": survey.food_out,
+        "food_delivery": survey.food_delivery,
         "rent": survey.rent,
-        "utilities": survey.utilities,
-        "internet_cable": survey.internet_cable,
+        "services_total": survey.services_total,
         "transportation": survey.transportation,
-        "uber_taxi": survey.uber_taxi,
         "school_expenses": survey.school_expenses,
-        "courses": survey.courses,
-        "books_supplies": survey.books_supplies,
         "entertainment": survey.entertainment,
         "vacations": survey.vacations,
         "insurance": survey.insurance,
-        "taxes": survey.taxes,
         "clothing": survey.clothing,
-        "laundry": survey.laundry,
-        "internet_expenses": survey.internet_expenses,
-        
-        # J) Health
-        "has_medical_condition": survey.has_medical_condition,
-        "takes_permanent_medication": survey.takes_permanent_medication,
+        "technology_purchases": survey.technology_purchases,
+        "other_expenses": survey.other_expenses,
         
         # K) Family contacts 8.0
-        "primary_family_contacts": survey.primary_family_contacts,
-        "secondary_family_contacts": survey.secondary_family_contacts,
         "work_references": survey.work_references,
-        "personal_reference": survey.personal_reference,
-        
+        "partner_name": survey.partner_name,
+        "partner_phone": survey.partner_phone,
+        "partner_occupation": survey.partner_occupation,
+        "partner_relationship_quality": survey.partner_relationship_quality,
+        "children_names": survey.children_names,
+        "emergency_contact_name": survey.emergency_contact_name,
+        "emergency_contact_phone": survey.emergency_contact_phone,
+
         # L) Home access 9.0
         "home_references": survey.home_references,
         "crime_in_area": survey.crime_in_area,
-        "services_quality": survey.services_quality,
         "security_quality": survey.security_quality,
         "surveillance_quality": survey.surveillance_quality,
         
         # M) Property status 9.1
-        "bedrooms": survey.bedrooms,
         "dining_room": survey.dining_room,
         "living_room": survey.living_room,
         "bathrooms": survey.bathrooms,
-        "floors": survey.floors,
         "garden": survey.garden,
         "kitchen": survey.kitchen,
         "air_conditioning": survey.air_conditioning,
@@ -1241,15 +1238,11 @@ async def get_survey_by_id(session_id: str, db: Session = Depends(get_db)):
         "pool": survey.pool,
         "sports_areas": survey.sports_areas,
         "study_office": survey.study_office,
-        
+
         # N) Operators
-        "has_federal_license": survey.has_federal_license,
         "federal_license_number": survey.federal_license_number,
-        "medical_folio": survey.medical_folio,
         "license_validity": survey.license_validity,
         "license_type": survey.license_type,
-        "has_state_license": survey.has_state_license,
-        "state_license_info": survey.state_license_info,
         
         # O) Evidence
         "evidence_sent": survey.evidence_sent,
@@ -1411,89 +1404,114 @@ async def survey_chat(session_id: str = Form(...),message: str = Form(...),ip_ad
             # Default prompt if not found in database
             system_prompt = f"""Eres Clippy, un asistente virtual de verificación socioeconómica para 6Cias. Tu objetivo es recopilar información y evidencias de forma clara, ordenada y respetuosa, para completar la certificación de ingreso a un puesto de confianza.
 
-            REGLAS GENERALES:
-            - Haz preguntas una por una y espera respuesta antes de seguir
-            - Si la persona contesta incompleto, pide precisión sin regañar
-            - Mantén tono profesional, directo y amable
-            - Al final, resume lo recabado y lista lo pendiente
+                REGLAS GENERALES:
+                - Haz preguntas una por una y espera respuesta antes de seguir
+                - Si la persona contesta incompleto, pide precisión sin regañar
+                - Mantén tono profesional, directo y amablemente platicando
+                - Las secciones de vivienda y entorno deben sentirse como una conversación natural, NO como un formulario
+                - Cuando se reporten errores, en vez de decir que hubo algún error, pedir que mejoren su internet y vuelvan a mandar su respuesta
+                - Al final, resume lo recabado y lista lo pendiente
 
-            ORDEN DE LA ENCUESTA (SEGUIR ESTRICTAMENTE):
+                ORDEN DE LA ENCUESTA (SEGUIR ESTRICTAMENTE):
 
-            A) BIENVENIDA E INTRODUCCIÓN:
-            0. "Perfecto, vamos a comenzar con la encuesta. Soy el asistente virtual Clippy y te voy a estar guiando a través del proceso. Por favor responde lo más cercano a la verdad para que podamos completar esta prueba exitosamente."
-            1. "¿Qué empresa está pidiendo tu certification y qué puesto es para certificar?"
-            
-            DATOS PERSONALES BÁSICOS:
-            2. Nombre completo (apellidos y nombres)
-            3. Fecha y lugar de nacimiento (o donde te hayan registrado)
+                A) BIENVENIDA E INTRODUCCIÓN:
+                0. "Perfecto, vamos a comenzar con la encuesta. Soy el asistente virtual Clippy y te voy a estar guiando a través del proceso. Por favor responde lo más cercano a la verdad para que podamos completar esta prueba exitosamente."
+                1. "¿Qué empresa está pidiendo tu certificación y qué puesto es para certificar?"
 
-            3. Correo electrónico
-            4. Teléfono celular donde tengas habilitados mensajes electrónicos
+                B) DATOS PERSONALES BÁSICOS:
+                2. Nombre completo (apellidos y nombres)
+                3. Fecha y lugar de nacimiento (o donde te hayan registrado)
+                4. Correo electrónico
+                5. "¿Cómo fue que te enteraste de esta vacante de tu puesto cuando entraste o la primera vez? ¿Por qué medio viste la oportunidad de trabajo, recomendación, Facebook, letrero, Computrabajo, algún otro medio?"
 
-            C) DOCUMENTOS PERSONALES:
-            5. CURP (en este caso tu INE la trae o alguna licencia de conducir, es probable que la traiga en la parte de atrás)
-            6. Número de seguridad social o IMSS
-            7. Número registrado para impuestos (RFC, tax ID o ITIN)
-            8. Licencia (si eres operador, la federal con tu número médico)
-            9. Comprobante de domicilio con el número de contrato, qué empresa es y a nombre de quién está registrado (Si tienes CFE en México, es la que más ocupamos para verificar)
+                C) DOCUMENTOS PERSONALES:
+                6. CURP (en este caso tu INE la trae o alguna licencia de conducir, es probable que la traiga en la parte de atrás)
+                7. Número de seguridad social o IMSS
+                8. Número registrado para impuestos (RFC, tax ID o ITIN)
+                9. Licencia (si eres Operador, qué letra es el tipo y si es la Federal con tu número médico)
+                10. Comprobante de domicilio con el número de contrato, qué empresa es y a nombre de quién está registrado (Si tienes CFE en México, es la que más ocupamos para verificar)
 
-            D) REFERENCIAS LABORALES:
-            10. "De casualidad, ¿tienes alguna referencia laboral nueva que quieras ingresar? Ya sea de compañeros, amistades, superiores o personas que te hayan visto trabajar, necesitamos ver sus números con WhatsApp."
-                - "No importa que los hayas dado antes, esto acelerará el proceso"
+                D) REFERENCIAS LABORALES:
+                11. "De casualidad, ¿tienes alguna referencia laboral nueva que quieras ingresar? Ya sea de compañeros, amistades, superiores o personas que te hayan visto trabajar, necesitamos ver sus números con WhatsApp."
+                    - "No importa que los hayas dado antes, esto acelerará el proceso"
 
-            E) ENCUESTA SOCIOECONÓMICA - GASTOS E INGRESOS:
-            11. "Vamos a ver la encuesta socioeconómica. En este caso, quisiera saber dónde es donde gastas más dinero, en qué áreas"
-            12. "¿Cuánto es lo que gastas en total al mes? Un aproximado"
-            13. "¿Tienes algún otro gasto o ingreso?"
-            14. "¿Cuánto es lo que estás ganando? ¿Cuánto es lo que estás percibiendo? ¿Tienes algún negocio, rentas? Cuéntame a qué se dedican"
+                E) ENCUESTA SOCIOECONÓMICA - GASTOS E INGRESOS:
+                12. "Vamos a ver la encuesta socioeconómica. Cuéntame, ¿en qué áreas es donde más gastas dinero al mes?"
+                13. "¿Cuánto calculas que gastas en total al mes? Un aproximado está bien."
+                14. Desglose de gastos — pregunta de manera conversacional, una por una:
+                    - "Hablando de comida, ¿cuánto calculas que gastas al mes en despensa, comidas rápidas, restaurantes o aplicaciones de delivery para toda tu familia?"
+                    - "¿Y de servicios? Renta o vivienda, internet, agua, luz, gas... ¿me puedes dar una suma aproximada de todo eso?"
+                    - "¿Cuánto gastas en transporte? Gasolina, mantenimiento, transporte público o aplicaciones como Uber, para toda tu familia."
+                    - "¿Tienes gastos de educación? Colegiaturas, útiles, uniformes, libros, cursos..."
+                    - "¿Cada cuándo sales a divertirte y cuánto calculas que gastas por salida? Teatro, cine, gimnasio, hobbies, deportes..."
+                    - "¿Cuándo fue tu última vez de vacaciones y cuánto gastó toda tu familia aproximadamente?"
+                    - "¿Cuánto fue tu última compra grande de ropa, tecnología o cosas para el hogar?"
+                    - "¿Tienes seguros? De vida, auto, gastos médicos mayores... ¿y algún impuesto como predial, tenencias o verificaciones?"
+                15. "¿Tienes algún otro gasto que no hayamos mencionado?"
+                16. "¿Cuánto estás ganando actualmente? Salario, bonos, cualquier ingreso que tengas."
+                17. "¿Tienes algún negocio, rentas u otras fuentes de ingreso? Cuéntame."
 
-            F) BIENES PATRIMONIALES:
-            15. "¿Cuáles son tus bienes patrimoniales a tu nombre? Casa, auto, negocios. Descríbelos en una sola línea, por favor"
+                F) BIENES PATRIMONIALES:
+                18. "¿Qué bienes tienes a tu nombre? Casa, auto, motocicleta, negocios, terrenos... Descríbelos brevemente."
+                19. "¿Tienes algo ahorrado o invertido en algún instrumento financiero o negocio?"
 
-            G) DEUDAS Y BURÓ:
-            16. "¿Qué deudas tienes? Recuerda que vamos a investigar todo y que van a salir incluso deudas mercantiles o demandas, ya sea bancos, casa, auto, hipoteca, personales. ¿Qué deudas tienes?"
-            17. "¿Te encuentras boletinado en algún buró de crédito?"
+                G) DEUDAS Y BURÓ:
+                20. "¿Qué deudas tienes actualmente? Recuerda que vamos a investigar todo y que van a salir incluso deudas mercantiles o demandas — bancos, casa, auto, hipoteca, personales. ¿Qué deudas tienes?"
+                21. "¿Te encuentras boletinado en algún buró de crédito?"
 
-            H) ENCUESTA FAMILIAR:
-            18. Contactos de tu padre y madre: nombre completo y a qué se dedican (si no tiene padre, pasar a la siguiente)
-            19. Contactos de tus hermanos: nombres completos, número de contacto de WhatsApp y a qué se dedican
-            20. "¿Dónde viven todos ellos? ¿Me puedes escribir?"
-            21. "¿Los contactas seguido? ¿A quiénes?"
-            22. "¿Me puedes decir si quieres que pongamos un contacto de emergencia en alguno de ellos?"
-            23. En el caso de que tengas pareja: nombre, número y a qué se dedica
-            24. "¿Tienes descendencia, hijos, adoptivos o de algún otro matrimonio? ¿Me puedes dar sus nombres completos?"
-            25. "¿Gustas que pongamos a tu pareja como contacto de emergencia?"
-            26. "¿Cómo es su relación?"
-            27. "¿Todos ellos viven contigo o dónde viven? ¿Qué direcciones?" (Si no sabe la dirección exacta: "¿Me puedes dar un aproximado, colonia o por dónde están?")
+                H) ENCUESTA FAMILIAR:
+                22. Contactos de tu padre y madre: nombre completo y a qué se dedican (si no tiene padre, pasar a la siguiente)
+                23. Contactos de tus hermanos: nombres completos, número de contacto de WhatsApp y a qué se dedican
+                24. "¿Dónde viven todos ellos? ¿Me puedes escribir?"
+                25. "¿Los contactas seguido? ¿A quiénes?"
+                26. "¿Me puedes decir si quieres que pongamos un contacto de emergencia en alguno de ellos?"
+                27. En el caso de que tengas pareja: nombre, número y a qué se dedica
+                28. "¿Tienes hijos, adoptivos o de algún otro matrimonio? ¿Me puedes dar sus nombres completos?"
+                29. "¿Gustas que pongamos a tu pareja como contacto de emergencia?"
+                30. "¿Cómo es su relación?"
+                31. "¿Todos ellos viven contigo o dónde viven? ¿Qué direcciones?" (Si no sabe la dirección exacta: "¿Me puedes dar un aproximado, colonia o por dónde están?")
 
-            I) ANTECEDENTES Y VERIFICACIÓN:
-            28. "Necesitamos que seas muy sincero en estas respuestas. Dime, ¿has tenido demandas, malas experiencias, antecedentes de problemas penales, mercantiles, alguna cuestión que sea adversa a las compañías que podamos encontrar? Recuerda que todo lo vamos a investigar y si tienes aunque sea un accidente es mejor reportarnos. ¿Tienes algo que reportar ahora que nosotros podríamos revisar y encontrar y que pueda salir mal en tu certificación?"
+                I) ENTORNO Y VIVIENDA (CONVERSACIONAL - NO USAR OPCIONES NUMERADAS):
+                INSTRUCCIÓN: Esta sección debe sentirse como una plática natural. No presentes opciones. Deja que la persona describa con sus propias palabras. Si necesitas profundizar, haz preguntas de seguimiento casuales.
 
-            J) EVIDENCIAS Y FOTOGRAFÍAS:
-            29. "Te voy a pedir si me puedes mandar la fotografía de tu perfil de Facebook. Esto es para encontrarlo un poco más rápido y entregar más rápido el reporte, aunque de por sí los vamos a buscar"
+                32. "Oye, cuéntame un poco de dónde vives. ¿Cuál es tu dirección completa y cómo se llega ahí o es conocido? ¿Cómo es tu colonia o fraccionamiento? ¿Cómo se siente el ambiente por ahí?"
+                    - Si menciona algo sobre seguridad, profundiza: "¿Y qué tan seguro lo sientes? ¿Has escuchado de algún incidente por la zona últimamente?"
+                    - Si no menciona seguridad: "¿Cómo está la seguridad por ahí? ¿Tienen alumbrado, patrullas, cámaras?"
 
-            30. "Te voy a pedir que ahora, por favor, terminando esta encuesta, mandes cinco fotos de alrededor de toda tu casa."
+                33. "Y tu casa, ¿cómo es? Descríbemela un poco, ¿es climatizada o no cuenta con todos los servicios? ¿Cuántos cuartos tiene, cocinas, comedores, baños, qué cuartos extra como oficina, TV, cine, cómo está distribuida?"
+                    - Escucha y si faltan datos clave, pregunta casualmente: "¿Tiene garage para cuántos autos? ¿Área de lavado o terrazas? ¿Patio o jardín?"
+                    - "¿Cómo la ves en general, bien conservada, o tiene cosas pendientes de arreglar?"
 
-            31. "Al mismo tiempo, terminando esas cinco fotos, toma unas cinco fotos de la calle principal, ya sea la entrada principal a tu fraccionamiento, a tu complejo, a tu condominio, a tu casa, donde se pueda ver desde afuera o desde adentro hacia afuera la casa, hacia la calle y la podemos nosotros certificar como que sí es tu vivienda"
+                34. "¿Cómo la tienes acomodada? ¿Cuántos pisos son y cuántos edificios?"
 
-            32. "Si me puedes compartir cartas de recomendación que tengas de manera digital"
+                35. "¿La casa o departamento es tuya, rentada, o vives con alguien más?"
 
-            CANALES DE ENVÍO DE EVIDENCIAS:
-            - Correo: solucion@6cias.com
-            - WhatsApp: [número proporcionado de coordinación]
-            "Todo esto al correo de solucion@6cias.com o al número proporcionado de coordinación a través de WhatsApp"
+                J) ANTECEDENTES Y VERIFICACIÓN:
+                36. "Necesitamos que seas muy sincero en estas respuestas. Dime, ¿has tenido demandas, malas experiencias, antecedentes de problemas penales, mercantiles, alguna cuestión adversa que las compañías puedan encontrar y mejor me expliques ahora? Recuerda que todo lo vamos a investigar y si tienes aunque sea un accidente es mejor reportarnos. ¿Tienes algo que reportar de un problema con una empresa? Dime para que me des tu versión."
 
-            K) CIERRE:
-            "Muy bien, muchas gracias. Hemos terminado con la encuesta socioeconómica. La información será utilizada para tu proceso de certificación."
+                K) EVIDENCIAS Y FOTOGRAFÍAS:
+                37. "Te voy a pedir si me puedes mandar la fotografía de tu perfil de Facebook. Esto es para encontrarlo un poco más rápido y entregar más rápido el reporte, aunque de por sí los vamos a buscar."
+                38. "Te voy a pedir que, al terminar esta encuesta, mandes cinco fotos de alrededor de toda tu casa."
+                39. "Al mismo tiempo, toma unas cinco fotos de la calle principal — ya sea la entrada a tu fraccionamiento, complejo, condominio o casa, donde se pueda ver desde afuera o desde adentro hacia afuera, para que podamos certificar que sí es tu vivienda."
+                40. "Si tienes cartas de recomendación en formato digital, también me las puedes compartir."
 
-            INSTRUCCIONES FINALES:
-            - Hacer UNA pregunta a la vez
-            - Ser amable y profesional
-            - Si la respuesta es confusa, pedir clarificación
-            - Avanzar sección por sección en orden
-            - Al terminar, agradecer y confirmar que la encuesta está completa
+                CANALES DE ENVÍO DE EVIDENCIAS:
+                - Correo: solucion@6cias.com
+                - WhatsApp: 5613771144
+                "Todo esto al correo de solucion@6cias.com o al número 5613771144 a través de WhatsApp."
 
-            Estado actual: Sección {survey.current_section or 'Inicio'}"""
+                L) CIERRE:
+                "Muy bien, muchas gracias. Hemos terminado con la encuesta socioeconómica. La información será utilizada para tu proceso de certificación."
+
+                INSTRUCCIONES FINALES:
+                - Hacer UNA pregunta a la vez
+                - Ser amable y profesional
+                - Si la respuesta es confusa, pedir clarificación
+                - Avanzar sección por sección en orden
+                - La sección I (Entorno y Vivienda) es conversacional — nunca uses opciones numeradas ahí
+                - Al terminar, agradecer y confirmar que la encuesta está completa
+
+                Estado actual: Sección {survey.current_section or 'Inicio'}"""
         
         # Add current message to history
         conversation_history.append({
@@ -2378,67 +2396,6 @@ async def get_connection_history(session_id: str, db: Session = Depends(get_db))
         ]
     }
 
-@app.get("/survey/all")
-async def get_all_surveys(db: Session = Depends(get_db)):
-    """Get all surveys with statistics"""
-    from models import ConnectionLog
-    
-    surveys = db.query(SurveyResponse).order_by(SurveyResponse.created_at.desc()).all()
-    
-    total = len(surveys)
-    completed = sum(1 for s in surveys if s.survey_completed)
-    in_progress = sum(1 for s in surveys if s.current_section and not s.survey_completed)
-    
-    # Today's surveys
-    today = datetime.utcnow().date()
-    today_count = sum(1 for s in surveys if s.created_at.date() == today)
-    
-    # Format surveys with connection data
-    formatted_surveys = []
-    for survey in surveys:
-        # Get connection stats for this survey
-        connection_logs = db.query(ConnectionLog).filter(
-            ConnectionLog.session_id == survey.session_id
-        ).order_by(ConnectionLog.created_at.desc()).all()
-        
-        # Calculate connection stats
-        total_logs = len(connection_logs)
-        offline_count = sum(1 for log in connection_logs if log.event_type == 'offline')
-        poor_quality_count = sum(1 for log in connection_logs if log.connection_quality in ['muy baja', 'baja'])
-        
-        # Get latest connection status
-        latest_connection = connection_logs[0] if connection_logs else None
-        
-        formatted_surveys.append({
-            "id": survey.id,
-            "session_id": survey.session_id,
-            "candidate_name": survey.candidate_name,
-            "email": survey.email,
-            "phone_whatsapp": survey.phone_whatsapp,
-            "current_section": survey.current_section,
-            "survey_completed": survey.survey_completed,
-            "created_at": survey.created_at.isoformat() if survey.created_at else None,
-            "updated_at": survey.updated_at.isoformat() if survey.updated_at else None,
-            
-            # ADD CONNECTION DATA
-            "connection_stats": {
-                "total_checks": total_logs,
-                "offline_events": offline_count,
-                "poor_quality_count": poor_quality_count,
-                "latest_quality": latest_connection.connection_quality if latest_connection else "desconocida",
-                "latest_speed": latest_connection.connection_speed if latest_connection else "N/A",
-                "has_issues": offline_count > 0 or poor_quality_count > 2
-            }
-        })
-    
-    return {
-        "total": total,
-        "completed": completed,
-        "in_progress": in_progress,
-        "today": today_count,
-        "surveys": formatted_surveys
-    }
-
 @app.post("/survey/gps-location")
 async def save_gps_location(
     session_id: str = Form(...),
@@ -2525,7 +2482,7 @@ async def save_browser_fingerprint(
         if not existing:
             db.execute(
                 text("INSERT INTO survey_responses (session_id, created_at, updated_at, survey_completed) "
-                     "VALUES (:sid, NOW(), NOW(), FALSE)"),
+                    "VALUES (:sid, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, FALSE)"),
                 {"sid": session_id}
             )
             db.commit()
@@ -2579,7 +2536,7 @@ async def save_browser_fingerprint(
             set_clause = ", ".join([f"{k} = :{k}" for k in non_null_fields])
             non_null_fields["sid"] = session_id
             db.execute(
-                text(f"UPDATE survey_responses SET {set_clause}, updated_at = NOW() WHERE session_id = :sid"),
+                text(f"UPDATE survey_responses SET {set_clause}, updated_at = CURRENT_TIMESTAMP WHERE session_id = :sid"),
                 non_null_fields
             )
             db.commit()
