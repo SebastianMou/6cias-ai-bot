@@ -1712,6 +1712,22 @@
         [data-theme="dark"] #location-map-modal > div > div:first-child::-webkit-scrollbar-thumb:hover {
             background: #9ca3af;
         }
+        .sidebar-value[data-field] {
+            cursor: pointer;
+            border-radius: 4px;
+            padding: 2px 4px;
+            margin: -2px -4px;
+            transition: background 0.2s;
+        }
+
+        .sidebar-value[data-field]:hover {
+            background: rgba(0,131,134,0.1);
+        }
+
+        .sidebar-value[data-field]:hover::after {
+            content: ' ✏️';
+            font-size: 11px;
+        }
     </style>
 </head>
 
@@ -1753,17 +1769,17 @@
         <div class="sidebar">
             <div class="sidebar-section">
                 <div class="sidebar-label">Nombre</div>
-                <div class="sidebar-value" id="sidebar-name">-</div>
+                <div class="sidebar-value" id="sidebar-name" data-field="candidate_name" onclick="startSidebarEdit(this)">-</div>
             </div>
 
             <div class="sidebar-section">
                 <div class="sidebar-label">Email</div>
-                <div class="sidebar-value" id="sidebar-email">-</div>
+                <div class="sidebar-value" id="sidebar-email" data-field="email" onclick="startSidebarEdit(this)">-</div>
             </div>
 
             <div class="sidebar-section">
                 <div class="sidebar-label">Teléfono</div>
-                <div class="sidebar-value" id="sidebar-phone">-</div>
+                <div class="sidebar-value" id="sidebar-phone" data-field="phone_whatsapp" onclick="startSidebarEdit(this)">-</div>
             </div>
 
             <div class="sidebar-section">
@@ -1793,7 +1809,7 @@
 
             <div class="sidebar-section">
                 <div class="sidebar-label">Dirección Declarada</div>
-                <div class="sidebar-value" id="sidebar-declared-address" style="font-size: 12px;">-</div>
+                <div class="sidebar-value" id="sidebar-declared-address" style="font-size: 12px;" data-field="full_address" onclick="startSidebarEdit(this)">-</div>
             </div>
 
             <div class="sidebar-section">
@@ -4618,10 +4634,18 @@
             // Save/cancel buttons
             const actions = document.createElement('div');
             actions.className = 'inline-edit-actions';
-            actions.innerHTML = `
-                <button class="inline-save-btn" onclick="saveInlineEdit(this.closest('.data-item'))">✓ Guardar</button>
-                <button class="inline-cancel-btn" onclick="cancelInlineEdit(this.closest('.data-item'))">✕ Cancelar</button>
-            `;
+            const saveBtn = document.createElement('button');
+            saveBtn.className = 'inline-save-btn';
+            saveBtn.textContent = '✓ Guardar';
+            saveBtn.onclick = (e) => { e.stopPropagation(); saveInlineEdit(dataItem); };
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'inline-cancel-btn';
+            cancelBtn.textContent = '✕ Cancelar';
+            cancelBtn.onclick = (e) => { e.stopPropagation(); cancelInlineEdit(dataItem); };
+
+            actions.appendChild(saveBtn);
+            actions.appendChild(cancelBtn);
 
             valueDiv.textContent = '';
             valueDiv.appendChild(input);
@@ -4697,6 +4721,105 @@
             return String(val);
         }
 
+        // ── SIDEBAR INLINE EDIT ─────────────────────────────────────
+
+        let activeSidebarEdit = null;
+
+        async function startSidebarEdit(el) {
+            if (activeSidebarEdit === el) return;
+            if (activeSidebarEdit) cancelSidebarEdit(activeSidebarEdit);
+
+            const field = el.dataset.field;
+            const currentText = el.textContent.trim();
+            const originalValue = currentText === 'No proporcionado' || currentText === '-' ? '' : currentText;
+
+            activeSidebarEdit = el;
+            el.style.cursor = 'default';
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = originalValue;
+            input.style.cssText = 'width:100%;padding:4px 6px;border:1px solid #008386;border-radius:4px;font-size:inherit;outline:none;box-sizing:border-box;';
+
+            const actions = document.createElement('div');
+            actions.style.cssText = 'display:flex;gap:5px;margin-top:5px;';
+            const saveBtn = document.createElement('button');
+            saveBtn.textContent = '✓';
+            saveBtn.style.cssText = 'flex:1;background:#008386;color:white;border:none;padding:4px;border-radius:4px;cursor:pointer;font-size:12px;';
+            saveBtn.onclick = (e) => { e.stopPropagation(); saveSidebarEdit(el); };
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = '✕';
+            cancelBtn.style.cssText = 'flex:1;background:#e0e0e0;color:#333;border:none;padding:4px;border-radius:4px;cursor:pointer;font-size:12px;';
+            cancelBtn.onclick = (e) => { e.stopPropagation(); cancelSidebarEdit(el); };
+
+            actions.appendChild(saveBtn);
+            actions.appendChild(cancelBtn);
+
+            el.textContent = '';
+            el.appendChild(input);
+            el.appendChild(actions);
+            input.focus();
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') saveSidebarEdit(el);
+                if (e.key === 'Escape') cancelSidebarEdit(el);
+            });
+        }
+
+        function cancelSidebarEdit(el) {
+            if (!el) return;
+            const field = el.dataset.field;
+            const val = currentSurvey ? currentSurvey[field] : null;
+            el.textContent = val || 'No proporcionado';
+            el.style.cursor = '';
+            activeSidebarEdit = null;
+        }
+
+        async function saveSidebarEdit(el) {
+            const field = el.dataset.field;
+            const input = el.querySelector('input');
+            const newValue = input ? input.value.trim() : '';
+
+            try {
+                const payload = {};
+                payload[field] = newValue || null;
+
+                const response = await fetch(`${API_URL}/survey/${sessionId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error('Save failed');
+
+                currentSurvey[field] = newValue || null;
+                el.textContent = newValue || 'No proporcionado';
+                el.style.cursor = '';
+                activeSidebarEdit = null;
+
+                // Also update the matching data tab field if it exists
+                const tabFieldMap = {
+                    candidate_name: 'data-name',
+                    email: 'data-email',
+                    phone_whatsapp: 'data-phone',
+                    full_address: 'data-address'
+                };
+                if (tabFieldMap[field]) {
+                    const tabEl = document.getElementById(tabFieldMap[field]);
+                    if (tabEl) tabEl.textContent = newValue || 'No proporcionado';
+                }
+
+                // Flash confirmation
+                el.style.transition = 'background 0.3s';
+                el.style.background = 'rgba(0,131,134,0.2)';
+                setTimeout(() => { el.style.background = ''; }, 1000);
+
+            } catch (err) {
+                console.error('Sidebar save error:', err);
+                alert('❌ Error al guardar');
+            }
+        }
     </script>
 </body>
 
