@@ -840,20 +840,22 @@ async def audit_survey_conversation(session_id: str, db: Session = Depends(get_d
         if not survey:
             raise HTTPException(status_code=404, detail="Survey not found")
         
-        # Get all conversations
         conversations = survey_crud.get_survey_conversations(db, session_id)
         
         if not conversations:
             raise HTTPException(status_code=400, detail="No conversation found to analyze")
         
-        # Build conversation text
+        # Build conversation text - TRUNCATE to last 8000 chars if too long
         conversation_text = ""
         for conv in conversations:
             conversation_text += f"Usuario: {conv.user_message}\n"
             conversation_text += f"Bot: {conv.bot_response}\n\n"
         
-        # Create extraction prompt
-        # Create extraction prompt - SIMPLIFIED to only extract mentioned fields
+        MAX_CHARS = 8000
+        if len(conversation_text) > MAX_CHARS:
+            conversation_text = conversation_text[-MAX_CHARS:]
+            print(f"[AUDIT] Conversation truncated to last {MAX_CHARS} chars")
+        
         extraction_prompt = f"""Analiza la siguiente conversación de una encuesta socioeconómica y extrae TODOS los datos mencionados.
 
             CONVERSACIÓN:
@@ -863,28 +865,43 @@ async def audit_survey_conversation(session_id: str, db: Session = Depends(get_d
             - Extrae SOLO información explícitamente mencionada en la conversación
             - Si un dato no fue mencionado, NO lo incluyas en el JSON
             - Para campos booleanos: usa true o false (sin comillas)
-            - Para texto: usa comillas dobles
+            - Para texto: usa comillas dobles con texto plano, NO uses arrays ni objetos anidados
+            - Para listas (hermanos, hijos, referencias): escribe todo en un solo string de texto separado por comas o saltos de línea
             - Para números: sin comillas
-            - Asegúrate de cerrar correctamente el JSON con llaves
+            - Responde SOLO con el JSON, sin markdown ni explicaciones
 
-            Responde con un objeto JSON válido que contenga ÚNICAMENTE los campos mencionados en la conversación.
-            Campos disponibles: candidate_name, company_name, date_of_birth, phone_whatsapp, email, full_address, share_location, curp, nss_imss, rfc_tax_id, utility_provider, utility_contract_number, utility_account_holder, housing_type, lives_with, dependents_count, has_water, has_electricity, has_internet, has_gas, real_estate, vehicles, businesses, formal_savings, debts, credit_bureau, education_level, has_education_proof, position_applying, organization, area_division, application_reason, how_found_vacancy, current_employment, previous_employment, salary_bonus, family_support, informal_business_income, expenses_list, expenses_amounts, groceries, alimony, food_out, rent, utilities, internet_cable, transportation, uber_taxi, school_expenses, courses, books_supplies, entertainment, vacations, insurance, taxes, clothing, laundry, internet_expenses, has_medical_condition, takes_permanent_medication, primary_family_contacts, secondary_family_contacts, work_references, personal_reference, work_reference_1_name, work_reference_1_phone, work_reference_1_relationship, work_reference_2_name, work_reference_2_phone, work_reference_2_relationship, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, partner_name, partner_phone, partner_occupation, partner_relationship_quality, children_names, children_count, home_references, crime_in_area, services_quality, security_quality, surveillance_quality, bedrooms, dining_room, living_room, bathrooms, floors, garden, kitchen, air_conditioning, garage, laundry_area, pool, sports_areas, study_office, has_federal_license, federal_license_number, medical_folio, license_validity, license_type, has_state_license, state_license_info, state_license_number, state_license_validity, facebook_profile_url, home_photos_submitted, street_photos_submitted, recommendation_letters_submitted, has_legal_issues, legal_issues_description, evidence_sent
+            Campos disponibles y sus nombres exactos:
+            candidate_name, date_of_birth, phone_whatsapp, email, full_address, share_location,
+            curp, nss_imss, rfc_tax_id, housing_type, lives_with, dependents_count,
+            real_estate, vehicles, businesses, formal_savings, debts, credit_bureau,
+            company_certifying, position_certifying, how_found_vacancy, work_references,
+            salary_bonus, informal_business_income, total_monthly_expenses,
+            groceries, food_out, food_delivery, rent, services_total, transportation,
+            school_expenses, entertainment, vacations, clothing, technology_purchases,
+            insurance, other_expenses, father_name, father_occupation, mother_name,
+            mother_occupation, siblings_info, family_addresses, frequent_contacts,
+            emergency_contact_name, emergency_contact_phone, emergency_contact_relationship,
+            partner_name, partner_phone, partner_occupation, partner_relationship_quality,
+            children_names, children_count, neighborhood_description, home_description,
+            home_floors, home_buildings, home_references, crime_in_area, security_quality,
+            surveillance_quality, bedrooms, dining_room, living_room, bathrooms, garden,
+            kitchen, air_conditioning, garage, laundry_area, pool, sports_areas, study_office,
+            has_federal_license, federal_license_number, medical_folio, license_validity,
+            license_type, evidence_sent, facebook_profile_url, has_legal_issues,
+            legal_issues_description
 
             Ejemplo de respuesta correcta:
-            {{"candidate_name": "Juan Pérez", "phone_whatsapp": "5551234567", "email": "juan@example.com"}}
-            
-            Responde SOLO con el JSON, sin markdown ni explicaciones:"""
-        
+            {{"candidate_name": "Juan Pérez", "phone_whatsapp": "5551234567", "email": "juan@example.com"}}"""
+
         print("[AUDIT] Calling Gemini API...")
 
-        # Call Gemini API
         try:
             response = client.models.generate_content(
                 model='gemini-2.5-flash',
                 contents=[{"role": "user", "parts": [{"text": extraction_prompt}]}],
                 config={
                     "temperature": 0.1,
-                    "max_output_tokens": 4096  # CHANGED from 2000 to 4096
+                    "max_output_tokens": 8192
                 }
             )
             print("[AUDIT] Gemini API response received successfully")
@@ -892,36 +909,104 @@ async def audit_survey_conversation(session_id: str, db: Session = Depends(get_d
             print(f"[AUDIT ERROR] Gemini API Error: {str(api_error)}")
             raise HTTPException(status_code=500, detail=f"Gemini API Error: {str(api_error)}")
         
-        # Parse JSON response
         import json
         import re
         
         response_text = response.text.strip()
         print(f"[AUDIT] Raw response length: {len(response_text)} chars")
         
-        # Remove markdown code blocks if present
+        # Clean markdown if present
         response_text = re.sub(r'^```json\s*', '', response_text)
         response_text = re.sub(r'^```\s*', '', response_text)
         response_text = re.sub(r'\s*```$', '', response_text)
         response_text = response_text.strip()
 
-        print(f"[AUDIT] Cleaned response length: {len(response_text)} chars")
-        print(f"[AUDIT] About to parse JSON...")
+        # Try to fix truncated JSON by finding the last complete field
+        def repair_json(text):
+            # Find the last complete key-value pair by scanning backwards for a comma or {
+            try:
+                return json.loads(text)
+            except json.JSONDecodeError:
+                # Try to close truncated JSON
+                depth = 0
+                in_string = False
+                last_complete = 0
+                for i, ch in enumerate(text):
+                    if ch == '"' and (i == 0 or text[i-1] != '\\'):
+                        in_string = not in_string
+                    if not in_string:
+                        if ch in ('{', '['):
+                            depth += 1
+                        elif ch in ('}', ']'):
+                            depth -= 1
+                            if depth == 0:
+                                last_complete = i
+                # Try closing at last complete position
+                truncated = text[:last_complete+1] if last_complete > 0 else text
+                # Remove trailing incomplete entry
+                truncated = re.sub(r',\s*"[^"]*"\s*:\s*[^,}\]]*$', '', truncated)
+                truncated = truncated.rstrip(',').rstrip() + '}'
+                return json.loads(truncated)
+
+        try:
+            extracted_data = repair_json(response_text)
+            print(f"[AUDIT] Successfully parsed JSON with {len(extracted_data)} fields")
+        except json.JSONDecodeError as json_err:
+            print(f"[AUDIT ERROR] JSON parsing failed: {str(json_err)}")
+            print(f"[AUDIT ERROR] Full response:\n{response_text}")
+            raise HTTPException(status_code=500, detail=f"Error parsing AI response: {str(json_err)}")
+
+        # Flatten any nested objects/arrays to strings so DB doesn't choke
+        def flatten_value(v):
+            if isinstance(v, (dict, list)):
+                return json.dumps(v, ensure_ascii=False)
+            return v
+
+        extracted_data = {k: flatten_value(v) for k, v in extracted_data.items()}
+
+        print(f"[AUDIT] Cleaned response: {response_text[:200]}...")
         
         try:
             extracted_data = json.loads(response_text)
             print(f"[AUDIT] Successfully parsed JSON with {len(extracted_data)} fields")
-            print(f"[AUDIT] Fields: {list(extracted_data.keys())[:10]}...")  # Print first 10 keys
         except json.JSONDecodeError as json_err:
             print(f"[AUDIT ERROR] JSON parsing failed: {str(json_err)}")
-            print(f"[AUDIT ERROR] Full response text:\n{response_text}")
+            print(f"[AUDIT ERROR] Full response:\n{response_text}")
             raise HTTPException(status_code=500, detail=f"Error parsing AI response: {str(json_err)}")
         
-        # Update survey with extracted data (only non-null values)
-        update_data = {k: v for k, v in extracted_data.items() if v is not None}
+        # VALID DB columns only - reject anything not in this set to avoid DB errors
+        VALID_FIELDS = {
+            'candidate_name', 'date_of_birth', 'phone_whatsapp', 'email', 'full_address',
+            'share_location', 'curp', 'nss_imss', 'rfc_tax_id', 'housing_type', 'lives_with',
+            'dependents_count', 'real_estate', 'vehicles', 'businesses', 'formal_savings',
+            'debts', 'credit_bureau', 'company_certifying', 'position_certifying',
+            'how_found_vacancy', 'work_references', 'salary_bonus', 'informal_business_income',
+            'total_monthly_expenses', 'groceries', 'food_out', 'food_delivery', 'rent',
+            'services_total', 'transportation', 'school_expenses', 'entertainment', 'vacations',
+            'clothing', 'technology_purchases', 'insurance', 'other_expenses', 'father_name',
+            'father_occupation', 'mother_name', 'mother_occupation', 'siblings_info',
+            'family_addresses', 'frequent_contacts', 'emergency_contact_name',
+            'emergency_contact_phone', 'emergency_contact_relationship', 'partner_name',
+            'partner_phone', 'partner_occupation', 'partner_relationship_quality',
+            'children_names', 'children_count', 'neighborhood_description', 'home_description',
+            'home_floors', 'home_buildings', 'home_references', 'crime_in_area',
+            'security_quality', 'surveillance_quality', 'bedrooms', 'dining_room', 'living_room',
+            'bathrooms', 'garden', 'kitchen', 'air_conditioning', 'garage', 'laundry_area',
+            'pool', 'sports_areas', 'study_office', 'has_federal_license', 'federal_license_number',
+            'medical_folio', 'license_validity', 'license_type', 'evidence_sent',
+            'facebook_profile_url', 'has_legal_issues', 'legal_issues_description'
+        }
         
-        print(f"[AUDIT] Preparing to update {len(update_data)} fields")
-        print(f"[AUDIT] Fields to update: {list(update_data.keys())[:10]}...")
+        update_data = {
+            k: v for k, v in extracted_data.items() 
+            if v is not None and k in VALID_FIELDS
+        }
+        
+        invalid_fields = [k for k in extracted_data.keys() if k not in VALID_FIELDS]
+        if invalid_fields:
+            print(f"[AUDIT] Skipped invalid fields: {invalid_fields}")
+        
+        print(f"[AUDIT] Updating {len(update_data)} valid fields: {list(update_data.keys())}")
         
         if update_data:
             try:
@@ -942,14 +1027,13 @@ async def audit_survey_conversation(session_id: str, db: Session = Depends(get_d
         }
         
     except HTTPException:
-        raise  # Re-raise HTTP exceptions as-is
+        raise
     except Exception as e:
         print(f"[AUDIT ERROR] Unexpected error: {str(e)}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error during audit: {str(e)}")
 
-# ========== SURVEY ROUTES ==========
 @app.get("/survey")
 async def survey_page():
     return FileResponse("economic_survey.html")
