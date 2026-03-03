@@ -48,6 +48,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+import cloudinary
+import cloudinary.uploader
+
+cloudinary.config(
+    cloud_name=os.environ.get("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.environ.get("CLOUDINARY_API_KEY"),
+    api_secret=os.environ.get("CLOUDINARY_API_SECRET")
+)
+
 # @app.on_event("startup")
 # async def startup_event():
 #     print("🔄 FINAL recreation - adding fingerprint columns...")
@@ -1370,37 +1379,41 @@ async def survey_chat(session_id: str = Form(...),message: str = Form(...),ip_ad
         # Handle file uploads
         uploaded_files_info = []
         if files:
-            session_folder = SURVEY_FILES_DIR / session_id
-            session_folder.mkdir(exist_ok=True)
-            
             for file in files:
                 if file.filename:
-                    # Generate unique filename
+                    # Read file content
+                    file_content = await file.read()
                     file_extension = Path(file.filename).suffix
                     unique_filename = f"{uuid.uuid4()}{file_extension}"
-                    file_path = session_folder / unique_filename
                     
-                    # Save file
-                    with open(file_path, "wb") as buffer:
-                        shutil.copyfileobj(file.file, buffer)
+                    # Upload to Cloudinary
+                    upload_result = cloudinary.uploader.upload(
+                        file_content,
+                        folder=f"surveys/{session_id}",
+                        public_id=unique_filename.replace(file_extension, ''),
+                        resource_type="auto"
+                    )
+                    
+                    cloudinary_url = upload_result["secure_url"]
+                    file_size = len(file_content)
                     
                     # Store file info
                     file_info = {
                         "original_name": file.filename,
-                        "saved_path": str(file_path),
+                        "saved_path": cloudinary_url,
                         "file_type": file.content_type,
-                        "file_size": file_path.stat().st_size
+                        "file_size": file_size
                     }
                     uploaded_files_info.append(file_info)
                     
-                    # Save to database
+                    # Save to database with Cloudinary URL
                     from models import SurveyFile
                     db_file = SurveyFile(
                         session_id=session_id,
                         file_name=file.filename,
-                        file_path=str(file_path),
+                        file_path=cloudinary_url,
                         file_type=file.content_type,
-                        file_size=file_path.stat().st_size
+                        file_size=file_size
                     )
                     db.add(db_file)
             
@@ -2336,6 +2349,7 @@ async def get_survey_files(session_id: str, db: Session = Depends(get_db)):
 async def get_survey_file(session_id: str, file_id: str, db: Session = Depends(get_db)):
     """Serve a specific file by ID or search by original filename"""
     from models import SurveyFile
+    from fastapi.responses import RedirectResponse
     
     # Try to find by ID first
     try:
@@ -2345,7 +2359,6 @@ async def get_survey_file(session_id: str, file_id: str, db: Session = Depends(g
             SurveyFile.session_id == session_id
         ).first()
     except ValueError:
-        # If not a number, try to find by original filename
         file_record = db.query(SurveyFile).filter(
             SurveyFile.session_id == session_id,
             SurveyFile.file_name == file_id
@@ -2354,12 +2367,17 @@ async def get_survey_file(session_id: str, file_id: str, db: Session = Depends(g
     if not file_record:
         raise HTTPException(status_code=404, detail="File not found")
     
-    file_path = Path(file_record.file_path)
+    # If it's a Cloudinary URL, redirect to it
+    if file_record.file_path and file_record.file_path.startswith("http"):
+        return RedirectResponse(url=file_record.file_path)
     
+    # Fallback for any old local files
+    file_path = Path(file_record.file_path)
     if not file_path.exists():
-        raise HTTPException(status_code=404, detail="File not found on disk")
+        raise HTTPException(status_code=404, detail="File not found")
     
     return FileResponse(file_path)
+
 
 @app.get("/api/settings/survey_prompt")
 async def get_survey_prompt(db: Session = Depends(get_db)):
