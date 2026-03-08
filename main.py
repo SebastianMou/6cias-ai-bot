@@ -52,9 +52,9 @@ import cloudinary
 import cloudinary.uploader
 
 cloudinary.config(
-    cloud_name=os.environ.get("CLOUDINARY_CLOUD_NAMECLOUDINARY_CLOUD_NAME"),
-    api_key=os.environ.get("CLOUDINARY_API_KEY"),
-    api_secret=os.environ.get("CLOUDINARY_API_SECRET")
+    cloud_name=settings.cloudinary_cloud_name,
+    api_key=settings.cloudinary_api_key,
+    api_secret=settings.cloudinary_api_secret
 )
 
 # @app.on_event("startup")
@@ -223,12 +223,14 @@ async def startup_event():
         ]
         for col_name, col_type in widen_columns:
             try:
+                # PostgreSQL syntax only - skip silently on SQLite
                 conn.execute(text(
                     f"ALTER TABLE survey_responses ALTER COLUMN {col_name} TYPE {col_type} USING {col_name}::{col_type}"
                 ))
                 print(f"✅ Widened {col_name} to {col_type}")
             except Exception as e:
-                print(f"⚠️ Could not widen {col_name}: {e}")
+                # SQLite doesn't support ALTER COLUMN - safe to ignore
+                pass
 
     print("✅ Database ready!")
 
@@ -2490,7 +2492,8 @@ async def get_survey_files(session_id: str, db: Session = Depends(get_db)):
                 "file_name": f.file_name,
                 "file_type": f.file_type,
                 "file_size": f.file_size,
-                "uploaded_at": f.uploaded_at.isoformat()
+                "uploaded_at": f.uploaded_at.isoformat(),
+                "file_url": f.file_path if f.file_path and f.file_path.startswith("http") else None
             }
             for f in files
         ]

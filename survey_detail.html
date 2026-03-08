@@ -2925,6 +2925,7 @@
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <script>
         const API_URL = window.location.origin;
@@ -3533,6 +3534,10 @@
             }
         }
 
+        // Global files store for carousel
+        let allFiles = [];
+        let currentImageIndex = 0;
+
         async function loadFiles() {
             try {
                 const response = await fetch(`${API_URL}/survey/${sessionId}/files`);
@@ -3542,44 +3547,50 @@
 
                 if (!data.files || data.files.length === 0) {
                     gallery.innerHTML = '<div class="empty-state"><p>No hay archivos adjuntos</p></div>';
-                    // Hide download button
                     const downloadBtn = document.getElementById('download-all-btn');
-                    if (downloadBtn) {
-                        downloadBtn.style.display = 'none';
-                    }
+                    if (downloadBtn) downloadBtn.style.display = 'none';
                     return;
                 }
 
+                // Store files globally for carousel and download
+                allFiles = data.files;
+
+                const downloadBtn = document.getElementById('download-all-btn');
+                if (downloadBtn) downloadBtn.style.display = 'block';
+
                 gallery.innerHTML = '';
 
-                // Show download all button if there are files
-                const downloadBtn = document.getElementById('download-all-btn');
-                if (downloadBtn) {
-                    downloadBtn.style.display = 'block';
-                }
-
-                data.files.forEach(file => {
+                data.files.forEach((file, index) => {
                     const fileCard = document.createElement('div');
-                    const fileUrl = `${API_URL}/survey/file/${sessionId}/${file.id}`;
-                    
+                    // Use cloudinary URL directly if available, else fallback to API
+                    const fileUrl = file.file_url || `${API_URL}/survey/file/${sessionId}/${file.id}`;
+
                     if (file.file_type && file.file_type.startsWith('image/')) {
-                        // Image file
                         fileCard.className = 'file-card';
                         fileCard.innerHTML = `
-                            <img src="${fileUrl}" alt="${file.file_name}" onclick="event.stopPropagation(); showImageModal('${fileUrl}')">
+                            <img src="${fileUrl}" alt="${file.file_name}" 
+                                style="cursor:zoom-in;"
+                                onclick="event.stopPropagation(); showImageCarousel(${index})">
                             <div class="file-details">
                                 <div class="file-name">${file.file_name}</div>
                                 <div class="file-meta">${formatFileSize(file.file_size)} • ${new Date(file.uploaded_at).toLocaleDateString('es-MX')}</div>
+                                <button onclick="event.stopPropagation(); downloadFile('${fileUrl}', '${file.file_name}')" 
+                                    style="margin-top:6px; padding:4px 10px; background:#008386; color:white; border:none; border-radius:4px; cursor:pointer; font-size:12px;">
+                                    ⬇️ Descargar
+                                </button>
                             </div>
                         `;
                     } else {
-                        // Document file
                         fileCard.className = 'file-card document';
                         fileCard.innerHTML = `
                             <div class="doc-icon">📄</div>
                             <div class="file-details">
                                 <div class="file-name">${file.file_name}</div>
                                 <div class="file-meta">${formatFileSize(file.file_size)} • ${new Date(file.uploaded_at).toLocaleDateString('es-MX')}</div>
+                                <button onclick="event.stopPropagation(); downloadFile('${fileUrl}', '${file.file_name}')"
+                                    style="margin-top:6px; padding:4px 10px; background:#008386; color:white; border:none; border-radius:4px; cursor:pointer; font-size:12px;">
+                                    ⬇️ Descargar
+                                </button>
                             </div>
                         `;
                         fileCard.onclick = () => window.open(fileUrl, '_blank');
@@ -3594,57 +3605,177 @@
             }
         }
 
-        // Global variable to store files
-        let allFiles = [];
+        async function downloadFile(fileUrl, fileName) {
+            try {
+                // Fetch the file as a blob (works cross-origin with Cloudinary)
+                const response = await fetch(fileUrl);
+                const blob = await response.blob();
+                const blobUrl = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(blobUrl);
+            } catch (error) {
+                // Fallback: open in new tab
+                window.open(fileUrl, '_blank');
+            }
+        }
 
         async function downloadAllFiles() {
             const btn = document.getElementById('download-all-btn');
             const originalText = btn.innerHTML;
-            
+
             try {
                 btn.disabled = true;
-                btn.innerHTML = '⏳ Descargando...';
-                
-                const response = await fetch(`${API_URL}/survey/${sessionId}/files`);
-                const data = await response.json();
-                
-                if (!data.files || data.files.length === 0) {
+
+                if (!allFiles || allFiles.length === 0) {
                     alert('No hay archivos para descargar');
                     return;
                 }
-                
-                // Download each file
-                for (let i = 0; i < data.files.length; i++) {
-                    const file = data.files[i];
-                    const fileUrl = `${API_URL}/survey/file/${sessionId}/${file.id}`;
-                    
-                    btn.innerHTML = `⏳ Descargando ${i + 1}/${data.files.length}...`;
-                    
-                    // Create temporary link and trigger download
-                    const link = document.createElement('a');
-                    link.href = fileUrl;
-                    link.download = file.file_name;
-                    link.target = '_blank';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    
-                    // Small delay between downloads to avoid blocking
-                    await new Promise(resolve => setTimeout(resolve, 500));
+
+                const zip = new JSZip();
+                const folderName = `Encuesta_${currentSurvey.candidate_name || sessionId}`;
+                const folder = zip.folder(folderName);
+
+                for (let i = 0; i < allFiles.length; i++) {
+                    const file = allFiles[i];
+                    const fileUrl = file.file_url || `${API_URL}/survey/file/${sessionId}/${file.id}`;
+                    btn.innerHTML = `⏳ Empaquetando ${i + 1}/${allFiles.length}...`;
+
+                    try {
+                        const response = await fetch(fileUrl);
+                        const blob = await response.blob();
+                        folder.file(file.file_name, blob);
+                    } catch (e) {
+                        console.warn(`Could not fetch ${file.file_name}:`, e);
+                    }
                 }
-                
-                btn.innerHTML = '✅ Descargado!';
+
+                btn.innerHTML = '⏳ Generando ZIP...';
+                const zipBlob = await zip.generateAsync({ type: 'blob' });
+                const zipUrl = URL.createObjectURL(zipBlob);
+                const link = document.createElement('a');
+                link.href = zipUrl;
+                link.download = `${folderName}_${new Date().toISOString().split('T')[0]}.zip`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(zipUrl);
+
+                btn.innerHTML = '✅ ZIP Descargado!';
                 setTimeout(() => {
                     btn.innerHTML = originalText;
                     btn.disabled = false;
                 }, 2000);
-                
+
             } catch (error) {
                 console.error('Error downloading files:', error);
-                alert('Error al descargar archivos');
+                alert('Error al descargar archivos: ' + error.message);
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             }
+        }
+
+        function showImageCarousel(startIndex) {
+            const images = allFiles.filter(f => f.file_type && f.file_type.startsWith('image/'));
+            if (images.length === 0) return;
+
+            // Find position within images-only array
+            const imageIndex = images.findIndex((_, i) => {
+                const globalIndex = allFiles.indexOf(images[i]);
+                return globalIndex === startIndex;
+            });
+            currentImageIndex = imageIndex >= 0 ? imageIndex : 0;
+
+            // Build carousel modal
+            let carouselHtml = `
+                <div id="carousel-modal" onclick="closeCarousel()" style="
+                    position:fixed; top:0; left:0; width:100%; height:100%; 
+                    background:rgba(0,0,0,0.92); z-index:9999; 
+                    display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                    
+                    <button onclick="event.stopPropagation(); closeCarousel()" style="
+                        position:absolute; top:20px; right:25px; background:none; border:none;
+                        color:white; font-size:32px; cursor:pointer; z-index:10000;">✕</button>
+                    
+                    <div style="position:absolute; top:20px; left:50%; transform:translateX(-50%);
+                        color:white; font-size:14px; opacity:0.8;" id="carousel-counter">
+                        ${currentImageIndex + 1} / ${images.length}
+                    </div>
+
+                    <button onclick="event.stopPropagation(); carouselPrev()" style="
+                        position:absolute; left:20px; background:rgba(255,255,255,0.2); border:none;
+                        color:white; font-size:36px; cursor:pointer; padding:10px 16px; border-radius:8px;
+                        z-index:10000;">‹</button>
+
+                    <img id="carousel-img" src="${images[currentImageIndex].file_url || `${API_URL}/survey/file/${sessionId}/${images[currentImageIndex].id}`}" 
+                        onclick="event.stopPropagation()"
+                        style="max-width:85vw; max-height:80vh; object-fit:contain; border-radius:8px; box-shadow:0 0 40px rgba(0,0,0,0.5);">
+
+                    <button onclick="event.stopPropagation(); carouselNext()" style="
+                        position:absolute; right:20px; background:rgba(255,255,255,0.2); border:none;
+                        color:white; font-size:36px; cursor:pointer; padding:10px 16px; border-radius:8px;
+                        z-index:10000;">›</button>
+
+                    <div style="margin-top:15px; color:white; font-size:13px; opacity:0.7;" id="carousel-name">
+                        ${images[currentImageIndex].file_name}
+                    </div>
+
+                    <button onclick="event.stopPropagation(); downloadFile('${images[currentImageIndex].file_url || `${API_URL}/survey/file/${sessionId}/${images[currentImageIndex].id}`}', '${images[currentImageIndex].file_name}')" 
+                        style="margin-top:10px; padding:8px 20px; background:#008386; color:white; 
+                        border:none; border-radius:6px; cursor:pointer; font-size:14px;">
+                        ⬇️ Descargar esta imagen
+                    </button>
+                </div>
+            `;
+
+            // Store images for navigation
+            window._carouselImages = images;
+            document.body.insertAdjacentHTML('beforeend', carouselHtml);
+
+            // Keyboard navigation
+            document.addEventListener('keydown', carouselKeyHandler);
+        }
+
+        function carouselKeyHandler(e) {
+            if (e.key === 'ArrowRight') carouselNext();
+            if (e.key === 'ArrowLeft') carouselPrev();
+            if (e.key === 'Escape') closeCarousel();
+        }
+
+        function carouselNext() {
+            const images = window._carouselImages;
+            if (!images) return;
+            currentImageIndex = (currentImageIndex + 1) % images.length;
+            updateCarousel(images);
+        }
+
+        function carouselPrev() {
+            const images = window._carouselImages;
+            if (!images) return;
+            currentImageIndex = (currentImageIndex - 1 + images.length) % images.length;
+            updateCarousel(images);
+        }
+
+        function updateCarousel(images) {
+            const img = document.getElementById('carousel-img');
+            const name = document.getElementById('carousel-name');
+            const counter = document.getElementById('carousel-counter');
+            const file = images[currentImageIndex];
+            const url = file.file_url || `${API_URL}/survey/file/${sessionId}/${file.id}`;
+            if (img) img.src = url;
+            if (name) name.textContent = file.file_name;
+            if (counter) counter.textContent = `${currentImageIndex + 1} / ${images.length}`;
+        }
+
+        function closeCarousel() {
+            const modal = document.getElementById('carousel-modal');
+            if (modal) modal.remove();
+            document.removeEventListener('keydown', carouselKeyHandler);
+            window._carouselImages = null;
         }
 
         function formatFileSize(bytes) {
@@ -3656,14 +3787,11 @@
         }
 
         function showImageModal(imageSrc) {
-            const modal = document.getElementById('image-modal');
-            const modalImage = document.getElementById('modal-image');
-            modalImage.src = imageSrc;
-            modal.classList.add('show');
+            showImageCarousel(allFiles.findIndex(f => (f.file_url || `${API_URL}/survey/file/${sessionId}/${f.id}`) === imageSrc));
         }
 
         function closeImageModal() {
-            document.getElementById('image-modal').classList.remove('show');
+            closeCarousel();
         }
 
         function calculateProgress(survey) {
