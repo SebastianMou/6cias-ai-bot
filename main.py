@@ -52,7 +52,7 @@ import cloudinary
 import cloudinary.uploader
 
 cloudinary.config(
-    cloud_name=os.environ.get("CLOUDINARY_CLOUD_NAME"),
+    cloud_name=os.environ.get("CLOUDINARY_CLOUD_NAMECLOUDINARY_CLOUD_NAME"),
     api_key=os.environ.get("CLOUDINARY_API_KEY"),
     api_secret=os.environ.get("CLOUDINARY_API_SECRET")
 )
@@ -860,47 +860,167 @@ async def audit_survey_conversation(session_id: str, db: Session = Depends(get_d
             conversation_text += f"Usuario: {conv.user_message}\n"
             conversation_text += f"Bot: {conv.bot_response}\n\n"
         
-        MAX_CHARS = 8000
+        MAX_CHARS = 20000
         if len(conversation_text) > MAX_CHARS:
-            conversation_text = conversation_text[-MAX_CHARS:]
-            print(f"[AUDIT] Conversation truncated to last {MAX_CHARS} chars")
+            # Take first 10000 chars (has name, docs, company) + last 10000 (has family, home, legal)
+            conversation_text = conversation_text[:10000] + "\n...[MIDDLE TRUNCATED]...\n" + conversation_text[-10000:]
+            print(f"[AUDIT] Conversation truncated: kept first+last 10000 chars")
+        else:
+            print(f"[AUDIT] Full conversation included: {len(conversation_text)} chars")
         
-        extraction_prompt = f"""Analiza la siguiente conversación de una encuesta socioeconómica y extrae TODOS los datos mencionados.
+        extraction_prompt = f"""Eres un extractor de datos experto. Analiza la siguiente conversación de una encuesta socioeconómica y extrae TODOS los datos mencionados, mapeándolos EXACTAMENTE al campo correcto.
 
             CONVERSACIÓN:
             {conversation_text}
 
-            INSTRUCCIONES IMPORTANTES:
+            INSTRUCCIONES CRÍTICAS DE MAPEO — LEE CON CUIDADO:
             - Extrae SOLO información explícitamente mencionada en la conversación
             - Si un dato no fue mencionado, NO lo incluyas en el JSON
             - Para campos booleanos: usa true o false (sin comillas)
             - Para texto: usa comillas dobles con texto plano, NO uses arrays ni objetos anidados
-            - Para listas (hermanos, hijos, referencias): escribe todo en un solo string de texto separado por comas o saltos de línea
-            - Para números: sin comillas
-            - Responde SOLO con el JSON, sin markdown ni explicaciones
+            - Para listas (hermanos, hijos, referencias): escribe todo en un solo string separado por comas
+            - Para números enteros (conteos, cantidades): sin comillas
+            - Responde SOLO con el JSON, sin markdown ni explicaciones adicionales
 
-            Campos disponibles y sus nombres exactos:
-            candidate_name, date_of_birth, phone_whatsapp, email, full_address, share_location,
-            curp, nss_imss, rfc_tax_id, housing_type, lives_with, dependents_count,
-            real_estate, vehicles, businesses, formal_savings, debts, credit_bureau,
-            company_certifying, position_certifying, how_found_vacancy, work_references,
-            salary_bonus, informal_business_income, total_monthly_expenses,
-            groceries, food_out, food_delivery, rent, services_total, transportation,
-            school_expenses, entertainment, vacations, clothing, technology_purchases,
-            insurance, other_expenses, father_name, father_occupation, mother_name,
-            mother_occupation, siblings_info, family_addresses, frequent_contacts,
-            emergency_contact_name, emergency_contact_phone, emergency_contact_relationship,
-            partner_name, partner_phone, partner_occupation, partner_relationship_quality,
-            children_names, children_count, neighborhood_description, home_description,
-            home_floors, home_buildings, home_references, crime_in_area, security_quality,
-            surveillance_quality, bedrooms, dining_room, living_room, bathrooms, garden,
-            kitchen, air_conditioning, garage, laundry_area, pool, sports_areas, study_office,
-            has_federal_license, federal_license_number, medical_folio, license_validity,
-            license_type, evidence_sent, facebook_profile_url, has_legal_issues,
-            legal_issues_description
+            DEFINICIÓN EXACTA DE CADA CAMPO — NO CONFUNDAS:
 
-            Ejemplo de respuesta correcta:
-            {{"candidate_name": "Juan Pérez", "phone_whatsapp": "5551234567", "email": "juan@example.com"}}"""
+            === IDENTIDAD ===
+            - candidate_name: Nombre completo de la persona entrevistada (ej: "Juan García López")
+            - date_of_birth: Fecha y lugar de nacimiento (ej: "02 febrero 1969, CDMX")
+            - phone_whatsapp: Número de teléfono/WhatsApp del candidato
+            - email: Correo electrónico del candidato (ej: "juan@gmail.com") — NO pongas aquí fechas ni direcciones
+
+            === DOCUMENTOS PERSONALES ===
+            - curp: Clave Única de Registro de Población, 18 caracteres alfanuméricos (ej: "BOCE690206HDFRHN04")
+            - nss_imss: Número de Seguridad Social del IMSS, generalmente 11 dígitos (ej: "33976900879")
+            - rfc_tax_id: Registro Federal de Contribuyentes, 13 caracteres (ej: "BOCE690206QK3")
+            - license_type: Tipo de licencia de conducir (ej: "Tipo A", "Tipo E Federal")
+            - federal_license_number: Número de la licencia federal de conducir
+            - medical_folio: Número de folio médico asociado a la licencia federal
+            - license_validity: Vigencia o fecha de vencimiento de la licencia
+            - utility_provider: Empresa del comprobante de domicilio (ej: "CFE", "Izzi", "Telmex")
+            - utility_contract_number: Número de contrato del comprobante de domicilio
+            - utility_account_holder: Nombre de la persona a quien está registrado el comprobante
+
+            === DIRECCIÓN ===
+            - full_address: Dirección completa incluyendo calle, número, colonia y código postal
+
+            === VACANTE Y EMPRESA ===
+            - company_certifying: Empresa que solicita la certificación / investigación del candidato
+            - position_certifying: Puesto al que aplica o para el que se certifica
+            - how_found_vacancy: Cómo se enteró de la vacante (ej: "Indeed", "Facebook", "recomendación")
+
+            === REFERENCIAS LABORALES ===
+            - work_references: TODAS las referencias laborales en un solo texto, con nombre y teléfono de cada una
+            - work_reference_1_name: Nombre de la primera referencia laboral
+            - work_reference_1_phone: Teléfono de la primera referencia laboral
+            - work_reference_1_relationship: Relación con la primera referencia (jefe, compañero, etc.)
+            - work_reference_2_name: Nombre de la segunda referencia laboral
+            - work_reference_2_phone: Teléfono de la segunda referencia laboral
+            - work_reference_2_relationship: Relación con la segunda referencia
+
+            === INGRESOS ===
+            - salary_bonus: Sueldo actual o más reciente, incluyendo bonos (ej: "14000 mensuales")
+            - informal_business_income: Ingresos por negocios, rentas u otras fuentes informales
+
+            === GASTOS MENSUALES ===
+            - total_monthly_expenses: Total estimado de gastos al mes (ej: "6000-7000")
+            - groceries: Gasto en despensa y supermercado
+            - food_out: Gasto en restaurantes y comida fuera de casa
+            - food_delivery: Gasto en aplicaciones de delivery (Uber Eats, Rappi, etc.)
+            - rent: Gasto en renta o vivienda — si no paga renta, pon "0" o no incluyas
+            - services_total: Gasto total en servicios del hogar: gas, luz, agua, internet
+            - transportation: Gasto en transporte: gasolina, pasajes, Uber, mantenimiento de auto
+            - school_expenses: Gasto en educación: colegiaturas, útiles, cursos
+            - entertainment: Gasto en entretenimiento: cine, teatro, gimnasio, hobbies
+            - vacations: Gasto en vacaciones
+            - clothing: Gasto en ropa
+            - technology_purchases: Gasto en tecnología y artículos para el hogar
+            - insurance: Gasto en seguros e impuestos
+            - other_expenses: Otros gastos no categorizados
+
+            === BIENES Y DEUDAS ===
+            - real_estate: Bienes inmuebles que posee (casas, terrenos, locales) — NO pongas vehículos aquí
+            - vehicles: Vehículos que posee (autos, motos, camiones) — NO pongas inmuebles aquí
+            - businesses: Negocios propios
+            - formal_savings: Ahorros formales (cuentas bancarias, afore, inversiones)
+            - debts: Deudas activas (créditos, préstamos, tarjetas)
+            - credit_bureau: Estado en el buró de crédito
+
+            === FAMILIA ===
+            - father_name: Nombre completo del padre
+            - father_occupation: Ocupación del padre
+            - mother_name: Nombre completo de la madre
+            - mother_occupation: Ocupación de la madre
+            - siblings_info: Información de hermanos: nombre, ocupación y teléfono de cada uno en un solo texto
+            - family_addresses: Direcciones donde viven familiares
+            - frequent_contacts: Con quién tiene contacto frecuente
+            - partner_name: Nombre de la pareja actual
+            - partner_phone: Teléfono de la pareja
+            - partner_occupation: Ocupación de la pareja
+            - partner_relationship_quality: Calidad de la relación de pareja (ej: "Buena")
+            - children_names: Nombres de los hijos separados por coma
+            - children_count: Número entero de hijos
+            - emergency_contact_name: Nombre del contacto de emergencia
+            - emergency_contact_phone: Teléfono del contacto de emergencia
+            - emergency_contact_relationship: Relación con el contacto de emergencia
+
+            === VIVIENDA ===
+            - housing_type: Tipo de vivienda (propia, rentada, familiar, etc.)
+            - lives_with: Con quién vive el candidato
+            - dependents_count: Número de personas que dependen económicamente del candidato
+            - neighborhood_description: Descripción del entorno o colonia
+            - home_description: Descripción general de la vivienda
+            - home_floors: Número de pisos o niveles de la vivienda
+            - home_buildings: Número de edificios o construcciones en el terreno
+            - home_references: Referencias para llegar al domicilio
+            - bedrooms: Número de recámaras
+            - dining_room: Tiene comedor (sí/no o número)
+            - living_room: Tiene sala (sí/no o número)
+            - bathrooms: Número de baños
+            - kitchen: Tiene cocina (sí/no o número)
+            - air_conditioning: Tiene aire acondicionado (sí/no)
+            - garage: Tiene cochera o espacio para autos (sí/no o número de autos)
+            - laundry_area: Tiene área de lavado (sí/no)
+            - garden: Tiene jardín o patio (sí/no)
+            - pool: Tiene alberca (sí/no)
+            - sports_areas: Tiene áreas deportivas (sí/no)
+            - study_office: Tiene estudio u oficina (sí/no)
+            - crime_in_area: Nivel de crimen o delincuencia en la zona
+            - security_quality: Calidad de la seguridad en la zona
+            - surveillance_quality: Vigilancia disponible en la zona (cámaras, patrullas, etc.)
+
+            === ANTECEDENTES ===
+            - has_legal_issues: true si mencionó problemas legales, penales o demandas; false si dijo que no tiene
+            - legal_issues_description: Descripción detallada de los problemas legales mencionados
+            - facebook_profile_url: URL o nombre del perfil de Facebook — NO pongas correos aquí
+
+            ERRORES COMUNES A EVITAR:
+            - NUNCA pongas el correo electrónico en date_of_birth, full_address u otro campo
+            - NUNCA pongas la CURP en nss_imss ni el NSS en rfc_tax_id — son tres campos distintos
+            - NUNCA pongas un vehículo en real_estate ni un inmueble en vehicles
+            - NUNCA pongas la licencia de conducir en utility_provider
+            - NUNCA pongas el Facebook en email ni el email en facebook_profile_url
+            - Si alguien dice "no pago renta", el campo rent es "0", no lo omitas
+            - Si alguien dice "sin deudas", el campo debts es "Sin deudas"
+
+            EJEMPLO DE RESPUESTA CORRECTA:
+            {{
+                "candidate_name": "Juan García López",
+                "date_of_birth": "15 marzo 1985, Guadalajara",
+                "email": "juan@gmail.com",
+                "curp": "GALJ850315HJCRPN02",
+                "nss_imss": "12345678901",
+                "rfc_tax_id": "GALJ850315AB1",
+                "company_certifying": "Transportes XYZ",
+                "position_certifying": "Chofer Federal",
+                "how_found_vacancy": "Indeed",
+                "work_reference_1_name": "Carlos Pérez",
+                "work_reference_1_phone": "+52 55 1234 5678",
+                "vehicles": "Chevrolet 2010",
+                "salary_bonus": "15000 mensuales",
+                "has_legal_issues": false
+            }}"""
 
         print("[AUDIT] Calling Gemini API...")
 
@@ -1003,7 +1123,10 @@ async def audit_survey_conversation(session_id: str, db: Session = Depends(get_d
             'bathrooms', 'garden', 'kitchen', 'air_conditioning', 'garage', 'laundry_area',
             'pool', 'sports_areas', 'study_office', 'has_federal_license', 'federal_license_number',
             'medical_folio', 'license_validity', 'license_type', 'evidence_sent',
-            'facebook_profile_url', 'has_legal_issues', 'legal_issues_description'
+            'facebook_profile_url', 'has_legal_issues', 'legal_issues_description',
+            'utility_provider', 'utility_contract_number', 'utility_account_holder',
+            'work_reference_1_name', 'work_reference_1_phone', 'work_reference_1_relationship',
+            'work_reference_2_name', 'work_reference_2_phone', 'work_reference_2_relationship',
         }
         
         update_data = {
@@ -1339,6 +1462,34 @@ async def get_survey_by_id(session_id: str, db: Session = Depends(get_db)):
         
         # O) Evidence
         "evidence_sent": survey.evidence_sent,
+
+        "utility_provider": survey.utility_provider,
+        "utility_contract_number": survey.utility_contract_number,
+        "utility_account_holder": survey.utility_account_holder,
+        "work_reference_1_name": survey.work_reference_1_name,
+        "work_reference_1_phone": survey.work_reference_1_phone,
+        "work_reference_1_relationship": survey.work_reference_1_relationship,
+        "work_reference_2_name": survey.work_reference_2_name,
+        "work_reference_2_phone": survey.work_reference_2_phone,
+        "work_reference_2_relationship": survey.work_reference_2_relationship,
+        "emergency_contact_relationship": survey.emergency_contact_relationship,
+        "children_count": survey.children_count,
+        "has_legal_issues": survey.has_legal_issues,
+        "legal_issues_description": survey.legal_issues_description,
+        "facebook_profile_url": survey.facebook_profile_url,
+        "dining_room": survey.dining_room,
+        "living_room": survey.living_room,
+        "pool": survey.pool,
+        "sports_areas": survey.sports_areas,
+        "study_office": survey.study_office,
+        "laundry_area": survey.laundry_area,
+        "air_conditioning": survey.air_conditioning,
+        "kitchen": survey.kitchen,
+        "crime_in_area": survey.crime_in_area,
+        "home_references": survey.home_references,
+        "nss_imss": survey.nss_imss,
+        "rfc_tax_id": survey.rfc_tax_id,
+        "curp": survey.curp,
     }
 
 @app.get("/survey/{session_id}/conversation")

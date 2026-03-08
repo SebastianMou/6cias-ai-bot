@@ -1895,7 +1895,7 @@
                     <button class="tab" onclick="switchTab('finanzas')">📊 Finanzas</button>
                     <button class="tab" onclick="switchTab('contactos')">👥 Contactos</button>
                     <button class="tab" onclick="switchTab('vivienda')">🏘️ Vivienda</button>
-                    <button class="tab" onclick="switchTab('licencias')">🚗 Licencias</button>
+                    <button class="tab" onclick="switchTab('licencias')">🚗 Licencias / Antecedentes</button>
                     <button class="tab" onclick="switchTab('conversacion')">💬 Conversación</button>
                     <button class="tab" onclick="switchTab('connection')">📶 Historial de Conexión</button>
                     <button class="tab" onclick="switchTab('archivos')">📎 Archivos</button>
@@ -1926,6 +1926,30 @@
                                 <div class="data-label">Session ID</div>
                                 <div class="data-value" id="data-session"
                                     style="font-size: 12px; word-break: break-all;">-</div>
+                            </div>
+                            <div class="data-item" data-field="curp">
+                                <div class="data-label">CURP</div>
+                                <div class="data-value" id="data-curp" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" data-field="nss_imss">
+                                <div class="data-label">NSS / IMSS</div>
+                                <div class="data-value" id="data-nss" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" data-field="rfc_tax_id">
+                                <div class="data-label">RFC</div>
+                                <div class="data-value" id="data-rfc" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" data-field="utility_provider">
+                                <div class="data-label">Proveedor Comprobante (CFE/Izzi/etc)</div>
+                                <div class="data-value" id="data-utility-provider" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" data-field="utility_contract_number">
+                                <div class="data-label">Número de Contrato</div>
+                                <div class="data-value" id="data-utility-contract" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" data-field="utility_account_holder">
+                                <div class="data-label">Titular del Contrato</div>
+                                <div class="data-value" id="data-utility-holder" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
                         </div>
                     </div>
@@ -2178,8 +2202,12 @@
                                 <div class="data-value" id="data-partner-relationship" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
                             <div class="data-item" style="grid-column: 1 / -1;" data-field="children_names" data-multiline="true">
-                                <div class="data-label">Hijos</div>
+                                <div class="data-label">Hijos (nombres)</div>
                                 <div class="data-value" id="data-children" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" data-field="children_count">
+                                <div class="data-label">Número de Hijos</div>
+                                <div class="data-value" id="data-children-count" onclick="startInlineEdit(this.parentElement)">-</div>
                             </div>
                         </div>
                     </div>
@@ -2325,6 +2353,24 @@
                     </div>
 
                     <div class="data-section">
+                        <h3>Antecedentes Legales</h3>
+                        <div class="data-grid">
+                            <div class="data-item" data-field="has_legal_issues">
+                                <div class="data-label">¿Tiene Problemas Legales?</div>
+                                <div class="data-value" id="data-has-legal" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" style="grid-column: 1 / -1;" data-field="legal_issues_description" data-multiline="true">
+                                <div class="data-label">Descripción del Problema Legal</div>
+                                <div class="data-value" id="data-legal-desc" style="white-space: pre-wrap;" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                            <div class="data-item" data-field="facebook_profile_url">
+                                <div class="data-label">Facebook (URL o nombre de perfil)</div>
+                                <div class="data-value" id="data-facebook" onclick="startInlineEdit(this.parentElement)">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="data-section">
                         <h3>Evidencias</h3>
                         <div class="data-grid">
                             <div class="data-item" style="grid-column: 1 / -1;" data-field="evidence_sent" data-multiline="true">
@@ -2333,6 +2379,7 @@
                             </div>
                         </div>
                     </div>
+                </div>
                 </div>
 
                 <!-- Tab: Archivos -->
@@ -2414,6 +2461,30 @@
                             <div class="form-group">
                                 <label>Correo Electrónico:</label>
                                 <input type="email" id="edit-email">
+                            </div>
+                            <div class="form-group">
+                                <label>CURP</label>
+                                <input type="text" id="edit-curp" placeholder="18 caracteres">
+                            </div>
+                            <div class="form-group">
+                                <label>NSS / IMSS</label>
+                                <input type="text" id="edit-nss">
+                            </div>
+                            <div class="form-group">
+                                <label>RFC</label>
+                                <input type="text" id="edit-rfc">
+                            </div>
+                            <div class="form-group">
+                                <label>Proveedor Comprobante (CFE/Izzi/etc)</label>
+                                <input type="text" id="edit-utility-provider">
+                            </div>
+                            <div class="form-group">
+                                <label>Número de Contrato</label>
+                                <input type="text" id="edit-utility-contract">
+                            </div>
+                            <div class="form-group">
+                                <label>Titular del Contrato</label>
+                                <input type="text" id="edit-utility-holder">
                             </div>
                         </div>
                     </div>
@@ -3355,6 +3426,15 @@
             setValue('data-license-validity', survey.license_validity);
             setValue('data-license-type', survey.license_type);
             setValue('data-evidence', survey.evidence_sent);
+            setValue('data-children-count', survey.children_count);
+            setValue('data-has-legal', survey.has_legal_issues === null ? null : (survey.has_legal_issues ? 'Sí ⚠️' : 'No'));
+            setValue('data-legal-desc', survey.legal_issues_description);
+            setValue('data-facebook', survey.facebook_profile_url);
+            setValue('data-curp', survey.curp);            setValue('data-nss', survey.nss_imss);
+            setValue('data-rfc', survey.rfc_tax_id);
+            setValue('data-utility-provider', survey.utility_provider);
+            setValue('data-utility-contract', survey.utility_contract_number);
+            setValue('data-utility-holder', survey.utility_account_holder);
         }
 
         async function loadConversation() {
@@ -3685,8 +3765,12 @@
                 document.getElementById('edit-license-number').value = currentSurvey.federal_license_number || '';
                 document.getElementById('edit-medical-folio').value = currentSurvey.medical_folio || '';
                 document.getElementById('edit-license-validity').value = currentSurvey.license_validity || '';
-                document.getElementById('edit-license-type').value = currentSurvey.license_type || '';
-                document.getElementById('edit-evidence').value = currentSurvey.evidence_sent || '';
+                document.getElementById('edit-curp').value = currentSurvey.curp || '';
+                document.getElementById('edit-nss').value = currentSurvey.nss_imss || '';
+                document.getElementById('edit-rfc').value = currentSurvey.rfc_tax_id || '';
+                document.getElementById('edit-utility-provider').value = currentSurvey.utility_provider || '';
+                document.getElementById('edit-utility-contract').value = currentSurvey.utility_contract_number || '';
+                document.getElementById('edit-utility-holder').value = currentSurvey.utility_account_holder || '';
 
                 // Show modal
                 document.getElementById('edit-modal').style.display = 'block';
@@ -3707,18 +3791,79 @@
                     date_of_birth: document.getElementById('edit-dob').value,
                     phone_whatsapp: document.getElementById('edit-phone').value,
                     email: document.getElementById('edit-email').value,
+                    curp: document.getElementById('edit-curp').value,
+                    nss_imss: document.getElementById('edit-nss').value,
+                    rfc_tax_id: document.getElementById('edit-rfc').value,
+                    utility_provider: document.getElementById('edit-utility-provider').value,
+                    utility_contract_number: document.getElementById('edit-utility-contract').value,
+                    utility_account_holder: document.getElementById('edit-utility-holder').value,
                     full_address: document.getElementById('edit-address').value,
                     housing_type: document.getElementById('edit-housing-type').value,
                     lives_with: document.getElementById('edit-lives-with').value,
+                    dependents_count: document.getElementById('edit-dependents').value,
                     real_estate: document.getElementById('edit-real-estate').value,
                     vehicles: document.getElementById('edit-vehicles').value,
+                    businesses: document.getElementById('edit-businesses').value,
+                    formal_savings: document.getElementById('edit-savings').value,
+                    debts: document.getElementById('edit-debts').value,
+                    credit_bureau: document.getElementById('edit-credit-bureau').value,
                     salary_bonus: document.getElementById('edit-salary').value,
                     informal_business_income: document.getElementById('edit-informal-income').value,
+                    total_monthly_expenses: document.getElementById('edit-total-expenses').value,
+                    groceries: document.getElementById('edit-groceries').value,
+                    food_out: document.getElementById('edit-food-out').value,
+                    food_delivery: document.getElementById('edit-food-delivery').value,
+                    rent: document.getElementById('edit-rent').value,
+                    services_total: document.getElementById('edit-services-total').value,
+                    transportation: document.getElementById('edit-transportation').value,
+                    school_expenses: document.getElementById('edit-school-expenses').value,
+                    entertainment: document.getElementById('edit-entertainment').value,
+                    vacations: document.getElementById('edit-vacations').value,
+                    clothing: document.getElementById('edit-clothing').value,
+                    technology_purchases: document.getElementById('edit-technology').value,
+                    insurance: document.getElementById('edit-insurance').value,
+                    other_expenses: document.getElementById('edit-other-expenses').value,
+                    company_certifying: document.getElementById('edit-company-certifying').value,
+                    position_certifying: document.getElementById('edit-position-certifying').value,
+                    how_found_vacancy: document.getElementById('edit-how-found').value,
                     work_references: document.getElementById('edit-work-refs').value,
+                    father_name: document.getElementById('edit-father-name').value,
+                    father_occupation: document.getElementById('edit-father-occupation').value,
+                    mother_name: document.getElementById('edit-mother-name').value,
+                    mother_occupation: document.getElementById('edit-mother-occupation').value,
+                    siblings_info: document.getElementById('edit-siblings').value,
+                    family_addresses: document.getElementById('edit-family-addresses').value,
+                    frequent_contacts: document.getElementById('edit-frequent-contacts').value,
+                    partner_name: document.getElementById('edit-partner-name').value,
+                    partner_phone: document.getElementById('edit-partner-phone').value,
+                    partner_occupation: document.getElementById('edit-partner-occupation').value,
+                    partner_relationship_quality: document.getElementById('edit-partner-relationship').value,
+                    children_names: document.getElementById('edit-children-names').value,
+                    neighborhood_description: document.getElementById('edit-neighborhood-desc').value,
+                    home_description: document.getElementById('edit-home-desc').value,
+                    home_floors: document.getElementById('edit-home-floors').value,
+                    home_buildings: document.getElementById('edit-home-buildings').value,
+                    home_references: document.getElementById('edit-home-refs').value,
+                    crime_in_area: document.getElementById('edit-crime').value,
+                    security_quality: document.getElementById('edit-security').value,
+                    surveillance_quality: document.getElementById('edit-surveillance').value,
                     bedrooms: document.getElementById('edit-bedrooms').value,
+                    dining_room: document.getElementById('edit-dining').value,
+                    living_room: document.getElementById('edit-living').value,
                     bathrooms: document.getElementById('edit-bathrooms').value,
+                    kitchen: document.getElementById('edit-kitchen').value,
+                    air_conditioning: document.getElementById('edit-ac').value,
                     garage: document.getElementById('edit-garage').value,
+                    laundry_area: document.getElementById('edit-laundry-area').value,
                     garden: document.getElementById('edit-garden').value,
+                    pool: document.getElementById('edit-pool').value,
+                    sports_areas: document.getElementById('edit-sports').value,
+                    study_office: document.getElementById('edit-office').value,
+                    license_type: document.getElementById('edit-license-type').value,
+                    federal_license_number: document.getElementById('edit-license-number').value,
+                    medical_folio: document.getElementById('edit-medical-folio').value,
+                    license_validity: document.getElementById('edit-license-validity').value,
+                    evidence_sent: document.getElementById('edit-evidence').value,
                 };
 
                 const response = await fetch(`${API_URL}/survey/${sessionId}`, {
@@ -4082,13 +4227,39 @@
                 
                 const addField = (label, value) => {
                     checkPageBreak();
-                    doc.setFont(undefined, 'bold');
+                    const labelText = label + ':';
+                    const displayValue = value || 'No proporcionado';
+                    
                     doc.setFontSize(10);
-                    doc.text(label + ':', margin, yPos);
-                    doc.setFont(undefined, 'normal');
-                    const lines = doc.splitTextToSize(value || 'No proporcionado', 120);
-                    doc.text(lines, margin + 50, yPos);
-                    yPos += lineHeight * lines.length;
+                    const labelWidth = doc.getStringUnitWidth(labelText) * 10 / doc.internal.scaleFactor;
+                    const valueWidth = doc.getStringUnitWidth(displayValue) * 10 / doc.internal.scaleFactor;
+                    
+                    const alwaysTwoLines = [
+                        'Relación Contacto Emergencia'
+                    ];
+
+                    // Go to two lines if label + value together would overflow
+                    const wouldOverflow = (labelWidth + valueWidth + 5) > 165 || alwaysTwoLines.includes(label);
+                    
+                    if (wouldOverflow) {
+                        // Label on its own line, value indented below
+                        doc.setFont(undefined, 'bold');
+                        doc.text(labelText, margin, yPos);
+                        yPos += lineHeight;
+                        checkPageBreak();
+                        doc.setFont(undefined, 'normal');
+                        const lines = doc.splitTextToSize(displayValue, 155);
+                        doc.text(lines, margin + 5, yPos);
+                        yPos += lineHeight * lines.length;
+                    } else {
+                        // Label and value on same line
+                        doc.setFont(undefined, 'bold');
+                        doc.text(labelText, margin, yPos);
+                        doc.setFont(undefined, 'normal');
+                        const lines = doc.splitTextToSize(displayValue, 120);
+                        doc.text(lines, margin + 50, yPos);
+                        yPos += lineHeight * lines.length;
+                    }
                 };
                 
                 // HEADER
@@ -4151,6 +4322,12 @@
                 addField('NSS/IMSS', currentSurvey.nss_imss);
                 addField('RFC', currentSurvey.rfc_tax_id);
                 addField('Dirección', currentSurvey.full_address);
+                addField('Tipo de Licencia', currentSurvey.license_type);
+                addField('Número de Licencia Federal', currentSurvey.federal_license_number);
+                addField('Folio Médico', currentSurvey.medical_folio);
+                addField('Vigencia de Licencia', currentSurvey.license_validity);
+                addField('Proveedor de Servicios', currentSurvey.utility_provider);
+                addField('Número de Contrato', currentSurvey.utility_contract_number);
                 
                 // VIVIENDA
                 addSection('VIVIENDA');
@@ -4160,7 +4337,23 @@
                 addField('Descripción del Entorno', currentSurvey.neighborhood_description);
                 addField('Descripción de la Vivienda', currentSurvey.home_description);
                 addField('Pisos', currentSurvey.home_floors);
-                addField('Edificios', currentSurvey.home_buildings);    
+                addField('Edificios', currentSurvey.home_buildings);
+                addField('Recámaras', currentSurvey.bedrooms);
+                addField('Comedor', currentSurvey.dining_room);
+                addField('Sala', currentSurvey.living_room);
+                addField('Baños', currentSurvey.bathrooms);
+                addField('Cocina', currentSurvey.kitchen);
+                addField('A/C', currentSurvey.air_conditioning);
+                addField('Cochera', currentSurvey.garage);
+                addField('Lavandería', currentSurvey.laundry_area);
+                addField('Jardín', currentSurvey.garden);
+                addField('Alberca', currentSurvey.pool);
+                addField('Áreas Deportivas', currentSurvey.sports_areas);
+                addField('Estudio/Oficina', currentSurvey.study_office);
+                addField('Crimen en la Zona', currentSurvey.crime_in_area);
+                addField('Calidad de Seguridad', currentSurvey.security_quality);
+                addField('Calidad de Vigilancia', currentSurvey.surveillance_quality);
+                addField('Referencias del Hogar', currentSurvey.home_references);
 
                 // VACANTE Y REFERENCIAS LABORALES
                 addSection('VACANTE Y REFERENCIAS LABORALES');
@@ -4173,16 +4366,16 @@
                 // INGRESOS
                 addSection('INGRESOS');
                 addField('Sueldo/Bonos', currentSurvey.salary_bonus);
-                addField('Negocios / Rentas / Informales', currentSurvey.informal_business_income);
+                addField('Negocios / Rentas', currentSurvey.informal_business_income);
                 
                 // GASTOS
                 addSection('GASTOS MENSUALES');
                 addField('Total Estimado', currentSurvey.total_monthly_expenses);
                 addField('Despensa / Comida', currentSurvey.groceries);
-                addField('Comida Fuera / Restaurantes', currentSurvey.food_out);
+                addField('Comida Fuera', currentSurvey.food_out);
                 addField('Delivery / Apps', currentSurvey.food_delivery);
                 addField('Renta / Vivienda', currentSurvey.rent);
-                addField('Servicios (agua, luz, gas, internet)', currentSurvey.services_total);
+                addField('Servicios (agua, luz, gas)', currentSurvey.services_total);
                 addField('Transporte / Gasolina / Uber', currentSurvey.transportation);
                 addField('Educación / Colegiaturas', currentSurvey.school_expenses);
                 addField('Entretenimiento', currentSurvey.entertainment);
@@ -4212,6 +4405,15 @@
                 addField('Pareja', `${currentSurvey.partner_name || 'N/A'} - ${currentSurvey.partner_phone || ''} - ${currentSurvey.partner_occupation || ''}`);
                 addField('Calidad de Relación', currentSurvey.partner_relationship_quality);
                 addField('Hijos', currentSurvey.children_names);
+                addField('Número de Hijos', currentSurvey.children_count?.toString());
+                addField('Relación Contacto Emergencia', currentSurvey.emergency_contact_relationship);
+
+                // ANTECEDENTES LEGALES
+                addSection('ANTECEDENTES LEGALES');
+                addField('¿Tiene Problemas Legales?', currentSurvey.has_legal_issues ? 'Sí' : (currentSurvey.has_legal_issues === false ? 'No' : 'No proporcionado'));
+                addField('Descripción', currentSurvey.legal_issues_description);
+                addField('Facebook', currentSurvey.facebook_profile_url);
+                addField('Evidencia Enviada', currentSurvey.evidence_sent);
                 
                 // ADD IMAGES SECTION
                 if (surveyImages.length > 0) {
@@ -4443,8 +4645,12 @@
                     createField("NSS/IMSS", currentSurvey.nss_imss),
                     createField("RFC", currentSurvey.rfc_tax_id),
                     createField("Dirección Completa", currentSurvey.full_address),
-                    createField("Proveedor de Servicios", currentSurvey.utility_provider),
-                    createField("Número de Contrato", currentSurvey.utility_contract_number)
+                    createField("Tipo de Licencia", currentSurvey.license_type),
+                    createField("Número de Licencia Federal", currentSurvey.federal_license_number),
+                    createField("Folio Médico", currentSurvey.medical_folio),
+                    createField("Vigencia de Licencia", currentSurvey.license_validity),
+                    createField("Proveedor de Servicios (CFE/etc)", currentSurvey.utility_provider),
+                    createField("Número de Contrato CFE", currentSurvey.utility_contract_number)
                 );
                 
                 // VIVIENDA
@@ -4478,7 +4684,7 @@
                 sections.push(
                     createHeading("INGRESOS"),
                     createField("Sueldo/Bonos", currentSurvey.salary_bonus),
-                    createField("Negocios / Rentas / Informales", currentSurvey.informal_business_income)
+                    createField("Negocios / Rentas", currentSurvey.informal_business_income)
                 );
 
                 // GASTOS
