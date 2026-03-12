@@ -1811,8 +1811,8 @@ async def survey_chat(session_id: str = Form(...),message: str = Form(...),ip_ad
             survey_crud.update_survey_field(db, session_id, utility_provider=message.strip())
 
         # B) Birth information
-        if "fecha" in bot_response_lower and "nacimiento" in bot_response_lower:
-            survey_crud.update_survey_field(db, session_id, date_of_birth=message.strip())
+        if ("fecha" in bot_response_lower and "nacimiento" in bot_response_lower) and ("nombre" not in bot_response_lower):
+            survey_crud.update_survey_field(db, session_id, date_of_birth=message.strip()[:100])
 
         # C) Contact info
         if "correo" in bot_response_lower or "email" in bot_response_lower:
