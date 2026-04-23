@@ -513,7 +513,14 @@
             } catch (error) {
                 console.error('Error loading candidate:', error);
                 document.getElementById('chat-messages').innerHTML = `
-                    <div class="loading">Error al cargar la conversación</div>
+                    <div style="text-align:center; padding: 40px 20px;">
+                        <div style="font-size: 48px; margin-bottom: 15px;">📶</div>
+                        <div style="font-size: 18px; font-weight: 600; color: #333; margin-bottom: 8px;">Hey, tu conexión está fallando</div>
+                        <div style="font-size: 14px; color: #666; margin-bottom: 20px;">Intenta acercarte al WiFi o recarga la página para volver a intentarlo.</div>
+                        <button onclick="loadCandidateDetails()" style="padding: 10px 24px; background: #008386; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+                            🔄 Recargar página
+                        </button>
+                    </div>
                 `;
             }
         }
@@ -594,7 +601,7 @@
 
                 document.getElementById('edit-modal').style.display = 'block';
             } catch (error) {
-                alert('Error al cargar datos del candidato');
+                alert('📶 Hey, tu conexión está fallando.\nIntenta acercarte al WiFi o recarga la página para volver a intentarlo.');
             }
         }
 
@@ -648,10 +655,10 @@
                     closeEditModal();
                     loadCandidateDetails(); // Reload the page data
                 } else {
-                    alert('Error al actualizar candidato');
+                    alert('📶 Hey, tu conexión está fallando.\nIntenta acercarte al WiFi o recarga la página para volver a intentarlo.');
                 }
             } catch (error) {
-                alert('Error al actualizar candidato');
+                alert('📶 Hey, tu conexión está fallando.\nIntenta acercarte al WiFi o recarga la página para volver a intentarlo.');
             }
         });
 
@@ -671,10 +678,10 @@
                     alert('Candidato eliminado exitosamente');
                     window.location.href = 'dashboard';
                 } else {
-                    alert('Error al eliminar candidato');
+                    alert('📶 Hey, tu conexión está fallando.\nIntenta acercarte al WiFi o recarga la página para volver a intentarlo.');
                 }
             } catch (error) {
-                alert('Error al eliminar candidato');
+                alert('📶 Hey, tu conexión está fallando.\nIntenta acercarte al WiFi o recarga la página para volver a intentarlo.');
             }
         }
 
@@ -766,11 +773,11 @@
         } catch (error) {
             console.error('Error during audit:', error);
             notification.style.background = '#dc3545';
-            notification.innerHTML = '❌ Error en auditoría';
+            notification.innerHTML = '❌ Error de conexión';
             
             setTimeout(() => {
                 notification.remove();
-                alert('Error al realizar la auditoría. Por favor intenta nuevamente.');
+                alert('📶 Hey, tu conexión está fallando.\nIntenta acercarte al WiFi o recarga la página para volver a intentarlo.');
             }, 1500);
         }
     }
