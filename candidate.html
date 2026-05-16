@@ -508,6 +508,21 @@
                     }
                 }
 
+                // Format and display created_at date
+                if (candidate.created_at) {
+                    const createdDate = new Date(candidate.created_at);
+                    const formattedDate = createdDate.toLocaleDateString('es-MX', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    document.getElementById('created-at').textContent = formattedDate;
+                } else {
+                    document.getElementById('created-at').textContent = '-';
+                }
+
                 // Render chat messages
                 renderMessages(data.messages);
             } catch (error) {
