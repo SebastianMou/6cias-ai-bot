@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, LargeBinary
 from datetime import datetime
 from database import Base
 
@@ -297,6 +297,7 @@ class SurveyFile(Base):
     file_path = Column(String(500), nullable=False)
     file_type = Column(String(50), nullable=True)  # image/pdf/document
     file_size = Column(Integer, nullable=True)  # in bytes
+    file_data = Column(LargeBinary, nullable=True)  # actual file bytes stored in PostgreSQL
     uploaded_at = Column(DateTime, default=datetime.utcnow)
 
 class SurveyPrompt(Base):

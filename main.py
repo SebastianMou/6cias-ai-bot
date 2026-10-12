@@ -48,15 +48,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-import cloudinary
-import cloudinary.uploader
-
-cloudinary.config(
-    cloud_name=settings.cloudinary_cloud_name,
-    api_key=settings.cloudinary_api_key,
-    api_secret=settings.cloudinary_api_secret
-)
-
 # @app.on_event("startup")
 # async def startup_event():
 #     print("🔄 FINAL recreation - adding fingerprint columns...")
@@ -231,6 +222,16 @@ async def startup_event():
             except Exception as e:
                 # SQLite doesn't support ALTER COLUMN - safe to ignore
                 pass
+
+    from sqlalchemy import inspect
+    existing_cols = [c["name"] for c in inspect(engine).get_columns("survey_files")]
+    if "file_data" not in existing_cols:
+        col_type = "BLOB" if engine.dialect.name == "sqlite" else "BYTEA"
+        with engine.begin() as conn:
+            conn.execute(text(f"ALTER TABLE survey_files ADD COLUMN file_data {col_type}"))
+        print("✅ Added survey_files.file_data column")
+    else:
+        print("✅ survey_files.file_data column already exists")
 
     print("✅ Database ready!")
 
@@ -1531,45 +1532,42 @@ async def survey_chat(session_id: str = Form(...),message: str = Form(...),ip_ad
         
         # Handle file uploads
         uploaded_files_info = []
+        MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB per file
+
         if files:
+            from models import SurveyFile
             for file in files:
                 if file.filename:
-                    # Read file content
                     file_content = await file.read()
-                    file_extension = Path(file.filename).suffix
-                    unique_filename = f"{uuid.uuid4()}{file_extension}"
-                    
-                    # Upload to Cloudinary
-                    upload_result = cloudinary.uploader.upload(
-                        file_content,
-                        folder=f"surveys/{session_id}",
-                        public_id=unique_filename.replace(file_extension, ''),
-                        resource_type="auto"
-                    )
-                    
-                    cloudinary_url = upload_result["secure_url"]
                     file_size = len(file_content)
-                    
-                    # Store file info
+
+                    if file_size > MAX_FILE_SIZE:
+                        raise HTTPException(status_code=413, detail=f"{file.filename} supera 10 MB")
+
+                    # Detect type if the browser didn't send one
+                    content_type = file.content_type or "application/octet-stream"
+                    if file.filename.lower().endswith(".pdf"):
+                        content_type = "application/pdf"
+
                     file_info = {
                         "original_name": file.filename,
-                        "saved_path": cloudinary_url,
-                        "file_type": file.content_type,
+                        "saved_path": "db",
+                        "file_type": content_type,
                         "file_size": file_size
                     }
                     uploaded_files_info.append(file_info)
-                    
-                    # Save to database with Cloudinary URL
-                    from models import SurveyFile
+
+                    # Save bytes directly in PostgreSQL
                     db_file = SurveyFile(
                         session_id=session_id,
                         file_name=file.filename,
-                        file_path=cloudinary_url,
-                        file_type=file.content_type,
-                        file_size=file_size
+                        file_path="db",
+                        file_type=content_type,
+                        file_size=file_size,
+                        file_data=file_content
                     )
                     db.add(db_file)
-            
+
             db.commit()
             
             # Append file info to message
@@ -2493,7 +2491,7 @@ async def get_survey_files(session_id: str, db: Session = Depends(get_db)):
                 "file_type": f.file_type,
                 "file_size": f.file_size,
                 "uploaded_at": f.uploaded_at.isoformat(),
-                "file_url": f.file_path if f.file_path and f.file_path.startswith("http") else None
+                "file_url": f.file_path if f.file_path and f.file_path.startswith("http") and not f.file_data else None
             }
             for f in files
         ]
@@ -2521,7 +2519,19 @@ async def get_survey_file(session_id: str, file_id: str, db: Session = Depends(g
     if not file_record:
         raise HTTPException(status_code=404, detail="File not found")
     
-    # If it's a Cloudinary URL, redirect to it
+    # Serve files stored in PostgreSQL
+    if file_record.file_data:
+        from fastapi.responses import Response
+        from urllib.parse import quote
+        return Response(
+            content=file_record.file_data,
+            media_type=file_record.file_type or "application/octet-stream",
+            headers={
+                "Content-Disposition": f"inline; filename*=UTF-8''{quote(file_record.file_name)}"
+            }
+        )
+
+    # Old Cloudinary files: redirect
     if file_record.file_path and file_record.file_path.startswith("http"):
         return RedirectResponse(url=file_record.file_path)
     
