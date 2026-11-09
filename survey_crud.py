@@ -22,6 +22,13 @@ def update_survey_field(db: Session, session_id: str, **kwargs):
     
     for key, value in kwargs.items():
         if hasattr(survey, key):
+            # Cut text that is longer than the database column allows
+            # (e.g. a long answer saved into phone_whatsapp VARCHAR(20) crashes PostgreSQL)
+            column = SurveyResponse.__table__.columns.get(key)
+            if column is not None and isinstance(value, str):
+                max_len = getattr(column.type, "length", None)
+                if max_len and len(value) > max_len:
+                    value = value[:max_len]
             setattr(survey, key, value)
     
     db.commit()

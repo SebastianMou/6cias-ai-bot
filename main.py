@@ -230,6 +230,22 @@ async def startup_event():
         with engine.begin() as conn:
             conn.execute(text(f"ALTER TABLE survey_files ADD COLUMN file_data {col_type}"))
         print("✅ Added survey_files.file_data column")
+
+    # Add every column that exists in models.py but is missing in the database
+    inspector = inspect(engine)
+    for table in Base.metadata.sorted_tables:
+        if not inspector.has_table(table.name):
+            continue
+        db_cols = {c["name"] for c in inspector.get_columns(table.name)}
+        for column in table.columns:
+            if column.name not in db_cols:
+                col_type = column.type.compile(dialect=engine.dialect)
+                try:
+                    with engine.begin() as conn:
+                        conn.execute(text(f'ALTER TABLE {table.name} ADD COLUMN {column.name} {col_type}'))
+                    print(f"✅ Added missing column {table.name}.{column.name} ({col_type})")
+                except Exception as e:
+                    print(f"⚠️ Could not add {table.name}.{column.name}: {e}")
     else:
         print("✅ survey_files.file_data column already exists")
 
@@ -1917,6 +1933,18 @@ async def survey_chat(session_id: str = Form(...),message: str = Form(...),ip_ad
         import traceback
         traceback.print_exc()
         print(f"❌ [SURVEY CHAT ERROR] model={settings.gemini_model} | {type(e).__name__}: {e}")
+        LAST_SURVEY_ERROR.update({
+            "time": datetime.utcnow().isoformat(),
+            "session_id": session_id,
+            "model": settings.gemini_model,
+            "error_type": type(e).__name__,
+            "error": str(e)[:1000],
+            "where": traceback.format_exc().strip().splitlines()[-3:]
+        })
+        try:
+            db.rollback()
+        except Exception:
+            pass
         return {
             "response": "Lo siento, hubo un error procesando tu respuesta. Por favor, intenta nuevamente.",
             "session_id": session_id,
@@ -2822,6 +2850,35 @@ async def save_browser_fingerprint(
         traceback.print_exc()
         print(f"❌ Fingerprint error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+LAST_SURVEY_ERROR = {}
+
+@app.get("/debug/last-survey-error")
+async def debug_last_survey_error():
+    """Open this in the browser right after the survey shows 'Lo siento...'"""
+    return LAST_SURVEY_ERROR or {"message": "No survey errors since the server started"}
+
+@app.get("/debug/gemini-test")
+async def debug_gemini_test():
+    """Open this in the browser to test the Gemini model with the same settings as the survey"""
+    try:
+        import google.genai
+        sdk_version = getattr(google.genai, "__version__", "unknown")
+    except Exception:
+        sdk_version = "unknown"
+    try:
+        response = client.models.generate_content(
+            model=settings.gemini_model,
+            contents=[{"role": "user", "parts": [{"text": "Responde solo: hola"}]}],
+            config={
+                "max_output_tokens": 4096,
+                "thinking_config": {"thinking_level": "low"}
+            }
+        )
+        return {"ok": True, "model": settings.gemini_model, "sdk_version": sdk_version, "reply": response.text}
+    except Exception as e:
+        return {"ok": False, "model": settings.gemini_model, "sdk_version": sdk_version,
+                "error_type": type(e).__name__, "error": str(e)}
 
 # ADD THIS new endpoint anywhere in main.py:
 @app.post("/debug/fingerprint-raw")
