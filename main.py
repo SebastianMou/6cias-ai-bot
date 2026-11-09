@@ -615,10 +615,12 @@ async def chat(request: ChatRequest, req: Request, db: Session = Depends(get_db)
         full_prompt = context + f"\nUsuario: {enhanced_message}\nAsistente:"
         
         response = client.models.generate_content(
-            model='gemini-2.5-flash',
+            model=settings.gemini_model,
             contents=full_prompt
         )
-        bot_response = response.text
+        bot_response = (response.text or "").strip()
+        if not bot_response:
+            raise ValueError(f"Gemini returned an empty reply (model={settings.gemini_model})")
         
         # Save conversation
         conversation_data = ConversationCreate(
@@ -1029,10 +1031,9 @@ async def audit_survey_conversation(session_id: str, db: Session = Depends(get_d
 
         try:
             response = client.models.generate_content(
-                model='gemini-2.5-flash',
+                model=settings.gemini_model,
                 contents=[{"role": "user", "parts": [{"text": extraction_prompt}]}],
                 config={
-                    "temperature": 0.1,
                     "max_output_tokens": 8192
                 }
             )
@@ -1044,7 +1045,7 @@ async def audit_survey_conversation(session_id: str, db: Session = Depends(get_d
         import json
         import re
         
-        response_text = response.text.strip()
+        response_text = (response.text or "").strip()
         print(f"[AUDIT] Raw response length: {len(response_text)} chars")
         
         # Clean markdown if present
@@ -1769,16 +1770,19 @@ async def survey_chat(session_id: str = Form(...),message: str = Form(...),ip_ad
         
         # Call Gemini API
         response = client.models.generate_content(
-            model='gemini-2.5-flash',
+            model=settings.gemini_model,
             contents=conversation_history,
             config={
                 "system_instruction": system_prompt,
-                "temperature": 0.7,
-                "max_output_tokens": 500
+                "max_output_tokens": 4096,
+                "thinking_config": {"thinking_level": "low"}
             }
         )
         
-        bot_response = response.text
+        bot_response = (response.text or "").strip()
+        if not bot_response:
+            finish = response.candidates[0].finish_reason if response.candidates else "no candidates"
+            raise ValueError(f"Gemini returned an empty reply (model={settings.gemini_model}, finish_reason={finish})")
         
         # Save conversation
         survey_crud.create_survey_conversation(
@@ -1912,6 +1916,7 @@ async def survey_chat(session_id: str = Form(...),message: str = Form(...),ip_ad
     except Exception as e:
         import traceback
         traceback.print_exc()
+        print(f"❌ [SURVEY CHAT ERROR] model={settings.gemini_model} | {type(e).__name__}: {e}")
         return {
             "response": "Lo siento, hubo un error procesando tu respuesta. Por favor, intenta nuevamente.",
             "session_id": session_id,
@@ -2372,7 +2377,7 @@ async def audit_candidate(session_id: str, db: Session = Depends(get_db)):
 
         # Call Gemini API for audit
         response = client.models.generate_content(
-            model='gemini-2.5-flash',
+            model=settings.gemini_model,
             contents=audit_prompt
         )
         
@@ -2380,7 +2385,7 @@ async def audit_candidate(session_id: str, db: Session = Depends(get_db)):
         import json
         import re
         
-        response_text = response.text.strip()
+        response_text = (response.text or "").strip()
         
         # Remove markdown code blocks if present
         response_text = re.sub(r'```json\s*|\s*```', '', response_text)
@@ -2837,5 +2842,3 @@ async def debug_fingerprint_raw(request: Request):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
-
-
