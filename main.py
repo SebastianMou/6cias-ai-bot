@@ -26,7 +26,7 @@ from pathlib import Path
 import re
 import unicodedata
 
-client = genai.Client(api_key=settings.gemini_api_key)
+client = genai.Client(api_key=settings.gemini_api_key, http_options={"timeout": 90_000})  # 90s, in milliseconds
 
 SURVEY_FILES_DIR = Path("survey_files")
 SURVEY_FILES_DIR.mkdir(exist_ok=True)

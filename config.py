@@ -3,7 +3,7 @@ from typing import List
 
 class Settings(BaseSettings):
     gemini_api_key: str
-    gemini_model: str = "gemini-3.8-flash"  # change with GEMINI_MODEL in .env / Railway variables
+    gemini_model: str = "gemini-3.5-flash-lite"  # change with GEMINI_MODEL in .env / Railway variables
     database_url: str = "sqlite:///./chatbot.db"
     allowed_origins: str = "https://www.6cias.com,http://localhost"
 
